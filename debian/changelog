@@ -1,3 +1,9 @@
+gmp-ecm (6.1.2-1) unstable; urgency=low
+
+  * New Upstream Version (closes: #434026).
+
+ -- Laurent Fousse <laurent@komite.net>  Sat, 21 Jul 2007 11:39:43 +0200
+
 gmp-ecm (6.1.1-4) unstable; urgency=low
 
   * Disable assembly on hppa as well (closes: #379006).
