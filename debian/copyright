@@ -1,0 +1,31 @@
+This package was debianized by Laurent Fousse <laurent@komite.net> on
+Tue, 22 Apr 2003 10:19:24 +0200.
+
+It was downloaded from http://gforge.inria.fr/projects/ecm/
+
+Upstream Authors (from upstream `AUTHORS' file):
+    Jim Fougeron <jfoug at cox dot net>
+    Laurent Fousse <laurent at komite dot net>
+    Alexander Kruppa <firstname.lastname@mytum.de> (substitute appropriately)
+    Dave Newman <david dot newman at jesus dot ox dot ac dot uk>
+    Paul Zimmermann <zimmerma at loria dot fr>
+
+This software is copyright (C) 2001-2006 Paul Zimmerman and Alexander Kruppa,
+(C) 2003-2005 Jim Fougeron, Laurent Fousse and Dave Newman.
+
+You are free to distribute the files:
+    auxlib.c bestd.c ecm-gmp.h ecm.c ecm2.c factor.c getprime.c ks-multiply.c
+    listz.c lucas.c median.c memory.c mpmod.c mul_lo.c pm1.c polyeval.c pp1.c
+    random.c rho.c schoen_strass.c stage2.c toomcook.c
+under the terms of the GNU Lesser General Public License, version 2.1 or any
+later version, and the files:
+    Fgw.c auxi.c b1_ainc.c candi.c ecm-ecm.h ecm-impl.h ecm.h ecmfactor.c
+    eval.c getprime2.c main.c random2.c resume.c smartprp.c trial.c tune.c
+    tune2.c
+under the terms of the GNU General Public License, version 2 or any later
+version.
+
+On Debian systems, the complete texts of the GNU General Public
+License and of the GNU Lesser General Public License can be found in
+the file `/usr/share/common-licenses/GPL' and `/usr/share/common-licenses/LGPL'
+respectively.

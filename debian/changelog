@@ -1,0 +1,100 @@
+gmp-ecm (6.1.1-4) unstable; urgency=low
+
+  * Disable assembly on hppa as well (closes: #379006).
+
+ -- Laurent Fousse <laurent@komite.net>  Mon, 31 Jul 2006 12:29:51 +0200
+
+gmp-ecm (6.1.1-3) unstable; urgency=low
+
+  * The build failure on s390 is of a more complicated nature,
+    disable assembly completely until someone fixes it.
+
+ -- Laurent Fousse <laurent@komite.net>  Thu, 20 Jul 2006 13:58:34 +0200
+
+gmp-ecm (6.1.1-2) unstable; urgency=low
+
+  * Define types before inclusion of longlong.h, fixes build
+    failure on s390.
+
+ -- Laurent Fousse <laurent@komite.net>  Thu, 20 Jul 2006 10:31:17 +0200
+
+gmp-ecm (6.1.1-1) unstable; urgency=low
+
+  * New upstream release
+  * Change debian/copyright to point to new download page.
+  * Upgraded Standards-Version to 3.7.2, no change needed.
+
+ -- Laurent Fousse <laurent@komite.net>  Wed, 19 Jul 2006 21:50:56 +0200
+
+gmp-ecm (6.0.1-2) unstable; urgency=low
+
+  * Updated Standards-Version to 3.6.2 (no change needed).
+  * Rebuild needed because of GMP C++ transition (closes: #326196).
+
+ -- Laurent Fousse <laurent@komite.net>  Sun,  4 Sep 2005 10:40:16 +0200
+
+gmp-ecm (6.0.1-1) unstable; urgency=low
+
+  * New upstream release.
+
+ -- Laurent Fousse <laurent@komite.net>  Fri,  1 Apr 2005 15:02:22 +0200
+
+gmp-ecm (6.0-2) unstable; urgency=low
+
+  * Applied upstream patches 04 through 08, fixes misc bugs including
+    potential segfault.
+
+ -- Laurent Fousse <laurent@komite.net>  Fri, 11 Mar 2005 10:37:00 +0100
+
+gmp-ecm (6.0-1) unstable; urgency=low
+
+  * New upstream release, repackaged since upstream switched to autotools.
+  * Applied upstream patch 02, fixes linking problem.
+  * Applied upstream patch 03, fixes segfault.
+  * Backported test.ecm from CVS, makes tests a lot faster.
+  * Add manpage link gmp-ecm(1).
+  * Changed to Standards-Version 3.6.1 (no change needed).
+
+ -- Laurent Fousse <laurent@komite.net>  Mon, 28 Feb 2005 16:02:28 +0100
+
+gmp-ecm (5.0.3-3) unstable; urgency=low
+
+  * Fix typo in manpage, thanks Bill Allombert (closes: #254255).
+
+ -- Laurent Fousse <laurent@komite.net>  Thu, 24 Jun 2004 15:18:15 +0200
+
+gmp-ecm (5.0.3-2) unstable; urgency=low
+
+  * Fixed debian/rules, "test" target no longer called twice.
+  * Updated to newer Cunningham numbers input list.
+
+ -- Laurent Fousse <laurent@komite.net>  Mon, 26 Jan 2004 13:33:03 +0100
+
+gmp-ecm (5.0.3-1) unstable; urgency=low
+
+  * New upstream release.
+  * "test" target added in debian/rules and called at build time.
+  * License for two files is LGPL, not GPL.
+  * Watch file removed as it is not applicable anymore.
+
+ -- Laurent Fousse <laurent@komite.net>  Sun,  9 Nov 2003 13:10:49 +0100
+
+gmp-ecm (5.0.1-3) unstable; urgency=low
+
+  * Added upstream patch that checks mallocs (closes: #197444).
+  * Updated Standards-Version to 3.6.0.
+
+ -- Laurent Fousse <laurent@komite.net>  Sun, 14 Sep 2003 17:26:43 +0200
+
+gmp-ecm (5.0.1-2) unstable; urgency=low
+
+  * Updated manpage. Closes: #197443
+
+ -- Laurent Fousse <laurent@komite.net>  Mon, 16 Jun 2003 08:07:29 +0000
+
+gmp-ecm (5.0.1-1) unstable; urgency=low
+
+  * Initial Release. Closes: #180191
+
+ -- Laurent Fousse <laurent@komite.net>  Sun, 25 May 2003 09:54:44 +0000
+

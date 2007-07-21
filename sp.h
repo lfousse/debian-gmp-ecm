@@ -71,6 +71,9 @@ typedef unsigned long UDItype;
 #define ULONG_MAX __GMP_ULONG_MAX
 #endif
 
+#if defined (__s390__) || defined (__hppa__)
+#define NO_ASM
+#endif
 #include "longlong.h"
 
 /* Use a library function for invert_limb, if available. */

@@ -1,0 +1,26 @@
+Source: gmp-ecm
+Section: math
+Priority: optional
+Maintainer: Laurent Fousse <laurent@komite.net>
+Build-Depends: debhelper (>= 4.0.0) , libgmp3-dev
+Standards-Version: 3.7.2
+
+Package: gmp-ecm
+Architecture: any
+Depends: ${shlibs:Depends}
+Description: Factor integers using the Elliptic Curve Method
+ gmp-ecm is a free implementation of the Elliptic Curve Method (ECM)
+ for integer factorization.
+ .
+ The original purpose of the ECMNET project was to make Richard Brent's
+ prediction true, i.e. to find a factor of 50 digits or more by
+ ECM. This goal was attained on September 14, 1998, when Conrad Curry
+ found a 53-digit factor of 2^677-1 c150 using George Woltman's mprime
+ program. The new goal of ECMNET is now to find other large factors by
+ ecm, mainly by contributing to the Cunningham project, most likely the
+ longest, ongoing computational project in history according to Bob
+ Silverman. A new record was set by Nik Lygeros and Michel Mizony, who
+ found in December 1999 a prime factor of 54 digits using GMP-ECM.
+ .
+ See http://www.loria.fr/~zimmerma/records/ecmnet.html for more
+ informations about ecmnet.
