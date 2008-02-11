@@ -165,6 +165,9 @@
 /* Define to 1 to use asm redc on x86 or x86_64 */
 #undef NATIVE_REDC
 
+/* Define to 1 if your C compiler doesn't accept -c and -o together. */
+#undef NO_MINUS_C_MINUS_O
+
 /* Name of package */
 #undef PACKAGE
 
@@ -185,7 +188,7 @@
 
 /* If using the C implementation of alloca, define if you know the
    direction of stack growth for your system; otherwise it will be
-   automatically deduced at run-time.
+   automatically deduced at runtime.
 	STACK_DIRECTION > 0 => grows toward higher addresses
 	STACK_DIRECTION < 0 => grows toward lower addresses
 	STACK_DIRECTION = 0 => direction of growth unknown */
@@ -215,5 +218,5 @@
 #undef inline
 #endif
 
-/* Define to `unsigned' if <sys/types.h> does not define. */
+/* Define to `unsigned int' if <sys/types.h> does not define. */
 #undef size_t

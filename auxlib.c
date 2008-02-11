@@ -148,11 +148,20 @@ cputime ()
 {
   FILETIME lpCreationTime, lpExitTime, lpKernelTime, lpUserTime;
   ULARGE_INTEGER n;
-
+  BOOL ok;
+  
   HANDLE hProcess = GetCurrentProcess();
   
-  GetProcessTimes (hProcess, &lpCreationTime, &lpExitTime, &lpKernelTime,
-      &lpUserTime);
+  ok = GetProcessTimes (hProcess, &lpCreationTime, &lpExitTime, &lpKernelTime,
+                        &lpUserTime);
+
+  if (!ok)
+    {
+      outputf (OUTPUT_ERROR, 
+               "cputime: GetProcessTimes returned error code %d\n",
+               GetLastError ());
+      return 0;
+    }
 
   /* copy FILETIME to a ULARGE_INTEGER as recommended by MSDN docs */
   n.u.LowPart = lpUserTime.dwLowDateTime;
