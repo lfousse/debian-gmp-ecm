@@ -920,7 +920,8 @@ mpres_mul (mpres_t R, mpres_t S1, mpres_t S2, mpmod_t modulus)
       ASSERT(mpn_fft_next_size (n, k) == n);
       base2mod_2 (S1, n, modulus->orig_modulus);
       base2mod_2 (S2, n, modulus->orig_modulus);
-      mpn_mul_fft (PTR(R), n, PTR(S1), ABSIZ(S1), PTR(S2), ABSIZ(S2), k);
+      PTR(R)[n] = mpn_mul_fft (PTR(R), n, PTR(S1), ABSIZ(S1), PTR(S2), 
+                               ABSIZ(S2), k);
       n ++;
       MPN_NORMALIZE(PTR(R), n);
       SIZ(R) = ((SIZ(S1) ^ SIZ(S2)) >= 0) ? (int) n : (int) -n;
