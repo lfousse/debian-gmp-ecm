@@ -47,7 +47,7 @@ clean:
 	rm -f build-stamp 
 
 	# Add here commands to clean up after the build process.
-	-$(MAKE) distclean
+	[ ! -f Makefile ] || $(MAKE) distclean
 ifneq "$(wildcard /usr/share/misc/config.sub)" ""
 	cp -f /usr/share/misc/config.sub config.sub
 endif
@@ -65,12 +65,9 @@ install: build
 	dh_installdirs
 
 	# Add here commands to install the package into debian/gmp-ecm.
-	$(MAKE) install DESTDIR=$(CURDIR)/debian/gmp-ecm
-	rm -rf $(CURDIR)/debian/gmp-ecm/usr/lib
-	rm -rf $(CURDIR)/debian/gmp-ecm/usr/include
-	mkdir -p $(CURDIR)/debian/gmp-ecm/usr/share/man/man1
-	cp ecm.1 debian/gmp-ecm/usr/share/man/man1
-	ln -s /usr/share/man/man1/ecm.1.gz debian/gmp-ecm/usr/share/man/man1/gmp-ecm.1.gz
+	$(MAKE) install DESTDIR=$(CURDIR)/debian/tmp
+	mkdir -p $(CURDIR)/debian/tmp/usr/share/man/man1
+	cp ecm.1 debian/tmp/usr/share/man/man1
 
 
 # Build architecture-independent files here.
@@ -85,9 +82,10 @@ binary-arch: build install
 	dh_installdocs
 	dh_installexamples
 	dh_installman
-	dh_link
+	dh_install
 	dh_strip
 	dh_compress
+	dh_link -p gmp-ecm usr/share/man/man1/ecm.1.gz usr/share/man/man1/gmp-ecm.1.gz
 	dh_fixperms
 	dh_installdeb
 	dh_shlibdeps
