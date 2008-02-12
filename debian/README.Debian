@@ -8,12 +8,4 @@ get you started:
 
     http://www.loria.fr/~zimmerma/records/ecmnet.html
 
-
-Library version
----------------
-
-Starting with version 6.0, gmp-ecm now ships with a library version
-too. The library is not included in the debian package yet, please
-file a wishlist bug asking for it if you find it useful.
-
  -- Laurent Fousse <laurent@komite.net>, Mon, 28 Feb 2005 16:34:07 +0100
