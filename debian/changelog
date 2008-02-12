@@ -1,7 +1,7 @@
 gmp-ecm (6.1.3-1) unstable; urgency=low
 
   * New upstream version.
-  * Ship the static library in the new libecm-dev package.
+  * Ship the static library in the new libecm-dev package (closes: #464959).
   * Upgraded Standards-Version to 3.7.3, no change needed.
   * Add Homepage field in control.
 
