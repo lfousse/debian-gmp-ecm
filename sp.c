@@ -1,6 +1,6 @@
 /* sp.c - "small prime" functions that don't need to be inlined
 
-  Copyright 2005 Dave Newman.
+  Copyright 2005, 2008 Dave Newman and Jason Papadopoulos.
 
   The SP Library is free software; you can redistribute it and/or modify
   it under the terms of the GNU Lesser General Public License as published by
@@ -14,11 +14,15 @@
 
   You should have received a copy of the GNU Lesser General Public License
   along with the SP Library; see the file COPYING.LIB.  If not, write to
-  the Free Software Foundation, Inc., 59 Temple Place - Suite 330, Boston,
-  MA 02111-1307, USA.
+  the Free Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston,
+  MA 02110-1301, USA.
 */
 
+#include <stdlib.h>
 #include "sp.h"
+
+
+/* Test if m is a base "a" strong probable prime */
 
 int
 sp_spp (sp_t a, sp_t m, sp_t d)
@@ -28,6 +32,7 @@ sp_spp (sp_t a, sp_t m, sp_t d)
   if (m == a)
     return 1;
 	
+  /* Set e * 2^s = m-1, e odd */
   for (s = 0, e = m - 1; !(e & 1); s++, e >>= 1);
 
   t = sp_pow (a, e, m, d);
@@ -46,7 +51,8 @@ sp_spp (sp_t a, sp_t m, sp_t d)
   return 0;
 }
 
-/* note this only works on sp's, i.e. we need the top bit of x set */
+/* Test if x is a prime, return 1 if it is. Note this only works on sp's, 
+   i.e. we need the top bit of x set */
 int
 sp_prime (sp_t x)
 {
@@ -58,9 +64,9 @@ sp_prime (sp_t x)
   if (x < SP_MIN)
     return 1;
   
-  invert_limb (d, x);
+  sp_reciprocal (d, x);
   
-  if (SP_NUMB_BITS == 32)
+  if (SP_NUMB_BITS <= 32)
     {
       /* 32-bit primality test
        * See http://primes.utm.edu/prove/prove2_3.html */
@@ -70,7 +76,7 @@ sp_prime (sp_t x)
     }
   else
     {
-      ASSERT (SP_NUMB_BITS == 64);
+      ASSERT (SP_NUMB_BITS <= 64);
       /* 64-bit primality test
        * follows from results by Jaeschke, "On strong pseudoprimes to several
        * bases" Math. Comp. 61 (1993) p916 */
@@ -84,3 +90,33 @@ sp_prime (sp_t x)
   
   return 1;
 }
+
+#define CACHE_LINE_SIZE 64
+
+void *
+sp_aligned_malloc (size_t len)
+{
+  void *ptr, *aligned_ptr;
+  unsigned long addr;
+
+  ptr = malloc (len + CACHE_LINE_SIZE);
+
+  addr = (unsigned long)ptr;				
+  addr = CACHE_LINE_SIZE - (addr % CACHE_LINE_SIZE);
+  aligned_ptr = (void *)((char *)ptr + addr);
+
+  *( (void **)aligned_ptr - 1 ) = ptr;
+  return aligned_ptr;
+}
+
+void
+sp_aligned_free (void *newptr) 
+{
+  void *ptr;
+
+  if (newptr == NULL) 
+    return;
+  ptr = *( (void **)newptr - 1 );
+  free (ptr);
+}
+

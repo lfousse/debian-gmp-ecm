@@ -14,7 +14,7 @@
 
   You should have received a copy of the GNU General Public License along
   with this program; see the file COPYING.  If not, write to the Free
-  Software Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
+  Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
   02111-1307, USA.
 */
 
@@ -23,18 +23,21 @@
 #include <string.h>
 #include <time.h>
 #include <math.h>
+#ifdef _MSC_VER
+#  include <winsock2.h>
+#endif
 #include "ecm-ecm.h"
 
-#if HAVE_UNISTD_H /* for access() */
+#ifdef HAVE_UNISTD_H /* for access() */
 # include <unistd.h>
 #else
 # define F_OK 0
-# if HAVE_IO_H
+# ifdef HAVE_IO_H
 #  include <io.h>
 # endif
 #endif
 
-#if HAVE_SIGNAL_H
+#ifdef HAVE_SIGNAL_H
 # include <signal.h>
 #endif
 
@@ -55,7 +58,7 @@ static char *champion_url[3] =
  "http://www.loria.fr/~zimmerma/records/Pminus1.html",
  "http://www.loria.fr/~zimmerma/records/Pplus1.html"};
 /* minimal number of digits to enter the champions table for ECM, P-1, P+1 */
-static unsigned int champion_digits[3] = { 57, 45, 38 };
+static unsigned int champion_digits[3] = { 61, 50, 40 };
 
 /* probab_prime_p() can get called from other modules. Instead of passing
    prpcmd to those functions, we make it static here - this variable will
@@ -198,15 +201,16 @@ usage (void)
     printf ("  -q           quiet mode\n");
     printf ("  -v           verbose mode\n");
     printf ("  -timestamp   print a time stamp with each number\n");
-    printf ("  -mpzmod      use GMP's mpz_mod for mod reduction\n");
-    printf ("  -modmuln     use Montgomery's MODMULN for mod reduction\n");
-    printf ("  -redc        use Montgomery's REDC for mod reduction\n");
+    printf ("  -mpzmod      use GMP's mpz_mod for modular reduction\n");
+    printf ("  -modmuln     use Montgomery's MODMULN for modular reduction\n");
+    printf ("  -redc        use Montgomery's REDC for modular reduction\n");
     printf ("  -nobase2     disable special base-2 code\n");
     printf ("  -base2 n     force base 2 mode with 2^n+1 (n>0) or 2^|n|-1 (n<0)\n");
     printf ("  -no-ntt      disable NTT polynomial routines in stage 2\n");
     printf ("  -save file   save residues at end of stage 1 to file\n");
     printf ("  -savea file  like -save, appends to existing files\n");
     printf ("  -resume file resume residues from file, reads from stdin if file is \"-\"\n");
+    printf ("  -chkpnt file save periodic checkpoints during stage 1 to file\n");
     printf ("  -primetest   perform a primality test on input\n");
     printf ("  -treefile f  store product tree of F in files f.0 f.1 ... \n");
     printf ("  -maxmem n    use at most n MB of memory in stage 2\n");
@@ -249,6 +253,7 @@ usage (void)
 int
 main (int argc, char *argv[])
 {
+  char **argv0 = argv;
   mpz_t x, sigma, A, f, orig_x0, B2, B2min, startingB2min;
   mpcandi_t n;
   mpgocandi_t go;
@@ -274,7 +279,7 @@ main (int argc, char *argv[])
                 default (0): automatic choice. */
   gmp_randstate_t randstate;
   char *savefilename = NULL, *resumefilename = NULL, *infilename = NULL;
-  char *TreeFilename = NULL;
+  char *TreeFilename = NULL, *chkfilename = NULL;
   char rtime[256] = "", who[256] = "", comment[256] = "", program[256] = "";
   FILE *savefile = NULL, *resumefile = NULL, *infile = NULL;
   mpz_t resume_lastN, resume_lastfac; /* When resuming residues from a file,
@@ -520,6 +525,12 @@ main (int argc, char *argv[])
 	  argv += 2;
 	  argc -= 2;
 	}
+      else if ((argc > 2) && (strcmp (argv[1], "-chkpnt") == 0))
+	{
+	  chkfilename = argv[2];
+	  argv += 2;
+	  argc -= 2;
+	}
       else if ((argc > 2) && (strcmp (argv[1], "-treefile") == 0))
 	{
 	  TreeFilename = argv[2];
@@ -664,12 +675,15 @@ main (int argc, char *argv[])
 	}
     }
 
+#if 0
+  /* For fast P-1 stage 2, odd S is required! */
   /* check that S is even for P-1 */
   if ((method == ECM_PM1) && (S % 2 != 0))
     {
       fprintf (stderr, "Error, S should be even for P-1\n");
       exit (EXIT_FAILURE);
     }
+#endif
 
   /* Ok, now we can "reset" the breadthfirst switch so that we do depthfirst 
      as requested */
@@ -678,7 +692,7 @@ main (int argc, char *argv[])
 
   if (argc < 2)
     {
-      fprintf (stderr, "Invalid arguments. See %s --help.\n", argv[0]);
+      fprintf (stderr, "Invalid arguments. See %s --help.\n", argv0[0]);
       exit (EXIT_FAILURE);
     }
 
@@ -703,6 +717,19 @@ main (int argc, char *argv[])
 	  printf ("ECM");
 	}
       printf ("]\n");
+#ifdef HAVE_GETHOSTNAME
+  if (verbose >= 2)
+    {
+#define MNAMESIZE  64
+      char mname[MNAMESIZE];
+      if (gethostname (mname, MNAMESIZE) == 0)
+        {
+          mname[MNAMESIZE - 1] = 0; /* gethostname() may omit trailing 0 */
+          printf ("Running on %s\n", mname);
+        }
+    }
+#endif
+
 #ifdef HAVE_GWNUM
 #ifdef gwnum_is_gpl
       if (! gwnum_is_gpl())
@@ -711,7 +738,7 @@ main (int argc, char *argv[])
                 "be distributed.\n");
 #endif
     }
-
+  
   /* set first stage bound B1 */
   B1 = strtod (argv[1], &argv[1]);
   if (*argv[1] == '-')
@@ -756,7 +783,19 @@ main (int argc, char *argv[])
         endptr = NULL;
       
       c = -1;
-      gmp_sscanf (argv[2], "%Zd%n", B2, &c); /* Try parsing as integer */
+      {
+	int r;
+
+	r = gmp_sscanf (argv[2], "%Zd%n", B2, &c); /* Try parsing as integer */
+	if (r <= 0)
+	  {
+	    /* restore original value */
+	    if (endptr != NULL)
+	      *(--endptr) = '-';
+	    fprintf (stderr, "Invalid B2 value: %s\n", argv[2]);
+	    exit (EXIT_FAILURE);
+	  }
+      }
 #ifdef __MINGW32__
       /* MinGW scanf() returns a value 1 too high for %n */
       /* Reported to MinGW as bug number 1163607 */
@@ -814,6 +853,7 @@ main (int argc, char *argv[])
   params->k = k;
   params->S = S;
   params->repr = repr;
+  params->chkfilename = chkfilename;
   params->TreeFilename = TreeFilename;
   params->maxmem = maxmem;
   params->stage1time = stage1time;
@@ -876,9 +916,16 @@ main (int argc, char *argv[])
 
   /* Install signal handlers */
 #ifdef HAVE_SIGNAL
-  signal (SIGINT, &signal_handler);
-  signal (SIGTERM, &signal_handler);
-  params->stop_asap = &stop_asap_test;
+  /* We catch signals only if there is a savefile. Otherwise there's nothing
+     we could save by exiting cleanly, but the waiting for the code to check
+     for signals may delay program end unacceptably */
+
+  if (savefile)
+    {
+      signal (SIGINT, &signal_handler);
+      signal (SIGTERM, &signal_handler);
+      params->stop_asap = &stop_asap_test;
+    }
 #endif
 
   /* loop for number in standard input or file */
@@ -983,7 +1030,7 @@ BreadthFirstDoAgain:;
                  the last attempt was a probable prime, or 2. if a factor
                  was found and the user gave the -one option */
               if (resume_wasPrp || 
-                  deep == 0 && mpz_cmp_ui (resume_lastfac, 1) != 0)
+                  (deep == 0 && mpz_cmp_ui (resume_lastfac, 1) != 0))
                   continue;
               
               /* If we found a factor in an earlier attempt, divide it out */
@@ -1100,17 +1147,10 @@ BreadthFirstDoAgain:;
 	{
 	  if ((!breadthfirst && cnt == count) || (breadthfirst && 1 == breadthfirst_cnt))
 	    {
-              if (timestamp)
-                {
-                  time_t t;
-                  
-                  t = time (NULL);
-                  printf ("[%.24s]\n", ctime (&t));
-                }
 	      /* first time this candidate has been run (if looping more than once */
-	      if (n.cpExpr && n.nexprlen < 1000)
+	      if (n.cpExpr && n.nexprlen < MAX_NUMBER_PRINT_LEN)
 		printf ("Input number is %s (%u digits)\n", n.cpExpr, n.ndigits);
-	      else if (n.ndigits < 1000)
+	      else if (n.ndigits < MAX_NUMBER_PRINT_LEN)
 		{
                   char *s;
                   s = mpz_get_str (NULL, 10, n.n);
@@ -1118,7 +1158,22 @@ BreadthFirstDoAgain:;
                   FREE (s, n.ndigits + 1);
 		}
 	      else
-		printf ("Input number has %u digits\n", n.ndigits);
+	        {
+	          /* Print only first and last ten digits of the number */
+	          mpz_t t, u;
+	          mpz_init (t);
+	          mpz_init (u);
+	          mpz_ui_pow_ui (u, 5, n.ndigits - 10);
+	          mpz_tdiv_q_2exp (t, n.n, n.ndigits - 10);
+	          mpz_tdiv_q (t, t, u);
+		  gmp_printf ("Input number is %Zd...", t);
+		  mpz_ui_pow_ui (u, 10, 10);
+		  mpz_tdiv_r (t, n.n, u);
+		  gmp_printf ("%Zd (%u digits)\n", t, n.ndigits);
+		  mpz_clear (u);
+		  mpz_clear (t);
+                }
+              
 	      if (n.isPrp)
 		printf ("****** Warning: input is probably prime ******\n");
 	    }
@@ -1219,7 +1274,7 @@ BreadthFirstDoAgain:;
           fc = popen (idlecmd, "r");
           if (fc == NULL)
             {
-              fprintf (stderr, "Error executing idle command: %d\n",
+              fprintf (stderr, "Error executing idle command: %s\n",
                        idlecmd);
               exit (EXIT_FAILURE);
             }
@@ -1232,6 +1287,14 @@ BreadthFirstDoAgain:;
             }
         }
 #endif /* WANT_SHELLCMD */
+
+      if (timestamp)
+        {
+          time_t t;
+          
+          t = time (NULL);
+          printf ("[%.24s]\n", ctime (&t));
+        }
 
       /* now call the ecm library */
       result = ecm_factor (f, n.n, B1, params);

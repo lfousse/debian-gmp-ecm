@@ -1,6 +1,6 @@
 /* Auxiliary functions for GMP-ECM.
 
-  Copyright 2002, 2003, 2004, 2005 Paul Zimmermann, Alexander Kruppa, Laurent Fousse, Jim Fougeron.
+  Copyright 2002, 2003, 2004, 2005, 2007 Paul Zimmermann, Alexander Kruppa, Laurent Fousse, Jim Fougeron.
 
   This program is free software; you can redistribute it and/or modify it
   under the terms of the GNU General Public License as published by the
@@ -14,7 +14,7 @@
 
   You should have received a copy of the GNU General Public License along
   with this program; see the file COPYING.  If not, write to the Free
-  Software Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
+  Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
   02111-1307, USA.
 */
 
@@ -31,16 +31,24 @@
 unsigned int
 nb_digits (const mpz_t n)
 {
-   mpz_t x;
-   unsigned int size;
-   
-   mpz_init_set (x, n);
-   
-   for (size = 0; mpz_size (x); size++)
-     mpz_tdiv_q_ui (x, x, 10);
+  mpz_t x;
+  unsigned int size;
 
-   mpz_clear (x);
+  size = mpz_sizeinbase (n, 10);
 
-   return size;
+  /* the GMP documentation says mpz_sizeinbase returns the exact value,
+     or one too big, thus:
+     (a) either n < 10^(size-1), and n has size-1 digits
+     (b) or n >= size-1, and n has size digits
+     Note: mpz_sizeinbase returns 1 for n=0, thus we always have size >= 1.
+  */
+				    
+  mpz_init (x);
+  mpz_ui_pow_ui (x, 10, size - 1);
+  if (mpz_cmp (n, x) < 0)
+    size --;
+  mpz_clear (x);
+
+  return size;
 }
 

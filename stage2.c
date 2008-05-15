@@ -17,14 +17,20 @@
 
   You should have received a copy of the GNU Lesser General Public License
   along with the ECM Library; see the file COPYING.LIB.  If not, write to
-  the Free Software Foundation, Inc., 59 Temple Place - Suite 330, Boston,
-  MA 02111-1307, USA.
+  the Free Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston,
+  MA 02110-1301, USA.
 */
 
+#include "config.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h> /* for floor */
 #include <string.h> /* for strlen */
+
+#ifdef HAVE_UNISTD_H
+#include <unistd.h> /* for unlink */
+#endif
+
 #include "ecm-impl.h"
 #include "sp.h"
 
@@ -131,30 +137,37 @@ fin_diff_coeff (listz_t coeffs, mpz_t s, mpz_t D, unsigned int E,
 
 /* Init several disjoint progressions for the computation of 
 
-   Dickson_{E,a} (e * (i0 + i + d * n * k)), for 0 <= i < k * d 
-                  with gcd(e * (i0 + i), d) == 1, i == 1 (mod m)
+   Dickson_{E,a} (e * (i0 + i + n * d * k)), for 0 <= i < d * k   (1)
+                  with gcd(e * (i0 + i), d) == 1, i == 1 (mod m),
+		  where m divides d
    
-   for successive n. m must divide d, e must divide s (d need not).
+   for successive n (the variable n does not appear here, it is the 
+   application that called this function that wants to evaluate (1)
+   for n = 0, 1, 2, ...
    
    This means there will be k sets of progressions, where each set contains
-   eulerphi(d) progressions that generate the values coprime to d and with
-   i == 1 (mod m).
-   
+   eulerphi(d) progressions that generate the values of Dickson_{E,a} (x)
+   with x coprime to d and 
+   with i == 1 (mod m), where x == e * (i0 + i) (mod m).
+
+   i0 may be a NULL pointer, in this case i0 = 0 is assumed.
+
    Return NULL if an error occurred.
 */
 
 listz_t
-init_progression_coeffs (mpz_t i0, const unsigned long d, const unsigned long e, 
-                         const unsigned int k, const unsigned int m, 
-                         const unsigned int E, const int dickson_a)
+init_progression_coeffs (mpz_t i0, const unsigned long d, 
+			 const unsigned long e, const unsigned int k, 
+			 const unsigned int m, const unsigned int E, 
+			 const int dickson_a)
 {
   unsigned int i, j, size_fd;
-  mpz_t t, dke;
+  mpz_t t, dke, em;
   listz_t fd;
 
   ASSERT (d % m == 0);
 
-  size_fd = k * eulerphi(d) / eulerphi(m) * (E + 1);
+  size_fd = k * (eulerphi(d) / eulerphi(m)) * (E + 1);
   fd = (listz_t) malloc (size_fd * sizeof (mpz_t));
   if (fd == NULL)
     return NULL;
@@ -162,28 +175,40 @@ init_progression_coeffs (mpz_t i0, const unsigned long d, const unsigned long e,
     MPZ_INIT (fd[i]);
 
   MPZ_INIT (t);
-  outputf (OUTPUT_TRACE, "init_progression_coeffs: i0 = %Zd, d = %u, e = %u, "
-           "k = %u, m = %u, E = %u, a = %d, size_fd = %u\n", 
-           i0 ? i0 : t, d, e, k, m, E, dickson_a, size_fd);
-
   if (i0 != NULL)
     mpz_set (t, i0);
-  mpz_mul_ui (t, t, e);
-  mpz_add_ui (t, t, e * (1 % m));
   
-  /* dke = d * k * e */
+  outputf (OUTPUT_TRACE, "init_progression_coeffs: i0 = %Zd, d = %u, e = %u, "
+           "k = %u, m = %u, E = %u, a = %d, size_fd = %u\n", 
+           t, d, e, k, m, E, dickson_a, size_fd);
+
+  /* Due to the condition i == 1 (mod m) we start at i = 1 or i = 0,
+     depending on whether m > 1 or m == 1 */
+  i = (m > 1) ? 1 : 0;
+  mpz_add_ui (t, t, (unsigned long) i);
+  mpz_mul_ui (t, t, e);
+  /* Now t = e * (i0 + i + n * d * k), for n = 0 */
+  
+  /* dke = d * k * e, the common difference of the arithmetic progressions
+     (it is the same for all arithmetic progressions we initialise) */
   MPZ_INIT (dke);
   mpz_set_ui (dke, d);
   mpz_mul_ui (dke, dke, k);
   mpz_mul_ui (dke, dke, e);
+  /* em = e * m, the value by which t advances if we increase i by m */
+  MPZ_INIT (em);
+  mpz_set_ui (em, e);
+  mpz_mul_ui (em, em, (unsigned long) m);
   
-  for (i = 1 % m, j = 0; i < k * d; i += m)
+  for (j = 0; i < k * d; i += m)
     {
       if (mpz_gcd_ui (NULL, t, d) == 1)
         {
           outputf (OUTPUT_TRACE, "init_progression_coeffs: initing a "
                    "progression for Dickson_{%d,%d}(%Zd + n * %Zd)\n", 
                    E, dickson_a, t, dke);
+	  /* Initialise for the evaluation of Dickson_{E,a} (t + n*dke)
+	     for n = 0, 1, 2, ... */
           fin_diff_coeff (fd + j, t, dke, E, dickson_a);
           j += E + 1;
         } else
@@ -192,64 +217,67 @@ init_progression_coeffs (mpz_t i0, const unsigned long d, const unsigned long e,
                      "progression for Dickson_{%d,%d}(%Zd + n * %Zd), "
                      "gcd (%Zd, %u) == %u)\n", E, dickson_a, t, dke, t, d,
                      mpz_gcd_ui (NULL, t, d));
-      mpz_add_ui (t, t, e * m); /* t = s + i * e */
+      /* We increase i by m, so we increase t by e*m */
+      mpz_add (t, t, em);
     }
 
+  mpz_clear (em);
   mpz_clear (dke);
   mpz_clear (t);
   return fd;
 }
 
 void 
-init_roots_state (ecm_roots_state *state, const int S, const unsigned long d1, 
-                  const unsigned long d2, const double cost)
+init_roots_params (progression_params_t *params, const int S, 
+		   const unsigned long d1, const unsigned long d2, 
+		   const double cost)
 {
   ASSERT (gcd (d1, d2) == 1);
   /* If S < 0, use degree |S| Dickson poly, otherwise use x^S */
-  state->S = abs (S);
-  state->dickson_a = (S < 0) ? -1 : 0;
+  params->S = abs (S);
+  params->dickson_a = (S < 0) ? -1 : 0;
 
   /* We only calculate Dickson_{S, a}(j * d2) * s where
      gcd (j, dsieve) == 1 and j == 1 (mod 6)
      by doing nr = eulerphi(dsieve)/2 separate progressions. */
   /* Now choose a value for dsieve. */
-  state->dsieve = 6;
-  state->nr = 1;
+  params->dsieve = 6;
+  params->nr = 1;
 
   /* Prospective saving by sieving out multiples of 5:
-     d1 / state->dsieve * state->nr / 5 roots, each one costs S point adds
+     d1 / params->dsieve * params->nr / 5 roots, each one costs S point adds
      Prospective cost increase:
-     4 times as many progressions to init (that is, 3 * state->nr more),
+     4 times as many progressions to init (that is, 3 * params->nr more),
      each costs ~ S * S * log_2(5 * dsieve * d2) / 2 point adds
-     The state->nr and one S cancel.
+     The params->nr and one S cancel.
   */
   if (d1 % 5 == 0 &&
-      d1 / state->dsieve / 5. * cost > 
-      3. * state->S * log (5. * state->dsieve * d2) / 2.)
+      d1 / params->dsieve / 5. * cost > 
+      3. * params->S * log (5. * params->dsieve * d2) / 2.)
     {
-      state->dsieve *= 5;
-      state->nr *= 4;
+      params->dsieve *= 5;
+      params->nr *= 4;
     }
 
   if (d1 % 7 == 0 &&
-      d1 / state->dsieve / 7. * cost > 
-      5. * state->S * log (7. * state->dsieve * d2) / 2.)
+      d1 / params->dsieve / 7. * cost > 
+      5. * params->S * log (7. * params->dsieve * d2) / 2.)
     {
-      state->dsieve *= 7;
-      state->nr *= 6;
+      params->dsieve *= 7;
+      params->nr *= 6;
     }
 
   if (d1 % 11 == 0 &&
-      d1 / state->dsieve / 11. * cost > 
-      9. * state->S * log (11. * state->dsieve * d2) / 2.)
+      d1 / params->dsieve / 11. * cost > 
+      9. * params->S * log (11. * params->dsieve * d2) / 2.)
     {
-      state->dsieve *= 11;
-      state->nr *= 10;
+      params->dsieve *= 11;
+      params->nr *= 10;
     }
 
-  state->size_fd = state->nr * (state->S + 1);
-  state->next = 0;
-  state->rsieve = 1;
+  params->size_fd = params->nr * (params->S + 1);
+  params->next = 0;
+  params->rsieve = 1;
 }
 
 double 
@@ -319,7 +347,7 @@ stage2 (mpz_t f, void *X, mpmod_t modulus, unsigned long dF, unsigned long k,
   unsigned int lgk; /* ceil(log(k)/log(2)) */
   listz_t invF = NULL;
   double mem;
-  mpzspm_t mpzspm;
+  mpzspm_t mpzspm = NULL;
   mpzspv_t sp_F = NULL, sp_invF = NULL;
   
   /* check alloc. size of f */
@@ -402,6 +430,12 @@ stage2 (mpz_t f, void *X, mpmod_t modulus, unsigned long dF, unsigned long k,
   if (stop_asap != NULL && (*stop_asap)())
     goto clear_T;
 
+  if (test_verbose (OUTPUT_TRACE))
+    {
+      unsigned long j;
+      for (j = 0; j < dF; j++)
+	outputf (OUTPUT_TRACE, "f_%lu = %Zd\n", j, F[j]);
+    }
 
   /* ----------------------------------------------
      |   F    |  invF  |   G   |         T        |
@@ -504,7 +538,14 @@ stage2 (mpz_t f, void *X, mpmod_t modulus, unsigned long dF, unsigned long k,
       else
 	PolyFromRoots_Tree (F, F, dF, T, -1, n, Tree, NULL, 0);
     }
-      
+  
+  
+  if (test_verbose (OUTPUT_TRACE))
+    {
+      unsigned long j;
+      for (j = 0; j < dF; j++)
+	outputf (OUTPUT_TRACE, "F[%lu] = %Zd\n", j, F[j]);
+    }
   outputf (OUTPUT_VERBOSE, "Building F from its roots took %ldms\n", 
            elltime (st, cputime ()));
 
@@ -610,14 +651,21 @@ stage2 (mpz_t f, void *X, mpmod_t modulus, unsigned long dF, unsigned long k,
     {
       /* needs dF+1 cells in T+dF */
       if (method == ECM_PM1)
-	youpi = pm1_rootsG (f, G, dF, (pm1_roots_state *) rootsG_state, T + dF,
-			    modulus);
+	youpi = pm1_rootsG (f, G, dF, (pm1_roots_state_t *) rootsG_state, 
+			    T + dF, modulus);
       else if (method == ECM_PP1)
-        youpi = pp1_rootsG (G, dF, (pp1_roots_state *) rootsG_state, modulus,
+        youpi = pp1_rootsG (G, dF, (pp1_roots_state_t *) rootsG_state, modulus,
                             (mpres_t *) X);
       else
-	youpi = ecm_rootsG (f, G, dF, (ecm_roots_state *) rootsG_state, 
+	youpi = ecm_rootsG (f, G, dF, (ecm_roots_state_t *) rootsG_state, 
 			    modulus);
+
+      if (test_verbose (OUTPUT_TRACE))
+	{
+	  unsigned long j;
+	  for (j = 0; j < dF; j++)
+	    outputf (OUTPUT_TRACE, "g_%lu = %Zd\n", j, G[j]);
+	}
 
       ASSERT(youpi != ECM_ERROR); /* xxx_rootsG cannot fail */
       if (youpi) /* factor found */
@@ -641,6 +689,15 @@ stage2 (mpz_t f, void *X, mpmod_t modulus, unsigned long dF, unsigned long k,
         ntt_PolyFromRoots (G, G, dF, T + dF, mpzspm);
       else
         PolyFromRoots (G, G, dF, T + dF, n);
+
+      if (test_verbose (OUTPUT_TRACE))
+	{
+	  unsigned long j;
+	  outputf (OUTPUT_TRACE, "G(x) = x^%lu ", dF);
+	  for (j = 0; j < dF; j++)
+	    outputf (OUTPUT_TRACE, "+ (%Zd * x^%lu)", G[j], j);
+	  outputf (OUTPUT_TRACE, "\n");
+	}
 
       /* needs 2*dF+list_mul_mem(dF/2) cells in T */
       outputf (OUTPUT_VERBOSE, "Building G from its roots took %ldms\n", 
@@ -746,19 +803,30 @@ stage2 (mpz_t f, void *X, mpmod_t modulus, unsigned long dF, unsigned long k,
 #else
   clear_list (invF, dF + 1);
   invF = NULL;
-  polyeval (T, dF, Tree, T + dF + 1, n, 0, ECM_STDERR);
+  polyeval (T, dF, Tree, T + dF + 1, n, 0);
 #endif
   treefiles_used = 0; /* Polyeval deletes treefiles by itself */
+
+  if (test_verbose (OUTPUT_TRACE))
+    {
+      unsigned long j;
+      for (j = 0; j < dF; j++)
+	outputf (OUTPUT_TRACE, "G(x_%lu) = %Zd\n", j, T[j]);
+    }
 
   outputf (OUTPUT_VERBOSE, "Computing polyeval(F,G) took %ldms\n", 
            elltime (st, cputime ()));
 
-  list_mulup (f, T, dF, n, T[dF]);
+  st = cputime ();
+  list_mulup (T, dF, n, T[dF]);
+  outputf (OUTPUT_VERBOSE, "Computing product of all F(g_i) took %ldms\n", 
+           elltime (st, cputime ()));
+
   mpz_gcd (f, T[dF - 1], n);
   if (mpz_cmp_ui (f, 1) > 0)
     {
       youpi = ECM_FACTOR_FOUND_STEP2;
-      if (test_verbose (OUTPUT_RESVERBOSE))
+      if (method == ECM_ECM && test_verbose (OUTPUT_RESVERBOSE))
         {
           /* Find out for which i*X, (i,d)==1, a factor was found */
           /* Note that the factor we found may be composite */
@@ -806,11 +874,11 @@ stage2 (mpz_t f, void *X, mpmod_t modulus, unsigned long dF, unsigned long k,
 
 clear_fd:
   if (method == ECM_PM1)
-    pm1_rootsG_clear ((pm1_roots_state *) rootsG_state, modulus);
+    pm1_rootsG_clear ((pm1_roots_state_t *) rootsG_state, modulus);
   else if (method == ECM_PP1)
-    pp1_rootsG_clear ((pp1_roots_state *) rootsG_state, modulus);
+    pp1_rootsG_clear ((pp1_roots_state_t *) rootsG_state, modulus);
   else /* ECM_ECM */
-    ecm_rootsG_clear ((ecm_roots_state *) rootsG_state, modulus);
+    ecm_rootsG_clear ((ecm_roots_state_t *) rootsG_state, modulus);
 
 clear_G:
   clear_list (G, dF);
@@ -836,7 +904,7 @@ free_Tree_i:
       char *fullname = (char *) malloc (strlen (TreeFilename) + 1 + 2 + 1);
       for (i = 0; i < treefiles_used; i++)
         {
-          sprintf (fullname, "%s.%lu", TreeFilename, i - 1);
+          sprintf (fullname, "%s.%lu", TreeFilename, i);
           outputf (OUTPUT_DEVVERBOSE, "Unlinking %s\n", fullname);
           if (unlink (fullname) != 0)
             outputf (OUTPUT_ERROR, "Could not delete %s\n", fullname);

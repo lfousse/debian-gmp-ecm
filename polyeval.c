@@ -16,15 +16,15 @@
 
   You should have received a copy of the GNU Lesser General Public License
   along with the ECM Library; see the file COPYING.LIB.  If not, write to
-  the Free Software Foundation, Inc., 59 Temple Place - Suite 330, Boston,
-  MA 02111-1307, USA.
+  the Free Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston,
+  MA 02110-1301, USA.
 */
 
 #include <stdlib.h>
 #include <string.h> /* for strlen */
 #include "ecm-impl.h"
 
-#if HAVE_UNISTD_H
+#ifdef HAVE_UNISTD_H
 # include <unistd.h> /* for unlink */
 #endif
 
@@ -37,7 +37,6 @@
 
 extern unsigned int Fermat;
 
-#ifndef POLYEVALTELLEGEN
 /* algorithm polyeval from section 3.7 of Peter Montgomery's dissertation.
 Input: 
    G - an array of k elements of R, G[i], 0 <= i < k
@@ -112,7 +111,6 @@ polyeval (listz_t G, unsigned int k, listz_t *Tree, listz_t T, mpz_t n,
   list_set (G + l, T, m);
   polyeval (G + l, m, Tree + 1, T, n, sh + l);
 }
-#endif
 
 #if defined(DEBUG) || defined(DEBUG_TREEDATA)
 void
@@ -252,7 +250,6 @@ TUpTree_space (unsigned int k)
     return r1;
 }
 
-#ifdef POLYEVALTELLEGEN
 /* Same as polyeval. Needs invF as extra argument.
    Return non-zero iff an error occurred.
 */
@@ -315,11 +312,11 @@ polyeval_tellegen (listz_t b, unsigned int k, listz_t *Tree, listz_t tmp,
         list_mod (T, T + k - 1, k, n);
 #else
         /* revert invF for call to TMulGen below */
-        list_revert (invF, k - 1);
+        list_revert (invF, k);
         TMulGen (T, k - 1, invF, k - 1, b, k - 1, T + k, n);
 #endif
       }
-    list_revert (T, k - 1);
+    list_revert (T, k);
     if (TreeFilename != NULL)
       {
         unsigned int lgk, i;
@@ -358,4 +355,3 @@ clear_T:
 
     return r;
 }
-#endif

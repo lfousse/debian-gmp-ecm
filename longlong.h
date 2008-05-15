@@ -17,8 +17,13 @@ License for more details.
 
 You should have received a copy of the GNU Lesser General Public License
 along with this file; see the file COPYING.LIB.  If not, write to
-the Free Software Foundation, Inc., 59 Temple Place - Suite 330, Boston,
-MA 02111-1307, USA. */
+the Free Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston,
+MA 02110-1301, USA. */
+
+/* added for compatibility with other compilers than gcc */
+#if !defined(__GNUC__)
+#define __builtin_constant_p(x) 0
+#endif
 
 /* You have to define the following before including this file:
 
@@ -123,6 +128,7 @@ MA 02111-1307, USA. */
 
 /* FIXME: The macros using external routines like __MPN(count_leading_zeros)
    don't need to be under !NO_ASM */
+
 #if ! defined (NO_ASM)
 
 #if defined (__alpha) && W_TYPE_SIZE == 64
@@ -159,14 +165,16 @@ MA 02111-1307, USA. */
 /* clz_tab is required by mpn/alpha/cntlz.asm, and that file is built for
    all alphas, even though ev67 and ev68 don't need it. */
 #define COUNT_LEADING_ZEROS_NEED_CLZ_TAB
-#if defined (__GNUC__) && (HAVE_HOST_CPU_alphaev67 || HAVE_HOST_CPU_alphaev68)
+#if defined (__GNUC__) && \
+    (defined(HAVE_HOST_CPU_alphaev67) && HAVE_HOST_CPU_alphaev67 || \
+     defined(HAVE_HOST_CPU_alphaev68) && HAVE_HOST_CPU_alphaev68)
 #define count_leading_zeros(COUNT,X) \
   __asm__("ctlz %1,%0" : "=r"(COUNT) : "r"(X))
 #define count_trailing_zeros(COUNT,X) \
   __asm__("cttz %1,%0" : "=r"(COUNT) : "r"(X))
 #else /* ! (ev67 || ev68) */
 #ifndef LONGLONG_STANDALONE
-#if HAVE_ATTRIBUTE_CONST
+#if defined(HAVE_ATTRIBUTE_CONST) && HAVE_ATTRIBUTE_CONST
 long __MPN(count_leading_zeros) _PROTO ((UDItype)) __attribute__ ((const));
 #else
 long __MPN(count_leading_zeros) _PROTO ((UDItype));
@@ -274,7 +282,6 @@ extern UWtype __MPN(udiv_qrnnd) _PROTO ((UWtype, UWtype, UWtype, UWtype *));
 #endif
 #define UDIV_TIME 220
 #endif
-
 
 #if defined (__GNUC__)
 
@@ -605,7 +612,8 @@ extern UWtype __MPN(udiv_qrnnd) _PROTO ((UWtype *, UWtype, UWtype, UWtype));
    is.  The faster count_leading_zeros are pressed into service via the
    generic count_trailing_zeros at the end of the file.  */
 
-#if HAVE_HOST_CPU_i586 || HAVE_HOST_CPU_pentium
+#if defined(HAVE_HOST_CPU_i586) && HAVE_HOST_CPU_i586 || \
+    defined(HAVE_HOST_CPU_pentium) && HAVE_HOST_CPU_pentium
 
 /* The following should be a fixed 14 cycles or so.  Some scheduling
    opportunities should be available between the float load/store too.  This
@@ -627,7 +635,7 @@ extern UWtype __MPN(udiv_qrnnd) _PROTO ((UWtype *, UWtype, UWtype, UWtype));
 #define COUNT_LEADING_ZEROS_0   (0x3FF + 31)
 
 #else /* ! pentium */
-#if HAVE_HOST_CPU_pentiummmx
+#if defined(HAVE_HOST_CPU_pentiummmx) && HAVE_HOST_CPU_pentiummmx
 
 /* The following should be a fixed 14 or 15 cycles, but possibly plus an L1
    cache miss reading from __clz_tab.  It's favoured over the float above so
@@ -672,11 +680,11 @@ extern UWtype __MPN(udiv_qrnnd) _PROTO ((UWtype *, UWtype, UWtype, UWtype));
    cost of one extra instruction.  Do this for "i386" too, since that means
    generic x86.  */
 #if __GNUC__ < 3							\
-  && (HAVE_HOST_CPU_i386                                                \
-      || HAVE_HOST_CPU_i686                                             \
-      || HAVE_HOST_CPU_pentiumpro                                       \
-      || HAVE_HOST_CPU_pentium2                                         \
-      || HAVE_HOST_CPU_pentium3)
+  && (defined(HAVE_HOST_CPU_i386) && HAVE_HOST_CPU_i386                 \
+      || defined(HAVE_HOST_CPU_i686) && HAVE_HOST_CPU_i686              \
+      || defined(HAVE_HOST_CPU_pentiumpro) && HAVE_HOST_CPU_pentiumpro  \
+      || defined(HAVE_HOST_CPU_pentium2) && HAVE_HOST_CPU_pentium2      \
+      || defined(HAVE_HOST_CPU_pentium3) && HAVE_HOST_CPU_pentium3)
 #define count_leading_zeros(count, x)					\
   do {									\
     USItype __cbtmp;							\
@@ -1241,7 +1249,7 @@ extern UWtype __MPN(udiv_qrnnd) _PROTO ((UWtype *, UWtype, UWtype, UWtype));
   __asm__ ("umul %2,%3,%1;rd %%y,%0" : "=r" (w1), "=r" (w0) : "r" (u), "r" (v))
 #define UMUL_TIME 5
 
-#if HAVE_HOST_CPU_supersparc
+#if defined(HAVE_HOST_CPU_supersparc) && HAVE_HOST_CPU_supersparc
 #define UDIV_TIME 60		/* SuperSPARC timing */
 #else
 /* Don't use this on SuperSPARC because its udiv only handles 53 bit
@@ -1470,6 +1478,46 @@ extern UWtype __MPN(udiv_qrnnd) _PROTO ((UWtype *, UWtype, UWtype, UWtype));
 
 #endif /* NO_ASM */
 
+#ifdef _MSC_VER
+#  include <intrin.h>
+
+#  if defined( _WIN64 )
+#    define count_leading_zeros(c,x)        \
+      do {                                  \
+        ASSERT ((x) != 0);                  \
+        _BitScanReverse64(&c, (x));         \
+        c = 63 - c;                         \
+      } while (0)
+#    define count_trailing_zeros(c,x)       \
+      do {                                  \
+        ASSERT ((x) != 0);                  \
+        _BitScanForward64(&c, (x));         \
+      } while (0)
+#    define umul_ppmm(xh, xl, m0, m1)       \
+      do {                                  \
+        xl = _umul128( (m0), (m1), &xh);    \
+      } while (0)
+#  else
+#    define count_leading_zeros(c,x)        \
+      do {                                  \
+        ASSERT ((x) != 0);                  \
+        _BitScanReverse(&c, (x));           \
+        c = 31 - c;                         \
+      } while (0)
+#    define count_trailing_zeros(c,x)       \
+      do {                                  \
+        ASSERT ((x) != 0);                  \
+        _BitScanForward(&c, (x));           \
+      } while (0)
+#    define umul_ppmm(xh, xl, m0, m1)       \
+      do { unsigned __int64 _t;             \
+        _t = __emulu( (m0), (m1));          \
+        xl = _t & 0xffffffff;               \
+        xh = _t >> 32;                      \
+      } while (0)
+#  endif
+
+#endif
 
 #if !defined (umul_ppmm) && defined (__umulsidi3)
 #define umul_ppmm(ph, pl, m0, m1) \
@@ -1491,7 +1539,8 @@ extern UWtype __MPN(udiv_qrnnd) _PROTO ((UWtype *, UWtype, UWtype, UWtype));
 /* Note the prototypes are under !define(umul_ppmm) etc too, since the HPPA
    versions above are different and we don't want to conflict.  */
 
-#if ! defined (umul_ppmm) && HAVE_NATIVE_mpn_umul_ppmm
+#if ! defined (umul_ppmm) && \
+  defined(HAVE_NATIVE_mpn_umul_ppmm) && HAVE_NATIVE_mpn_umul_ppmm
 #define mpn_umul_ppmm  __MPN(umul_ppmm)
 extern mp_limb_t mpn_umul_ppmm _PROTO ((mp_limb_t *, mp_limb_t, mp_limb_t));
 #define umul_ppmm(wh, wl, u, v)						\
@@ -1503,7 +1552,8 @@ extern mp_limb_t mpn_umul_ppmm _PROTO ((mp_limb_t *, mp_limb_t, mp_limb_t));
   } while (0)
 #endif
 
-#if ! defined (udiv_qrnnd) && HAVE_NATIVE_mpn_udiv_qrnnd
+#if ! defined (udiv_qrnnd) && \
+  defined(HAVE_NATIVE_mpn_udiv_qrnnd) && HAVE_NATIVE_mpn_udiv_qrnnd
 #define mpn_udiv_qrnnd  __MPN(udiv_qrnnd)
 extern mp_limb_t mpn_udiv_qrnnd _PROTO ((mp_limb_t *,
 					 mp_limb_t, mp_limb_t, mp_limb_t));

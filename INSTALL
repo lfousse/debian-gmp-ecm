@@ -1,12 +1,12 @@
 Instructions to install GMP-ECM:
 
 0) you first need to install the GNU MP (GMP) library.
-   GNU MP is available from <http://www.swox.com/gmp/>.
+   GNU MP is available from <http://gmplib.org/>.
 
    Remark: GNU MP is already installed in most Linux distributions.
    However it is often an old version, moreover without processor-specific
    optimizations. If you care about efficiency, be sure to install the
-   latest version of GNU MP (4.2 as of March 2006), and to compile it
+   latest version of GNU MP (4.2.2 as of August 2007), and to compile it
    for your particular processor.
 
 1) check your configuration with:
@@ -38,7 +38,7 @@ Instructions to install GMP-ECM:
    $ ./configure CC=cc CFLAGS="-fast -fns=no -fsimple=1 -xarch=v9" 
    
    Note 2: If you want to use George Woltman's GWNUM library for speeding up
-   factoring Fermat numbers, obtain the file "gwnum_gpl_linux.tgz" from
+   factoring base 2 numbers, obtain the file "gwnum_gpl_linux.tgz" from
    ftp://mersenne.org/gimps/ (or gwnum_gpl.zip or gwnum_gpl_mingw.tgz
    accordingly) and follow the instructions therein to compile
    the library. Possibly the archive contains a readily compiled library
@@ -50,11 +50,16 @@ Instructions to install GMP-ECM:
    gwnum.h and related header files. The source file of the gwnum library
    is available at <http://www.mersenne.org/source.htm>.
 
+   To compile the GMP-ECM library as a shared library, use the
+   --enable-shared parameter for ./configure. Building a shared library is
+   disabled by default.
+
 2) compile the program with:
 
    $ make
 
-   This will create the 'libecm.a' library, the 'ecm' binary file,
+   This will create the 'libecm.a' library, the 'libecm.so' shared
+   library if --enable-shared was used, the 'ecm' binary file,
    the 'ecmfactor' binary file (sample use of libecm.a), and 'tune',
    a tuning program.
 
@@ -69,7 +74,9 @@ Instructions to install GMP-ECM:
 
    $ make ecm-params; make
 
-   See also README ("How to get the best of GMP-ECM?").
+   See also README ("How to get the best of GMP-ECM?"). Note: if your machine
+   has not enough memory for the tune program, you can run it manually with
+   ./tune -max_log2_len 16 for example (the default is 18).
 
 5) (optional) you can then install the ecm binary and its man page:
 
@@ -91,7 +98,7 @@ Instructions to install GMP-ECM:
    download "cunningham.in" on <http://www.loria.fr/~zimmerma/ecmnet/>, then
    perform one ecm test with B1=43e6 on each number of this file:
 
-   $ ./ecm 43e6 < cunningham.in > cunningham.out &
+   $ ./ecm 110e6 < cunningham.in > cunningham.out &
 
    If you find any factor (grep found cunningham.out), please submit it
    using the report form on <http://www.loria.fr/~zimmerma/ecmnet/>.
@@ -99,6 +106,13 @@ Instructions to install GMP-ECM:
 ============================================================================
 
 For Windows users:
+
+Windows users have two options for building GMP-ECM: (a) the use of a
+number of Unix on Windows environments, or (b) the use of Microsoft
+Visual Studio C/C++ 2008.  The former is described here while the latter
+is described in the readme.txt file within the build.vc9 subdirectory.
+
+(a) For Windows users with a Unix-like environment:
 
 Before you can compile GMP-ECM, you will need a compiler. Several suitable
 compilers are freely available, for example as part of MinGW, CygWin and 
@@ -120,27 +134,27 @@ Step-by-step instructions, courtesy of Jes Hansen:
    this, because is creates your home folder. Then exit it again.
 
 4) Download the latest version of GMP (at the time of writing the latest 
-   version is 4.2, this will be assumed for the rest of this document) 
-   in .tar.gz format from http://www.swox.com/gmp/ and place it in your 
+   version is 4.2.2, this will be assumed for the rest of this document) 
+   in .tar.gz format from http://gmplib.org/ and place it in your 
    newly created home folder. The home folder is in C:\GNU\msys\home and 
    has the same name as your Windows login name.
 
 5) Download GMP-ECM (if you do not have it already) from
    http://www.loria.fr/~zimmerma/records/ecmnet.html (check the News section
-   for the latest release, at the time of writing 6.1) and place it in your
+   for the latest release, at the time of writing 6.2) and place it in your
    home folder as well. You won't need an internet connection from now on, 
    feel free to disconnect.
 
 6) Start the MinSys up again from the desktop and type 
-   tar -xvzf gmp-4.2.tar.gz
-   cd gmp-4.2/
+   tar -xvzf gmp-4.2.2.tar.gz
+   cd gmp-4.2.2/
    ./configure
    make install
    cd ~
 
 7) You are back in your home directory. Now type
-  tar -xvzf ecm-6.1.tar.gz
-  cd ecm-6.1
+  tar -xvzf ecm-6.2.tar.gz
+  cd ecm-6.2
   ./configure --with-gmp=/usr/local
   make
 
@@ -155,7 +169,7 @@ In case of a problem, report it to us, with:
 
 - the versions of GMP-ECM and GMP used (first output line), for example:
   
-  GMP-ECM 6.1 [powered by GMP 4.2] [P+1]
+  GMP-ECM 6.2 [powered by GMP 4.2.2] [P+1]
 
 - the detailed input enabling us to reproduce the problem, for example:
 

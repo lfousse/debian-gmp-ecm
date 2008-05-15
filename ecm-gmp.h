@@ -17,8 +17,8 @@ License for more details.
 
 You should have received a copy of the GNU Lesser General Public License
 along with the GNU MP Library; see the file COPYING.LIB.  If not, write to
-the Free Software Foundation, Inc., 59 Temple Place - Suite 330, Boston,
-MA 02111-1307, USA. */
+the Free Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston,
+MA 02110-1301, USA. */
 
 #ifndef _ECM_GMP_H
 #define _ECM_GMP_H 1
@@ -122,23 +122,6 @@ MA 02111-1307, USA. */
 __GMP_DECLSPEC mp_limb_t __gmpn_add_nc (mp_ptr, mp_srcptr, mp_srcptr,
     mp_size_t, mp_limb_t);
 #endif
-#endif
-
-/* fft stuff */
-#ifndef mpn_fft_best_k
-#define mpn_fft_best_k __MPN(fft_best_k)
-int     mpn_fft_best_k (mp_size_t, int);
-#endif
-
-#ifndef   mpn_fft_next_size
-#define   mpn_fft_next_size __MPN(fft_next_size)
-mp_size_t mpn_fft_next_size (mp_size_t, int);
-#endif
-
-#ifndef mpn_mul_fft
-#define mpn_mul_fft  __MPN(mul_fft)
-int     mpn_mul_fft (mp_ptr, mp_size_t, mp_srcptr, mp_size_t, mp_srcptr,
-                     mp_size_t, int);
 #endif
 
 #endif /* _ECM_GMP_H */

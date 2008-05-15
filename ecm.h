@@ -1,21 +1,24 @@
 /* ecm.h - public interface for libecm.
  
-  Copyright 2001, 2002, 2003, 2004, 2005 Paul Zimmermann and Alexander Kruppa.
+  Copyright 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008,
+  Paul Zimmermann and Alexander Kruppa.
  
-  This program is free software; you can redistribute it and/or modify it
-  under the terms of the GNU General Public License as published by the
-  Free Software Foundation; either version 2 of the License, or (at your
+  This file is part of the ECM Library.
+
+  The ECM Library is free software; you can redistribute it and/or modify
+  it under the terms of the GNU Lesser General Public License as published by
+  the Free Software Foundation; either version 2.1 of the License, or (at your
   option) any later version.
- 
-  This program is distributed in the hope that it will be useful, but WITHOUT
-  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-  FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
-  more details.
- 
-  You should have received a copy of the GNU General Public License along
-  with this program; see the file COPYING.  If not, write to the Free
-  Software Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
-  02111-1307, USA.
+
+  The ECM Library is distributed in the hope that it will be useful, but
+  WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+  or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
+  License for more details.
+
+  You should have received a copy of the GNU Lesser General Public License
+  along with the ECM Library; see the file COPYING.LIB.  If not, write to
+  the Free Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston,
+  MA 02110-1301, USA.
 */
 
 #ifndef _ECM_H
@@ -23,6 +26,10 @@
 
 #include <stdio.h> /* for FILE */
 #include <gmp.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 typedef struct
 {
@@ -46,6 +53,7 @@ typedef struct
 		     2 diagnostic output */
   FILE *os;       /* output stream (for verbose messages) */
   FILE *es;       /* error  stream (for error   messages) */
+  char *chkfilename; /* Filename to write stage 1 checkpoints to */
   char *TreeFilename; /* Base filename for storing product tree of F */
   double maxmem;  /* Maximal amount of memory to use in stage 2, in bytes.
                      0. means no limit (optimise only for speed) */
@@ -63,6 +71,7 @@ typedef __ecm_param_struct ecm_params[1];
 #define ECM_MOD_BASE2 2
 #define ECM_MOD_MODMULN 3
 #define ECM_MOD_REDC 4
+/* values <= -16 or >= 16 have a special meaning */
 
 int ecm_factor (mpz_t, mpz_t, double, ecm_params);
 void ecm_init (ecm_params);
@@ -71,13 +80,13 @@ void ecm_clear (ecm_params);
 /* the following interface is not supported */
 int ecm (mpz_t, mpz_t, mpz_t, mpz_t, mpz_t, double *, double, mpz_t, mpz_t,
          double, unsigned long, const int, int, int, int, int, FILE*, FILE*, 
-         char*, double, double, gmp_randstate_t, int (*)(void));
+         char*, char *, double, double, gmp_randstate_t, int (*)(void));
 int pp1 (mpz_t, mpz_t, mpz_t, mpz_t, double *, double, mpz_t, mpz_t, 
          double, unsigned long, const int, int, int, int, FILE*, FILE*, char*,
-         double, gmp_randstate_t, int (*)(void));
+         char *, double, gmp_randstate_t, int (*)(void));
 int pm1 (mpz_t, mpz_t, mpz_t, mpz_t, double *, double, mpz_t, 
-          mpz_t, double, unsigned long, const int, int, int, int, FILE*, FILE*, 
-          char*, double, gmp_randstate_t, int (*)(void));
+         mpz_t, double, unsigned long, const int, int, int, int, FILE*, 
+	 FILE*, char *, char*, double, gmp_randstate_t, int (*)(void));
 
 /* different methods implemented */
 #define ECM_ECM 0
@@ -105,6 +114,10 @@ int pm1 (mpz_t, mpz_t, mpz_t, mpz_t, double *, double, mpz_t,
 
 /* Apple uses '\r' for newlines */
 #define IS_NEWLINE(c) (((c) == '\n') || ((c) == '\r'))
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* _ECM_H */
 

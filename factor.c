@@ -16,8 +16,8 @@
 
   You should have received a copy of the GNU Lesser General Public License
   along with the ECM Library; see the file COPYING.LIB.  If not, write to
-  the Free Software Foundation, Inc., 59 Temple Place - Suite 330, Boston,
-  MA 02111-1307, USA.
+  the Free Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston,
+  MA 02110-1301, USA.
 */
 
 #include <stdio.h>
@@ -33,7 +33,7 @@ ecm_init (ecm_params q)
   mpz_init_set_ui (q->sigma, 0);
   q->sigma_is_A = 0;
   mpz_init_set_ui (q->go, 1);
-  q->B1done = ECM_DEFAULT_B1_DONE;
+  q->B1done = ECM_DEFAULT_B1_DONE + 1. / 1048576.;
   mpz_init_set_si (q->B2min, -1.0); /* default: B2min will be set to B1 */
   mpz_init_set_si (q->B2, ECM_DEFAULT_B2);
   q->k = ECM_DEFAULT_K;
@@ -42,6 +42,7 @@ ecm_init (ecm_params q)
   q->verbose = 0; /* no output (default in library mode) */
   q->os = stdout; /* standard output */
   q->es = stderr; /* error output */
+  q->chkfilename = NULL;
   q->TreeFilename = NULL;
   q->maxmem = 0.0;
   q->stage1time = 0.0;
@@ -80,26 +81,28 @@ ecm_factor (mpz_t f, mpz_t n, double B1, ecm_params p)
       ecm_init (q);
     }
 
-  /* Ugly hack to pass B2scale to the library somehow. It gets piggy-backed
-     onto B1done. The next major release will have to allow for variable
-     length parameter structs. */
-  B1done = floor (p->B1done);
-  B2scale = (p->B1done - B1done) * 1048576.;
-  p->B1done = B1done;
-
+   /* Ugly hack to pass B2scale to the library somehow. It gets piggy-backed
+      onto B1done. The next major release will have to allow for variable
+      length parameter structs. */
+   B1done = floor (p->B1done);
+   B2scale = (p->B1done - B1done) * 1048576.;
+   p->B1done = B1done;
+ 
   if (p->method == ECM_ECM)
     res = ecm (f, p->x, p->sigma, n, p->go, &(p->B1done), B1, p->B2min, p->B2, 
-               B2scale, p->k, p->S, p->verbose, p->repr, p->use_ntt, 
-               p->sigma_is_A, p->os, p->es, p->TreeFilename, p->maxmem, 
-               p->stage1time, p->rng, p->stop_asap);
+               B2scale, p->k, p->S, p->verbose, p->repr, p->use_ntt, p->sigma_is_A,
+	       p->os, p->es, p->chkfilename, p->TreeFilename, p->maxmem, 
+	       p->stage1time, p->rng, p->stop_asap);
   else if (p->method == ECM_PM1)
-    res = pm1 (f, p->x, n, p->go, &(p->B1done), B1, p->B2min, p->B2, 
-               B2scale, p->k, p->S, p->verbose, p->repr, p->use_ntt, p->os, 
-               p->es, p->TreeFilename, p->maxmem, p->rng, p->stop_asap);
+    res = pm1 (f, p->x, n, p->go, &(p->B1done), B1, p->B2min, p->B2, B2scale,
+               p->k, p->S, p->verbose, p->repr, p->use_ntt, p->os, p->es,
+               p->chkfilename, p->TreeFilename, p->maxmem, p->rng, 
+               p->stop_asap);
   else if (p->method == ECM_PP1)
-    res = pp1 (f, p->x, n, p->go, &(p->B1done), B1, p->B2min, p->B2, 
-               B2scale, p->k, p->S, p->verbose, p->repr, p->use_ntt, p->os, 
-               p->es, p->TreeFilename, p->maxmem, p->rng, p->stop_asap);
+    res = pp1 (f, p->x, n, p->go, &(p->B1done), B1, p->B2min, p->B2, B2scale,
+               p->k, p->S, p->verbose, p->repr, p->use_ntt, p->os, p->es,
+               p->chkfilename, p->TreeFilename, p->maxmem, p->rng, 
+               p->stop_asap);
   else
     {
       fprintf (p->es, "Error, unknown method: %d\n", p->method);

@@ -16,8 +16,8 @@
 
   You should have received a copy of the GNU Lesser General Public License
   along with the ECM Library; see the file COPYING.LIB.  If not, write to
-  the Free Software Foundation, Inc., 59 Temple Place - Suite 330, Boston,
-  MA 02111-1307, USA.
+  the Free Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston,
+  MA 02110-1301, USA.
 */
 
 #include <stdio.h>
@@ -25,7 +25,7 @@
 #include "ecm-impl.h"
 #include <math.h>
 
-#if HAVE_LIMITS_H
+#ifdef HAVE_LIMITS_H
 # include <limits.h>
 #else
 # define ULONG_MAX __GMP_ULONG_MAX
@@ -39,10 +39,11 @@
 
 #define mpz_mulmod5(r,s1,s2,m,t) { mpz_mul(t,s1,s2); mpz_mod(r, t, m); }
 
-/* Computes curve parameter A and a starting point (x:1) from a given 
+/* Computes curve parameter A and a starting point (x:1) from a given
    sigma value.
-   If a factor of n was found during the process, returns 1 (and factor 
-   in f), 0 otherwise.
+   If a factor of n was found during the process, returns 
+   ECM_FACTOR_FOUND_STEP1 (and factor in f), returns ECM_NO_FACTOR_FOUND 
+   otherwise.
 */
 static int
 get_curve_from_sigma (mpz_t f, mpres_t A, mpres_t x, mpz_t sigma, mpmod_t n)
@@ -89,7 +90,7 @@ get_curve_from_sigma (mpz_t f, mpres_t A, mpres_t x, mpz_t sigma, mpmod_t n)
       mpres_clear (v, n);
       mpres_clear (b, n);
       mpres_clear (z, n);
-      return 1;
+      return ECM_FACTOR_FOUND_STEP1;
     }
   
   mpres_mul (v, u, b, n);   /* v = z^(-1) (mod n) */
@@ -105,13 +106,16 @@ get_curve_from_sigma (mpz_t f, mpres_t A, mpres_t x, mpz_t sigma, mpmod_t n)
   mpres_clear (b, n);
   mpres_clear (z, n);
 
-  return 0;
+  return ECM_NO_FACTOR_FOUND;
 }
 
 /* switch from Montgomery's form g*y^2 = x^3 + a*x^2 + x
    to Weierstrass' form          Y^2 = X^3 + A*X + B
    by change of variables x -> g*X-a/3, y -> g*Y.
    We have A = (3-a^2)/(3g^2), X = (3x+a)/(3g), Y = y/g.
+   If a factor is found during the modular inverse, returns 
+   ECM_FACTOR_FOUND_STEP1 and the factor in f, otherwise returns
+   ECM_NO_FACTOR_FOUND.
 */
 static int 
 montgomery_to_weierstrass (mpz_t f, mpres_t x, mpres_t y, mpres_t A, mpmod_t n)
@@ -131,7 +135,7 @@ montgomery_to_weierstrass (mpz_t f, mpres_t x, mpres_t y, mpres_t A, mpmod_t n)
     {
       mpres_gcd (f, y, n);
       mpres_clear (g, n);
-      return 1;
+      return ECM_FACTOR_FOUND_STEP1;
     }
   
   /* update x */
@@ -151,7 +155,7 @@ montgomery_to_weierstrass (mpz_t f, mpres_t x, mpres_t y, mpres_t A, mpmod_t n)
   mpres_mul (y, y, g, n);    /* (3g)/(3g^2) = 1/g */
   
   mpres_clear (g, n);
-  return 0;
+  return ECM_NO_FACTOR_FOUND;
 }
 
 /* adds Q=(x2:z2) and R=(x1:z1) and puts the result in (x3:z3),
@@ -317,7 +321,7 @@ lucas_cost (unsigned long n, double v)
   double c; /* cost */
 
   d = n;
-  r = (unsigned long) ((double) d / v + 0.5);
+  r = (unsigned long) ((double) d * v + 0.5);
   if (r >= n)
     return (ADD * (double) n);
   d = n - r;
@@ -401,28 +405,40 @@ prac (mpres_t xA, mpres_t zA, unsigned long k, mpmod_t n, mpres_t b,
       mpres_t u, mpres_t v, mpres_t w, mpres_t xB, mpres_t zB, mpres_t xC, 
       mpres_t zC, mpres_t xT, mpres_t zT, mpres_t xT2, mpres_t zT2)
 {
-  unsigned long d, e, r, i = 0;
+  unsigned long d, e, r, i = 0, nv;
   double c, cmin;
   __mpz_struct *tmp;
 #define NV 10  
+  /* 1/val[0] = the golden ratio (1+sqrt(5))/2, and 1/val[i] for i>0
+     is the real number whose continued fraction expansion is all 1s
+     except for a 2 in i+1-st place */
   static double val[NV] =
-    { 1.6180339887498948, 1.7236067977499790, 1.6183471196562281,
-      1.6179144065288179, 1.6124299495094950, 1.6328398060887063,
-      1.6201819808074158, 1.5801787282954641, 1.6172146165344039,
-      1.3819660112501052 };
-  
-  /* chooses the best value of v */
-  for (d = 0, cmin = ADD * (double) k; d < NV; d++)
+    { 0.61803398874989485, 0.72360679774997897, 0.58017872829546410,
+      0.63283980608870629, 0.61242994950949500, 0.62018198080741576,
+      0.61721461653440386, 0.61834711965622806, 0.61791440652881789,
+      0.61807966846989581};
+
+  /* for small n, it makes no sense to try 10 different Lucas chains */
+  nv = mpz_size ((mpz_ptr) n);
+  if (nv > NV)
+    nv = NV;
+
+  if (nv > 1)
     {
-      c = lucas_cost (k, val[d]);
-      if (c < cmin)
+      /* chooses the best value of v */
+      for (d = 0, cmin = ADD * (double) k; d < nv; d++)
         {
-          cmin = c;
-          i = d;
+          c = lucas_cost (k, val[d]);
+          if (c < cmin)
+            {
+              cmin = c;
+              i = d;
+            }
         }
     }
+
   d = k;
-  r = (unsigned long) ((double) d / val[i] + 0.5);
+  r = (unsigned long) ((double) d * val[i] + 0.5);
   
   /* first iteration always begins by Condition 3, then a swap */
   d = k - r;
@@ -544,15 +560,21 @@ prac (mpres_t xA, mpres_t zA, unsigned long k, mpmod_t n, mpres_t b,
    Output: If a factor is found, it is returned in x.
            Otherwise, x contains the x-coordinate of the point computed
            in stage 1 (with z coordinate normalized to 1).
-   Return value: non-zero iff a factor is found
+	   B1done is set to B1 if stage 1 completed normally,
+	   or to the largest prime processed if interrupted, but never
+	   to a smaller value than B1done was upon function entry.
+   Return value: ECM_FACTOR_FOUND_STEP1 if a factor, otherwise 
+           ECM_NO_FACTOR_FOUND
 */
 static int
 ecm_stage1 (mpz_t f, mpres_t x, mpres_t A, mpmod_t n, double B1, 
-            double *B1done, mpz_t go, int (*stop_asap)(void))
+            double *B1done, mpz_t go, int (*stop_asap)(void), 
+            char *chkfilename)
 {
   mpres_t b, z, u, v, w, xB, zB, xC, zC, xT, zT, xT2, zT2;
-  double q, r;
-  int ret = 0;
+  double p, r, last_chkpnt_p;
+  int ret = ECM_NO_FACTOR_FOUND;
+  long last_chkpnt_time;
 
   MEMORY_TAG;
   mpres_init (b, n);
@@ -581,6 +603,8 @@ ecm_stage1 (mpz_t f, mpres_t x, mpres_t A, mpmod_t n, double B1,
   MEMORY_TAG;
   mpres_init (zT2, n);
   MEMORY_UNTAG;
+  
+  last_chkpnt_time = cputime ();
 
   mpres_set_ui (z, 1, n);
 
@@ -608,30 +632,48 @@ ecm_stage1 (mpz_t f, mpres_t x, mpres_t A, mpmod_t n, double B1,
         add3 (x, z, x, z, xB, zB, x, z, n, u, v, w);
       }
   
-  q = getprime (2.0); /* Puts 3.0 into q. Next call gives 5.0 */
-  for (q = getprime (q); q <= B1; q = getprime (q))
+  last_chkpnt_p = 3.;
+  p = getprime (); /* Puts 3.0 into p. Next call gives 5.0 */
+  for (p = getprime (); p <= B1; p = getprime ())
     {
-      for (r = q; r <= B1; r *= q)
+      for (r = p; r <= B1; r *= p)
 	if (r > *B1done)
-	  prac (x, z, (unsigned long) q, n, b, u, v, w, xB, zB, xC, zC, xT,
+	  prac (x, z, (unsigned long) p, n, b, u, v, w, xB, zB, xC, zC, xT,
 		zT, xT2, zT2);
 
       if (mpres_is_zero (z, n))
         {
           outputf (OUTPUT_VERBOSE, "Reached point at infinity, %.0f divides "
-                   "group order\n", q);
+                   "group order\n", p);
           break;
         }
 
       if (stop_asap != NULL && (*stop_asap) ())
         {
-          outputf (OUTPUT_NORMAL, "Interrupted at prime %.0f\n", q);
+          outputf (OUTPUT_NORMAL, "Interrupted at prime %.0f\n", p);
           break;
+        }
+
+      if (chkfilename != NULL && p > last_chkpnt_p + 10000. && 
+          elltime (last_chkpnt_time, cputime ()) > CHKPNT_PERIOD)
+        {
+          writechkfile (chkfilename, ECM_ECM, MAX(p, *B1done), n, A, x, z);
+          last_chkpnt_p = p;
+          last_chkpnt_time = cputime ();
         }
     }
   
-  getprime (FREE_PRIME_TABLE); /* free the prime tables, and reinitialize */
-  *B1done = (q < B1) ? q : B1;
+  /* If stage 1 finished normally, p is the smallest prime >B1 here.
+     In that case, set to B1 */
+  if (p > B1)
+      p = B1;
+  
+  if (p > *B1done)
+      *B1done = p;
+
+  if (chkfilename != NULL)
+    writechkfile (chkfilename, ECM_ECM, *B1done, n, A, x, z);
+  getprime_clear (); /* free the prime tables, and reinitialize */
 
   /* Normalize z to 1 */
 #ifndef FULL_REDUCTION
@@ -640,7 +682,7 @@ ecm_stage1 (mpz_t f, mpres_t x, mpres_t A, mpmod_t n, double B1,
   if (!mpres_invert (u, z, n)) /* Factor found? */
     {
       mpres_gcd (f, z, n);
-      ret = 1;
+      ret = ECM_FACTOR_FOUND_STEP1;
     }
   mpres_mul (x, x, u, n);
 
@@ -681,16 +723,12 @@ choose_S (mpz_t B2len)
 
 static void
 print_expcurves (mpz_t B2min, mpz_t effB2, unsigned long dF, unsigned long k, 
-                 int S, int clear)
+                 int S)
 {
   double prob;
   int i;
   char sep;
 
-  if (!test_verbose (OUTPUT_VERBOSE))
-    return;
-
-  rhoinit (256, 10);
   outputf (OUTPUT_VERBOSE, "Expected number of curves to find a factor "
            "of n digits:\n20\t25\t30\t35\t40\t45\t50\t55\t60\t65\n");
   for (i = 20; i <= 65; i += 5)
@@ -705,23 +743,16 @@ print_expcurves (mpz_t B2min, mpz_t effB2, unsigned long dF, unsigned long k,
       else
         outputf (OUTPUT_VERBOSE, "Inf%c", sep);
     }
-
-  if (clear)
-    rhoinit (1, 0); /* Free memory of rhotable */
 }
 
 static void
 print_exptime (mpz_t B2min, mpz_t effB2, unsigned long dF, unsigned long k, 
-               int S, double tottime, int clear)
+               int S, double tottime)
 {
   double prob, exptime;
   int i;
   char sep;
   
-  if (!test_verbose (OUTPUT_VERBOSE))
-    return;
-  
-  rhoinit (256, 10);
   outputf (OUTPUT_VERBOSE, "Expected time to find a factor of n digits:\n"
     "20\t25\t30\t35\t40\t45\t50\t55\t60\t65\n");
   for (i = 20; i <= 65; i += 5)
@@ -751,9 +782,43 @@ print_exptime (mpz_t B2min, mpz_t effB2, unsigned long dF, unsigned long k,
       else 
         outputf (OUTPUT_VERBOSE, "Inf%c", sep);
     }
+}
 
-  if (clear)
-    rhoinit (1, 0); /* Free memory of rhotable */
+void
+print_B1_B2_poly (int verbosity, int method, double B1, double B1done, 
+		  mpz_t B2min_param, mpz_t B2min, mpz_t B2, int S, mpz_t x0,
+		  int sigma_is_A)
+{
+  if (test_verbose (verbosity))
+  {
+      outputf (verbosity, "Using ");
+      if (ECM_IS_DEFAULT_B1_DONE(B1done))
+	  outputf (verbosity, "B1=%1.0f, ", B1);
+      else
+	  outputf (verbosity, "B1=%1.0f-%1.0f, ", B1done, B1);
+      if (mpz_sgn (B2min_param) < 0)
+	  outputf (verbosity, "B2=%Zd", B2);
+      else
+	  outputf (verbosity, "B2=%Zd-%Zd", B2min, B2);
+      
+      if (S > 0)
+	  outputf (verbosity, ", polynomial x^%u", S);
+      else if (S < 0)
+	  outputf (verbosity, ", polynomial Dickson(%u)", -S);
+      
+      /* don't print in resume case, since x0 is saved in resume file */
+      if (method == ECM_ECM)
+        {
+	  if (sigma_is_A)
+	    outputf (verbosity, ", A=%Zd", x0);
+	  else
+	    outputf (verbosity, ", sigma=%Zd", x0);
+        }
+      else if (ECM_IS_DEFAULT_B1_DONE(B1done))
+	  outputf (verbosity, ", x0=%Zd", x0);
+      
+      outputf (verbosity, "\n");
+  }
 }
 
 /* Input: x is starting point or zero
@@ -778,8 +843,9 @@ int
 ecm (mpz_t f, mpz_t x, mpz_t sigma, mpz_t n, mpz_t go, double *B1done,
      double B1, mpz_t B2min_parm, mpz_t B2_parm, double B2scale, 
      unsigned long k, const int S, int verbose, int repr, int use_ntt,
-     int sigma_is_A, FILE *os, FILE* es, char *TreeFilename, double maxmem,
-     double stage1time, gmp_randstate_t rng, int (*stop_asap)(void))
+     int sigma_is_A, FILE *os, FILE* es, char *chkfilename,
+     char *TreeFilename, double maxmem, double stage1time, 
+     gmp_randstate_t rng, int (*stop_asap)(void))
 {
   int youpi = ECM_NO_FACTOR_FOUND;
   int base2 = 0;  /* If n is of form 2^n[+-]1, set base to [+-]n */
@@ -821,7 +887,7 @@ ecm (mpz_t f, mpz_t x, mpz_t sigma, mpz_t n, mpz_t go, double *B1done,
   if (repr != ECM_MOD_NOBASE2)
     base2 = (abs (repr) >= 16) ? repr : isbase2 (n, BASE2_THRESHOLD);
 
-  /* For for a Fermat number (base2 a positive power of 2) */
+  /* For a Fermat number (base2 a positive power of 2) */
   for (Fermat = base2; Fermat > 0 && (Fermat & 1) == 0; Fermat >>= 1);
   if (Fermat == 1) 
     {
@@ -831,19 +897,8 @@ ecm (mpz_t f, mpz_t x, mpz_t sigma, mpz_t n, mpz_t go, double *B1done,
   else
       Fermat = 0;
 
-  if (base2)
-    {
-      if (mpmod_init_BASE2 (modulus, base2, n) == ECM_ERROR)
-        return ECM_ERROR;
-    }
-  else if (repr == ECM_MOD_MPZ)
-    mpmod_init_MPZ (modulus, n);
-  else if (repr == ECM_MOD_MODMULN)
-    mpmod_init_MODMULN (modulus, n);
-  else if (repr == ECM_MOD_REDC)
-    mpmod_init_REDC (modulus, n);
-  else /* automatic choice of general reduction method */
-    mpmod_init (modulus, n, -1);
+  if (mpmod_init (modulus, n, repr) != 0)
+    return ECM_ERROR;
 
   MEMORY_TAG;
   mpres_init (P.x, modulus);
@@ -891,6 +946,7 @@ ecm (mpz_t f, mpz_t x, mpz_t sigma, mpz_t n, mpz_t go, double *B1done,
   if (use_ntt)
     po2 = 1;
 
+  root_params.d2 = 0; /* Enable automatic choice of d2 */
   if (bestD (&root_params, &k, &dF, B2min, B2, po2, use_ntt, maxmem, 
              (TreeFilename != NULL), modulus) == ECM_ERROR)
     {
@@ -961,19 +1017,9 @@ ecm (mpz_t f, mpz_t x, mpz_t sigma, mpz_t n, mpz_t go, double *B1done,
   if (mpz_sgn (x) != 0)
       mpres_set_z (P.x, x, modulus);
 
-  /* Now that the parameters are decided, print info */
-
-  outputf (OUTPUT_NORMAL, "Using B1=%1.0f, B2=", B1);
-  if (mpz_cmp_d (B2min, B1) == 0)
-      outputf (OUTPUT_NORMAL, "%Zd", B2);
-  else
-      outputf (OUTPUT_NORMAL, "%Zd-%Zd", B2min, B2);
-  outputf (OUTPUT_NORMAL, ", polynomial ");
-  if (root_params.S > 0)
-      outputf (OUTPUT_NORMAL, "x^%u", root_params.S);
-  else
-      outputf (OUTPUT_NORMAL, "Dickson(%u)", -root_params.S);
-  outputf (OUTPUT_NORMAL, ", sigma=%Zd\n", sigma);
+  /* Print B1, B2, polynomial and sigma */
+  print_B1_B2_poly (OUTPUT_NORMAL, ECM_ECM, B1, *B1done, B2min_parm, B2min, 
+		    B2, root_params.S, sigma, sigma_is_A);
 
 #if 0
   outputf (OUTPUT_VERBOSE, "b2=%1.0f, dF=%lu, k=%lu, d=%lu, d2=%lu, i0=%Zd\n", 
@@ -1000,7 +1046,11 @@ ecm (mpz_t f, mpz_t x, mpz_t sigma, mpz_t n, mpz_t go, double *B1done,
   if (go != NULL && mpz_cmp_ui (go, 1) > 0)
     outputf (OUTPUT_VERBOSE, "initial group order: %Zd\n", go);
 
-  print_expcurves (B2min, B2, dF, k, root_params.S, 0);
+  if (test_verbose (OUTPUT_VERBOSE))
+    {
+      rhoinit (256, 10);
+      print_expcurves (B2min, B2, dF, k, root_params.S);
+    }
 
 #ifdef HAVE_GWNUM
   /* Right now, we only do base 2 numbers with GWNUM */
@@ -1013,11 +1063,11 @@ ecm (mpz_t f, mpz_t x, mpz_t sigma, mpz_t n, mpz_t go, double *B1done,
 
   if (youpi != ECM_NO_FACTOR_FOUND)
     goto end_of_ecm;
-
 #endif
 
   if (B1 > *B1done)
-    youpi = ecm_stage1 (f, P.x, P.A, modulus, B1, B1done, go, stop_asap);
+    youpi = ecm_stage1 (f, P.x, P.A, modulus, B1, B1done, go, stop_asap,
+                        chkfilename);
   
   if (stage1time > 0.)
     {
@@ -1055,38 +1105,39 @@ ecm (mpz_t f, mpz_t x, mpz_t sigma, mpz_t n, mpz_t go, double *B1done,
   if (stop_asap != NULL && (*stop_asap) ())
     goto end_of_ecm;
 
-#ifdef MONT_ROOTS
-  /* If we want to use Montgomery form for generating the roots for stage 2, 
-     convert to Weierstrass form only if S != 1 */
-  if (root_params.S != 1)
+  youpi = montgomery_to_weierstrass (f, P.x, P.y, P.A, modulus);
+  
+  if (test_verbose (OUTPUT_RESVERBOSE) && youpi == ECM_NO_FACTOR_FOUND && 
+      mpz_cmp (B2, B2min) >= 0)
     {
       mpz_t t;
-      outputf (OUTPUT_DEVVERBOSE, "ecm: Converting to Weierstrass form\n");
-      youpi = montgomery_to_weierstrass (f, P.x, P.y, P.A, modulus);
-      if (test_verbose (OUTPUT_TRACE))
-        {
-          MEMORY_TAG;
-          mpz_init (t);
-          MEMORY_UNTAG;
-          mpres_get_z (t, P.x, modulus);
-          outputf (OUTPUT_TRACE, "P = (%Zd, ", t);
-          mpres_get_z (t, P.y, modulus);
-          outputf (OUTPUT_TRACE, "%Zd)\n", t);
-          mpz_clear (t);
-        }
-    }
-#else
-  youpi = montgomery_to_weierstrass (f, P.x, P.y, P.A, modulus);
-#endif
 
+      MEMORY_TAG;
+      mpz_init (t);
+      MEMORY_UNTAG;
+      mpres_get_z (t, P.x, modulus);
+      outputf (OUTPUT_RESVERBOSE, "After switch to Weierstrass form, "
+      "P=(%Zd", t);
+      mpres_get_z (t, P.y, modulus);
+      outputf (OUTPUT_RESVERBOSE, ", %Zd)\n", t);
+      mpres_get_z (t, P.A, modulus);
+      outputf (OUTPUT_RESVERBOSE, "on curve Y^2 = X^3 + %Zd * X + b\n", t);
+      mpz_clear (t);
+    }
+  
   if (youpi == ECM_NO_FACTOR_FOUND && mpz_cmp (B2, B2min) >= 0)
     youpi = stage2 (f, &P, modulus, dF, k, &root_params, ECM_ECM, 
                     use_ntt, TreeFilename, stop_asap);
   
-  if (youpi == ECM_NO_FACTOR_FOUND && (stop_asap == NULL || !(*stop_asap)()))
-    print_exptime (B2min, B2, dF, k, root_params.S, 
-                   (long) (stage1time * 1000.) + 
-                   elltime (st, cputime ()), 1);
+  if (test_verbose (OUTPUT_VERBOSE))
+    {
+      if (youpi == ECM_NO_FACTOR_FOUND && 
+          (stop_asap == NULL || !(*stop_asap)()))
+        print_exptime (B2min, B2, dF, k, root_params.S, 
+                       (long) (stage1time * 1000.) + 
+                       elltime (st, cputime ()));
+      rhoinit (1, 0); /* Free memory of rhotable */
+    }
 
 end_of_ecm:
   mpres_clear (P.A, modulus);
