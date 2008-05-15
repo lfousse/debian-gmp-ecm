@@ -16,8 +16,8 @@
 
   You should have received a copy of the GNU Lesser General Public License
   along with the ECM Library; see the file COPYING.LIB.  If not, write to
-  the Free Software Foundation, Inc., 59 Temple Place - Suite 330, Boston,
-  MA 02111-1307, USA.
+  the Free Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston,
+  MA 02110-1301, USA.
 
 References: 
 [1] Tellegen's Principle into Practice, by A. Bostan, G. Lecerf and E. Schost,
@@ -683,13 +683,11 @@ TToomCookMul_space (unsigned int n, unsigned int m, unsigned int l)
     if (m <= 2 * nu)
     {
         stmp1 = TToomCookMul_space (nu - 1, m, l);
-        if (l >= nu)
-            stmp2 = TToomCookMul_space (nu - 1, m, l - nu);
-        stmp1 = MAX(stmp1, stmp2);
         if (l >= 2 * nu)
-            stmp2 = TToomCookMul_space (n - 2 * nu, m, l - 2 * nu);
-        stmp1 = MAX(stmp1, stmp2);
-        return stmp1;
+	  stmp2 = TToomCookMul_space (n - 2 * nu, m, l - 2 * nu);
+        else if (l >= nu)
+	  stmp2 = TToomCookMul_space (nu - 1, m, l - nu);
+        return MAX(stmp1, stmp2);
     }
                   
     /* Second degenerate case. We want 2 * mu < n.
@@ -698,23 +696,18 @@ TToomCookMul_space (unsigned int n, unsigned int m, unsigned int l)
     if (n <= 2 * mu)
     {
         stmp1 += TToomCookMul_space (n, mu - 1, l);
-        if (l >= mu)
-        {
-            stmp2 = TToomCookMul_space (n, mu - 1, l - mu) + n + 1;
-            stmp1 = MAX(stmp1, stmp2);
-        }
         if (l >= 2 * mu)
-        {
-            stmp2 = TToomCookMul_space (n, m - 2 * mu, l - 2 * mu) + n + 1;
-            stmp1 = MAX(stmp1, stmp2);
-        }
-        return stmp1;
+	  stmp2 = TToomCookMul_space (n, m - 2 * mu, l - 2 * mu) + n + 1;
+        else if (l >= mu)
+	  stmp2 = TToomCookMul_space (n, mu - 1, l - mu) + n + 1;
+        return MAX(stmp1, stmp2);
     }
 
     h = MAX(nu, mu);
 
-    stmp2 = TToomCookMul_space (h - 1, h - 1, 2 * h - 2) + 7 * h - 2;
-    stmp1 = TToomCookMul_space (h - 1, h - 1, 2 * h - 2) + 6 * h - 2;
+    stmp1 = TToomCookMul_space (h - 1, h - 1, 2 * h - 2);
+    stmp2 = stmp1 + 7 * h - 2;
+    stmp1 = stmp1 + 6 * h - 2;
     stmp1 = MAX(stmp1, stmp2);
     stmp2 = TToomCookMul_space (n - 2 * h, m - 2 * h, 2 * h - 1) + 7*h-2;
     return MAX(stmp1, stmp2);
@@ -729,33 +722,37 @@ TToomCookMul_space (unsigned int n, unsigned int m, unsigned int l)
    b[n] = a[0]*c[n] + ... + a[i]*c[i+n] with i = min(m, l-n) [=l-n].
    Using auxiliary memory in tmp.
 
-   Assumes n <= l.
+   Assumes n <= l. 
+
+   Returns number of multiplications if known, 0 if not known, 
+   and -1 for error.
 */
-unsigned int
+int
 TMulGen (listz_t b, unsigned int n, listz_t a, unsigned int m,
          listz_t c, unsigned int l, listz_t tmp, mpz_t modulus)
 {
-    unsigned int i, muls = 0;
-
-    for (i = l + 1; i > 1 && (i&1) == 0; i >>= 1);
+  ASSERT (n <= l);
     
-    if (Fermat)
-      {
-        if (i == 1 && m + n + 1 == l)
-          return F_mul_trans (b, a, c, l + 1, Fermat, tmp);
-        else
-          fprintf (ECM_STDERR, "TMulGen: Fermat = %d, but m+1 = %d, n+1 = %d, l+1 = %d\n", 
-                   Fermat, m+1, n+1, l+1);
-      }
-
+  if (Fermat)
+    {
+      unsigned int i;
+      for (i = l + 1; i > 1 && (i&1) == 0; i >>= 1);
+      ASSERT(i == 1);
+      ASSERT(n + 1 == (l + 1) / 2);
+      ASSERT(m == l - n || m + 1 == l - n);
+      return F_mul_trans (b, a, c, m + 1, l + 1, Fermat, tmp);
+    }
+  
 #ifdef KS_MULTIPLY
-    if ((double) n * (double) mpz_sizeinbase (modulus, 2) >= KS_TMUL_THRESHOLD)
-      TMulKS (b, n, a, m, c, l, modulus, 1); /* does no muls count */
-    else
+  if ((double) n * (double) mpz_sizeinbase (modulus, 2) >= KS_TMUL_THRESHOLD)
+    {
+      if (TMulKS (b, n, a, m, c, l, modulus, 1)) /* Non-zero means error */
+	return -1;
+      return 0; /* We have no mul count so we return 0 */
+    }
 #endif
-      muls = TToomCookMul (b, n, a, m, c, l, tmp);
 
-  return muls;
+  return TToomCookMul (b, n, a, m, c, l, tmp);
 }
 
 

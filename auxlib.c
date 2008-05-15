@@ -16,8 +16,8 @@
 
   You should have received a copy of the GNU Lesser General Public License
   along with the ECM Library; see the file COPYING.LIB.  If not, write to
-  the Free Software Foundation, Inc., 59 Temple Place - Suite 330, Boston,
-  MA 02111-1307, USA.
+  the Free Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston,
+  MA 02110-1301, USA.
 */
 
 /* need stdio.h and stdarg.h for gmp.h to declare gmp_vfprintf */
@@ -37,7 +37,7 @@
 # endif
 #endif
 
-#if HAVE_LIMITS_H
+#ifdef HAVE_LIMITS_H
 # include <limits.h>
 #else
 # ifndef ULONG_MAX
@@ -45,59 +45,34 @@
 # endif
 #endif
 
+#ifdef HAVE_STDINT
+#include <stdint.h>
+#else
+/* size_t is an unsigned integer so this ought to work */
+#ifndef SIZE_MAX
+#define SIZE_MAX (~((size_t) 0))
+#endif
+#endif
+
 #define VERBOSE __ECM(verbose)
 static int VERBOSE = OUTPUT_NORMAL;
 
-unsigned int
-gcd (unsigned int a, unsigned int b)
+void 
+mpz_add_si (mpz_t r, mpz_t s, long i)
 {
-  unsigned int t;
-
-  while (b != 0)
-    {
-      t = a % b;
-      a = b;
-      b = t;
-    }
-
-  return a;
-}
-
-/* returns Euler's totient phi function */
-unsigned long
-eulerphi (unsigned long n)
-{
-  unsigned long phi = 1, p;
-
-  for (p = 2; p * p <= n; p += 2)
-    {
-      if (n % p == 0)
-	{
-	  phi *= p - 1;
-	  n /= p;
-	  while (n % p == 0)
-	    {
-	      phi *= p;
-	      n /= p;
-	    }
-	}
-
-      if (p == 2)
-	p--;
-    }
-
-  /* now n is prime or 1 */
-
-  return (n == 1) ? phi : phi * (n - 1);
+  if (i >= 0)
+    mpz_add_ui (r, s, (unsigned long) i);
+  else
+    mpz_sub_ui (r, s, (unsigned long) (-i));
 }
 
 void 
-mpz_sub_si (mpz_t r, mpz_t s, int i)
+mpz_sub_si (mpz_t r, mpz_t s, long i)
 {
   if (i >= 0)
-    mpz_sub_ui (r, s, (unsigned int) i);
+    mpz_sub_ui (r, s, (unsigned long) i);
   else
-    mpz_add_ui (r, s, (unsigned int) (-i));
+    mpz_add_ui (r, s, (unsigned long) (-i));
 }
 
 /* Divide RS by 3 */
@@ -117,23 +92,19 @@ mpz_divby3_1op (mpz_t RS)
     RS->_mp_size -= mpz_sgn (RS);
 }
 
-/* returns ceil(log(n)/log(2)) */
-unsigned int
-ceil_log2 (unsigned long n)
+/* Convert a double d to a size_t. If d < 0., returns 0. If d > MAX_SIZE, 
+   returns MAX_SIZE. */
+
+size_t
+double_to_size (double d)
 {
-  unsigned int k = 0;
-
-  ASSERT (n > 0);
-
-  n--;
-  while (n)
-    {
-      k++;
-      n >>= 1;
-    }
-
-  return k;
+  if (d < 0.)
+    return (size_t) 0;
+  if (d > (double) SIZE_MAX)
+    return SIZE_MAX;
+  return (size_t) d;
 }
+
 
 /* cputime () gives the elapsed time in milliseconds */
 
@@ -148,20 +119,11 @@ cputime ()
 {
   FILETIME lpCreationTime, lpExitTime, lpKernelTime, lpUserTime;
   ULARGE_INTEGER n;
-  BOOL ok;
-  
+
   HANDLE hProcess = GetCurrentProcess();
   
-  ok = GetProcessTimes (hProcess, &lpCreationTime, &lpExitTime, &lpKernelTime,
-                        &lpUserTime);
-
-  if (!ok)
-    {
-      outputf (OUTPUT_ERROR, 
-               "cputime: GetProcessTimes returned error code %d\n",
-               GetLastError ());
-      return 0;
-    }
+  GetProcessTimes (hProcess, &lpCreationTime, &lpExitTime, &lpKernelTime,
+      &lpUserTime);
 
   /* copy FILETIME to a ULARGE_INTEGER as recommended by MSDN docs */
   n.u.LowPart = lpUserTime.dwLowDateTime;
@@ -221,6 +183,20 @@ elltime (long st0, long st1)
     }
 }
 
+/* Get real (wall-clock) time in milliseconds */
+long
+realtime ()
+{
+#ifdef HAVE_GETTIMEOFDAY
+  struct timeval tv;
+  if (gettimeofday(&tv, NULL) != 0)
+    return 0L;
+  return (long) tv.tv_sec * 1000L + (long) tv.tv_usec / 1000L;
+#else
+  return 0L;
+#endif
+}
+
 int 
 get_verbose ()
 {
@@ -270,4 +246,52 @@ outputf (int loglevel, char *format, ...)
   va_end (ap);
   
   return n;
+}
+
+void
+writechkfile (char *chkfilename, int method, double p, mpmod_t modulus, 
+              mpres_t A, mpres_t x, mpres_t z)
+{
+  FILE *chkfile;
+  char *methodname;
+  mpz_t t;
+
+  outputf (OUTPUT_DEVVERBOSE, "Writing checkpoint to %s at p = %.0f\n",
+           chkfilename, p);
+
+  switch (method)
+    {
+    case ECM_ECM : methodname = "ECM"; break;
+    case ECM_PM1 : methodname = "P-1"; break;
+    case ECM_PP1 : methodname = "P+1"; break;
+    default: 
+      outputf (OUTPUT_ERROR, "writechkfile: Invalid method\n");
+      return;
+    }
+
+  chkfile = fopen (chkfilename, "w");
+  if (chkfile == NULL)
+    {
+      outputf (OUTPUT_ERROR, "Error opening checkpoint file %s\n", 
+	       chkfilename);
+      return;
+    }
+
+  mpz_init (t);
+
+  gmp_fprintf (chkfile, "METHOD=%s; B1=%.0f; N=%Zd;", 
+	       methodname, p, modulus->orig_modulus);
+  mpres_get_z (t, x, modulus);
+  gmp_fprintf (chkfile, " X=0x%Zx;", t);
+  if (method == ECM_ECM)
+    {
+      mpres_get_z (t, z, modulus);
+      gmp_fprintf (chkfile, " Z=0x%Zx;", t);
+      mpres_get_z (t, A, modulus);
+      gmp_fprintf (chkfile, " A=0x%Zx;", t);
+    }
+  fprintf (chkfile, "\n");
+  mpz_clear (t);
+  fflush (chkfile);
+  fclose (chkfile);
 }

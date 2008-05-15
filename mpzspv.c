@@ -1,7 +1,7 @@
 /* mpzspv.c - "mpz small prime polynomial" functions for arithmetic on mpzv's
    reduced modulo a mpzspm
 
-  Copyright 2005 Dave Newman.
+  Copyright 2005, 2008 Dave Newman, Jason Papadopoulos and Alexander Kruppa.
 
   The SP Library is free software; you can redistribute it and/or modify
   it under the terms of the GNU Lesser General Public License as published by
@@ -15,8 +15,8 @@
 
   You should have received a copy of the GNU Lesser General Public License
   along with the SP Library; see the file COPYING.LIB.  If not, write to
-  the Free Software Foundation, Inc., 59 Temple Place - Suite 330, Boston,
-  MA 02111-1307, USA.
+  the Free Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston,
+  MA 02110-1301, USA.
 */
 
 #include <stdlib.h>
@@ -38,12 +38,12 @@ mpzspv_init (spv_size_t len, mpzspm_t mpzspm)
   
   for (i = 0; i < mpzspm->sp_num; i++)
     {
-      x[i] = (spv_t) malloc (len * sizeof (sp_t));
+      x[i] = (spv_t) sp_aligned_malloc (len * sizeof (sp_t));
       
       if (x[i] == NULL)
 	{
 	  while (i--)
-	    free (x[i]);
+	    sp_aligned_free (x[i]);
 	  
 	  free (x);
 	  return NULL;
@@ -61,7 +61,7 @@ mpzspv_clear (mpzspv_t x, mpzspm_t mpzspm)
   ASSERT (mpzspv_verify (x, 0, 0, mpzspm));
   
   for (i = 0; i < mpzspm->sp_num; i++)
-    free (x[i]);
+    sp_aligned_free (x[i]);
   
   free (x);
 }
@@ -88,7 +88,8 @@ mpzspv_verify (mpzspv_t x, spv_size_t offset, spv_size_t len, mpzspm_t mpzspm)
     {
 
 #ifdef HAVE_MALLOC_USABLE_SIZE
-      if (malloc_usable_size (x[i]) < (offset + len) * sizeof (sp_t))
+      if (malloc_usable_size (*( (void **)x[i] - 1 )) < 
+          (offset + len) * sizeof (sp_t))
         return 0;
 #endif
 
@@ -111,6 +112,19 @@ mpzspv_set (mpzspv_t r, spv_size_t r_offset, mpzspv_t x, spv_size_t x_offset,
   
   for (i = 0; i < mpzspm->sp_num; i++)
     spv_set (r[i] + r_offset, x[i] + x_offset, len);
+}
+
+void
+mpzspv_revcopy (mpzspv_t r, spv_size_t r_offset, mpzspv_t x, 
+    spv_size_t x_offset, spv_size_t len, mpzspm_t mpzspm)
+{
+  unsigned int i;
+  
+  ASSERT (mpzspv_verify (r, r_offset + len, 0, mpzspm));
+  ASSERT (mpzspv_verify (x, x_offset, len, mpzspm));
+  
+  for (i = 0; i < mpzspm->sp_num; i++)
+    spv_rev (r[i] + r_offset, x[i] + x_offset, len);
 }
 
 void
@@ -140,6 +154,20 @@ mpzspv_neg (mpzspv_t r, spv_size_t r_offset, mpzspv_t x, spv_size_t x_offset,
 }
 
 void
+mpzspv_add (mpzspv_t r, spv_size_t r_offset, mpzspv_t x, spv_size_t x_offset,
+            mpzspv_t y, spv_size_t y_offset, spv_size_t len, mpzspm_t mpzspm)
+{
+  unsigned int i;
+  
+  ASSERT (mpzspv_verify (r, r_offset + len, 0, mpzspm));
+  ASSERT (mpzspv_verify (x, x_offset, len, mpzspm));
+  
+  for (i = 0; i < mpzspm->sp_num; i++)
+    spv_add (r[i] + r_offset, x[i] + x_offset, y[i] + y_offset, len, 
+             mpzspm->spm[i]->sp);
+}
+
+void
 mpzspv_reverse (mpzspv_t x, spv_size_t offset, spv_size_t len, mpzspm_t mpzspm)
 {
   unsigned int i;
@@ -162,15 +190,14 @@ mpzspv_reverse (mpzspv_t x, spv_size_t offset, spv_size_t len, mpzspm_t mpzspm)
 }
 
 void
-mpzspv_from_mpzv (mpzspv_t x, spv_size_t offset, mpzv_t mpzv,
-    spv_size_t len, mpzspm_t mpzspm)
+mpzspv_from_mpzv (mpzspv_t x, const spv_size_t offset, const mpzv_t mpzv,
+    const spv_size_t len, mpzspm_t mpzspm)
 {
-  unsigned int i, sp_num;
-  spv_size_t j;
+  const unsigned int sp_num = mpzspm->sp_num;
+  long i;
   
   ASSERT (mpzspv_verify (x, offset + len, 0, mpzspm));
-  
-  sp_num = mpzspm->sp_num;
+  ASSERT (sizeof (mp_limb_t) >= sizeof (sp_t));
   
   /* GMP's comments on mpn_preinv_mod_1:
    *
@@ -181,26 +208,40 @@ mpzspv_from_mpzv (mpzspv_t x, spv_size_t offset, mpzv_t mpzv,
    * It doesn't accept 0 as the dividend so we have to treat this case
    * separately */
   
-  for (i = 0; i < len; i++)
+#if defined(_OPENMP)
+#pragma omp parallel private(i) if (len > 100)
+  {
+    /* Multi-threading with dynamic scheduling slows things down */
+#pragma omp for schedule(static)
+#endif
+    for (i = 0; i < (long) len; i++)
     {
-      if (SIZ(mpzv[i]) == 0)
+      unsigned int j;
+      if (mpz_sgn (mpzv[i]) == 0)
 	{
 	  for (j = 0; j < sp_num; j++)
 	    x[j][i + offset] = 0;
 	}
       else
         {
+	  ASSERT(mpz_sgn (mpzv[i]) > 0); /* We can't handle negative values */
 	  for (j = 0; j < sp_num; j++)
-            x[j][i + offset] =
-              mpn_preinv_mod_1 (PTR(mpzv[i]), SIZ(mpzv[i]),
-                mpzspm->spm[j]->sp, mpzspm->spm[j]->mul_c);
+            x[j][i + offset] = 
+              mpn_mod_1 (PTR(mpzv[i]), SIZ(mpzv[i]), 
+                (mp_limb_t) mpzspm->spm[j]->sp);
+              /* The typecast to mp_limb_t assumes that mp_limb_t is at least
+                 as wide as sp_t */
 	}
     }
+#if defined(_OPENMP)
+  }
+#endif
 }
 
-/* B&S: ecrt mod m
+/* See: Daniel J. Bernstein and Jonathan P. Sorenson,
+ * Modular Exponentiation via the explicit Chinese Remainder Theorem
  *
- * memory: MPZSPV_NORMALIZE_STRIDE floats */
+ * memory: MPZSPV_NORMALISE_STRIDE floats */
 void
 mpzspv_to_mpzv (mpzspv_t x, spv_size_t offset, mpzv_t mpzv,
     spv_size_t len, mpzspm_t mpzspm)
@@ -211,9 +252,11 @@ mpzspv_to_mpzv (mpzspv_t x, spv_size_t offset, mpzv_t mpzv,
   float prime_recip;
   sp_t t;
   spm_t *spm = mpzspm->spm;
+  mpz_t mt;
   
   ASSERT (mpzspv_verify (x, offset, len, mpzspm));
   
+  mpz_init (mt);
   for (l = 0; l < len; l += MPZSPV_NORMALISE_STRIDE)
     {
       spv_size_t stride = MIN (MPZSPV_NORMALISE_STRIDE, len - l);
@@ -226,14 +269,22 @@ mpzspv_to_mpzv (mpzspv_t x, spv_size_t offset, mpzv_t mpzv,
   
     for (i = 0; i < mpzspm->sp_num; i++)
       {
-        prime_recip = 1.0 / (float) spm[i]->sp;
+        prime_recip = 1.0f / (float) spm[i]->sp;
       
         for (k = 0; k < stride; k++)
           {
   	    t = sp_mul (x[i][l + k + offset], mpzspm->crt3[i], spm[i]->sp,
                   spm[i]->mul_c);
           
-	    mpz_addmul_ui (mpzv[l + k], mpzspm->crt1[i], t);
+            if (sizeof (sp_t) > sizeof (unsigned long))
+              {
+                mpz_set_sp (mt, t);
+                mpz_addmul (mpzv[l + k], mpzspm->crt1[i], mt);
+              }
+            else
+              {
+      	        mpz_addmul_ui (mpzv[l + k], mpzspm->crt1[i], t);
+              }
 
 	    f[k] += (float) t * prime_recip;
           }
@@ -243,6 +294,7 @@ mpzspv_to_mpzv (mpzspv_t x, spv_size_t offset, mpzv_t mpzv,
       mpz_add (mpzv[l + k], mpzv[l + k], mpzspm->crt2[(unsigned int) f[k]]);
   }
   
+  mpz_clear (mt);
   free (f);
 }  
 
@@ -299,7 +351,7 @@ mpzspv_normalise (mpzspv_t x, spv_size_t offset, spv_size_t len,
       
       for (i = 0; i < sp_num; i++)
         {
-          prime_recip = 1.0 / (float) spm[i]->sp;
+          prime_recip = 1.0f / (float) spm[i]->sp;
       
           for (k = 0; k < stride; k++)
 	    {
@@ -332,9 +384,12 @@ mpzspv_normalise (mpzspv_t x, spv_size_t offset, spv_size_t len,
             }      
 
           /* FIXME: do we need to account for dividend == 0? */
+          /* TG: The comment [...] can be safely removed. ...
+             The mpn functions don't worry about the actual data, 
+             only the limb count, unless the documentation exlicitly 
+             say differently. */
           for (k = 0; k < stride; k++)
-	    t[i][k] = mpn_preinv_mod_1 (d + 3 * k, 3, spm[i]->sp,
-		spm[i]->mul_c);
+	    t[i][k] = mpn_mod_1 (d + 3 * k, 3, spm[i]->sp);
         }	  
       mpzspv_set (x, l + offset, t, 0, stride, mpzspm);
     }
@@ -351,20 +406,18 @@ mpzspv_to_ntt (mpzspv_t x, spv_size_t offset, spv_size_t len,
     spv_size_t ntt_size, int monic, mpzspm_t mpzspm)
 {
   unsigned int i;
-  spv_size_t j;
+  spv_size_t j, log2_ntt_size;
   spm_t spm;
-  sp_t root;
   spv_t spv;
   
   ASSERT (mpzspv_verify (x, offset, len, mpzspm));
   ASSERT (mpzspv_verify (x, offset + ntt_size, 0, mpzspm));
   
+  log2_ntt_size = ceil_log_2 (ntt_size);
+
   for (i = 0; i < mpzspm->sp_num; i++)
     {
       spm = mpzspm->spm[i];
-      root = sp_pow (spm->prim_root, mpzspm->max_ntt_size / ntt_size,
-	  spm->sp, spm->mul_c);
-      
       spv = x[i] + offset;
       
       if (ntt_size < len)
@@ -378,7 +431,7 @@ mpzspv_to_ntt (mpzspv_t x, spv_size_t offset, spv_size_t len,
       if (monic)
 	spv[len % ntt_size] = sp_add (spv[len % ntt_size], 1, spm->sp);
       
-      spv_ntt_gfp_dif (spv, ntt_size, spm->sp, spm->mul_c, root);
+      spv_ntt_gfp_dif (spv, log2_ntt_size, spm);
     }
 }
 
@@ -386,21 +439,20 @@ void mpzspv_from_ntt (mpzspv_t x, spv_size_t offset, spv_size_t ntt_size,
     spv_size_t monic_pos, mpzspm_t mpzspm)
 {
   unsigned int i;
+  spv_size_t log2_ntt_size;
   spm_t spm;
-  sp_t root;
   spv_t spv;
   
   ASSERT (mpzspv_verify (x, offset, ntt_size, mpzspm));
   
+  log2_ntt_size = ceil_log_2 (ntt_size);
+
   for (i = 0; i < mpzspm->sp_num; i++)
     {
       spm = mpzspm->spm[i];
-      root = sp_pow (spm->inv_prim_root, mpzspm->max_ntt_size / ntt_size,
-	  spm->sp, spm->mul_c);
-      
       spv = x[i] + offset;
       
-      spv_ntt_gfp_dit (spv, ntt_size, spm->sp, spm->mul_c, root);
+      spv_ntt_gfp_dit (spv, log2_ntt_size, spm);
 
       /* spm->sp - (spm->sp - 1) / ntt_size is the inverse of ntt_size */
       spv_mul_sp (spv, spv, spm->sp - (spm->sp - 1) / ntt_size,

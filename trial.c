@@ -14,7 +14,7 @@
 
   You should have received a copy of the GNU General Public License along
   with this program; see the file COPYING.  If not, write to the Free
-  Software Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
+  Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
   02111-1307, USA.
 */
 
@@ -22,15 +22,21 @@
 #include <math.h> /* log */
 #include "ecm-ecm.h"
 
+/* Does trial division of n by the primes 1 < p <= maxfact.
+   Returns the number of factors found (counting multiplicity) */
+
 int
 trial_factor (mpcandi_t *n, double maxfact, int deep)
 {
   unsigned long factors = 0, exponent;
   double p;
 
-  getprime (FREE_PRIME_TABLE);  /* free the prime tables, and reinitialize */
+  if (mpz_sgn (n->n) == 0)
+    return 0;
+
+  getprime_clear ();  /* free the prime tables, and reinitialize */
   /* brain dead trial factor'r but it works */
-  for (p = 2.0; p <= maxfact; p = getprime (p))
+  for (p = 2.0; p <= maxfact; p = getprime ())
     {
       for (exponent = 0; mpcandi_t_addfoundfactor_d (n, p); exponent++);
       
@@ -50,7 +56,7 @@ trial_factor (mpcandi_t *n, double maxfact, int deep)
 	    break;
 	}
     }
-  getprime (FREE_PRIME_TABLE);  /* free the prime tables, and reinitialize */
+  getprime_clear ();  /* free the prime tables, and reinitialize */
 
   return factors;
 }

@@ -14,7 +14,7 @@
 
   You should have received a copy of the GNU General Public License along
   with this program; see the file COPYING.  If not, write to the Free
-  Software Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
+  Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
   02111-1307, USA.
 */
 
@@ -24,11 +24,11 @@
 #include <time.h>
 #include "ecm-ecm.h"
 
-#if HAVE_STRINGS_H
+#ifdef HAVE_STRINGS_H
 # include <strings.h> /* for strncasecmp */
 #endif
 
-#if HAVE_CTYPE_H
+#ifdef HAVE_CTYPE_H
 # include <ctype.h>
 #endif
 
@@ -123,7 +123,7 @@ ChompLine:;
       if (nCurSize == nMaxSize)
       {
 	char *cp;
-	nMaxSize += 5000;
+	nMaxSize += nMaxSize / 2;
 	cp = (char *) realloc (expr, nMaxSize + 1);
 	if (!cp)
 	{
@@ -283,8 +283,8 @@ void eval_power (mpz_t prior_n, mpz_t n,char op)
       double p;
       nMax = mpz_get_si(n);
       mpz_set_ui(n,1);
-      getprime (FREE_PRIME_TABLE);  /* free the prime tables, and reinitialize */
-      for (p = 2.0; p <= nMax; p = getprime (p))
+      getprime_clear ();  /* free the prime tables, and reinitialize */
+      for (p = 2.0; p <= nMax; p = getprime ())
 	/* This could be done much more efficiently (bunching mults using smaller "built-ins"), but I am not going to bother for now */
 	mpz_mul_ui(n,n,(unsigned)p);
     }
@@ -296,7 +296,7 @@ void eval_power (mpz_t prior_n, mpz_t n,char op)
       nMax = mpz_get_si(prior_n);
       nStart = mpz_get_ui(n);
       mpz_set_ui(n,1);
-      getprime (FREE_PRIME_TABLE);  /* free the prime tables, and reinitialize */
+      getprime_clear ();  /* free the prime tables, and reinitialize */
       p = getprime (nStart);
       /*printf ("Reduced-primorial  %ld#%ld\n", nMax, nStart);*/
       for (; p <= nMax; p = getprime (p))
@@ -310,7 +310,8 @@ void eval_power (mpz_t prior_n, mpz_t n,char op)
     }
 }
 
-void eval_product (mpz_t prior_n, mpz_t n,char op)
+void
+eval_product (mpz_t prior_n, mpz_t n, char op)
 {
 #if defined (DEBUG_EVALUATOR)
   if ('*'==op || '.'==op || '/'==op || '%'==op)
@@ -322,12 +323,22 @@ void eval_product (mpz_t prior_n, mpz_t n,char op)
       fprintf (stderr, "\n");
     }
 #endif
-  if ('*'==op || '.'==op)
-    mpz_mul(n,prior_n,n);
-  else if ('/'==op)
-    mpz_tdiv_q(n,prior_n,n);
-  else if ('%'==op)
-    mpz_tdiv_r(n,prior_n,n);
+  if ('*' == op || '.' == op)
+    mpz_mul (n, prior_n, n);
+  else if ('/' == op)
+    {
+      mpz_t r;
+      mpz_init (r);
+      mpz_tdiv_qr (n, r, prior_n, n);
+      if (mpz_cmp_ui (r, 0) != 0)
+        {
+          fprintf (stderr, "Parsing Error: inexact division\n");
+          exit (EXIT_FAILURE);
+        }
+      mpz_clear (r);
+    }
+  else if ('%' == op)
+    mpz_tdiv_r (n, prior_n, n);
 }
 
 void eval_sum (mpz_t prior_n, mpz_t n,char op)
@@ -404,8 +415,8 @@ int eval_Phi (mpz_t b, mpz_t n, int ParamCnt)
     }
 
   /* Obtain the factors of B */
-  getprime (FREE_PRIME_TABLE);  /* free the prime tables, and reinitialize */
-  for (p = 2.0; p <= B; p = getprime (p))
+  getprime_clear ();  /* free the prime tables, and reinitialize */
+  for (p = 2.0; p <= B; p = getprime ())
     {
       if (B % (int) p == 0)
 	{

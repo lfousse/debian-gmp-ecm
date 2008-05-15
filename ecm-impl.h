@@ -14,7 +14,7 @@
  
   You should have received a copy of the GNU General Public License along
   with this program; see the file COPYING.  If not, write to the Free
-  Software Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
+  Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
   02111-1307, USA.
 */
 
@@ -77,6 +77,11 @@ extern FILE *ECM_STDOUT, *ECM_STDERR;
 #define ATTRIBUTE_CONST
 #endif
 
+/* Whether we build the polynomials in stage 2 as described in the literature 
+   as products of (x - x_i) (NEGATED_ROOTS 0), or as 
+   (x + x_i) (NEGATED_ROOTS 1) */
+#define NEGATED_ROOTS 0
+
 /* default B2 choice: pow (B1 * METHOD_COST / 6.0, DEFAULT_B2_EXPONENT) */
 #define DEFAULT_B2_EXPONENT 1.43
 #define PM1_COST 1.0 / 6.0
@@ -115,23 +120,9 @@ extern FILE *ECM_STDOUT, *ECM_STDERR;
 #define USE_SHORT_PRODUCT
 #endif
 
-/* If defined, ECM stage 2 uses Montgomery form for computing roots of F,G
-   if S == 1. Very slow right now, as we need an inversion per root */
-/* #define MONT_ROOTS */
-
-/* Use George Woltman's GWNUM library */
-/* Should be defined via -DHAVE_GWNUM by Makefile
-#define HAVE_GWNUM
-*/
-
-#ifdef HAVE_GWNUM
-/* Only Fermat numbers with exponent >= GWTHRESHOLD are multiplied with 
-   Woltman's DWT */
-#define GWTHRESHOLD 1024
-#endif
-
-#if WANT_ASSERT
 #include <assert.h>
+#define ASSERT_ALWAYS(expr)   assert (expr)
+#ifdef WANT_ASSERT
 #define ASSERT(expr)   assert (expr)
 #else
 #define ASSERT(expr)   do {} while (0)
@@ -152,8 +143,6 @@ void tests_memory_set_location (char *, unsigned int);
 #define MPZ_INIT(x) mpz_init(x)
 #define MPZ_INIT2(x,n) mpz_init2(x,n)
 #endif
-
-
 
 /* thresholds */
 #define MPN_MUL_LO_THRESHOLD 32
@@ -195,6 +184,9 @@ void tests_memory_set_location (char *, unsigned int);
 /* OUTPUT_ERROR is for printing error messages */
 #define OUTPUT_ERROR -1
 
+/* Interval length for writing checkpoints in stage 1, in milliseconds */
+#define CHKPNT_PERIOD 600000
+
 typedef mpz_t mpres_t;
 
 typedef mpz_t* listz_t;
@@ -223,6 +215,13 @@ typedef struct
 } __root_params_t;
 typedef __root_params_t root_params_t;
 
+typedef struct
+{
+  unsigned long P, s_1, s_2, l;
+  mpz_t m_1;
+} __faststage2_param_t;
+typedef __faststage2_param_t faststage2_param_t;
+
 #define EC_MONTGOMERY_FORM 0
 #define EC_WEIERSTRASS_FORM 1
 
@@ -235,46 +234,31 @@ typedef struct
   unsigned int dsieve; /* Values not coprime to dsieve are skipped */
   unsigned int rsieve; /* Which residue mod dsieve current .next belongs to */
   int dickson_a;       /* Parameter for Dickson polynomials */
+} progression_params_t;
+
+typedef struct
+{
+  progression_params_t params;
   point *fd;
-#ifdef MONT_ROOTS
-  int form;            /* Montgomery or Weierstrass form */
-  long int i0;         /* i0 as a long int (if it fits) */
-#endif
   unsigned int size_T; /* How many entries T has */
   mpres_t *T;          /* For temp values. FIXME: should go! */
   curve *X;            /* The curve the points are on */
-} __ecm_roots_state;
-typedef __ecm_roots_state ecm_roots_state;
+} ecm_roots_state_t;
 
-/* WARNING: it is important that the order of fields matches that
-   of ecm_roots_state. See comment in pm1.c:pm1_rootsF. */
+
 typedef struct
 {
-  unsigned int size_fd; /* How many entries .fd has, always nr * (S+1) */
-  unsigned int nr;     /* How many separate progressions there are */
-  unsigned int next;   /* From which progression to take the next root */
-  unsigned int S;      /* Degree of the polynomials */
-  unsigned int dsieve; /* Values not coprime to dsieve are skipped */
-  unsigned int rsieve; /* Which residue mod dsieve current .next belongs to */
-  int dickson_a;       /* Parameter for Dickson polynomials */
+  progression_params_t params;
   mpres_t *fd;
   int invtrick;
-} __pm1_roots_state;
-typedef __pm1_roots_state pm1_roots_state;
+} pm1_roots_state_t;
 
 typedef struct
 {
-  unsigned int size_fd; /* How many entries .fd has, always nr * (S+1) */
-  unsigned int nr;     /* How many separate progressions there are */
-  unsigned int next;   /* From which progression to take the next root */
-  unsigned int S;      /* Degree of the polynomials */
-  unsigned int dsieve; /* Values not coprime to dsieve are skipped */
-  unsigned int rsieve; /* Which residue mod dsieve current .next belongs to */
+  progression_params_t params;
   point *fd;           /* for S != 1 */
   mpres_t tmp[4];      /* for S=1 */
-  int dickson_a;       /* Parameter for Dickson polynomials */
-} __pp1_roots_state;
-typedef __pp1_roots_state pp1_roots_state;
+} pp1_roots_state_t;
 
 typedef struct
 {
@@ -286,10 +270,10 @@ typedef __polyz_struct polyz_t[1];
 
 typedef struct 
 {
-  int repr;           /* 0: plain modulus, possibly normalized
-                         1: base 2 number
-                         2: MODMULN
-                         3: REDC representation */
+  int repr;           /* ECM_MOD_MPZ: plain modulus, possibly normalized
+                         ECM_MOD_BASE2: base 2 number
+                         ECM_MOD_MODMULN: MODMULN
+                         ECM_MOD_REDC: REDC representation */
   int bits;           /* in case of a base 2 number, 2^k[+-]1, bits = [+-]k
                          in case of MODMULN or REDC representation, nr. of 
                          bits b so that 2^b > orig_modulus and 
@@ -299,8 +283,11 @@ typedef struct
                          If repr != 1, undefined */
   mp_limb_t Nprim;    /* For MODMULN */
   mpz_t orig_modulus; /* The original modulus */
-  mpz_t aux_modulus;  /* The auxiliary modulus value (i.e. normalized 
-                         modulus, or -1/N (mod 2^bits) for REDC */
+  mpz_t aux_modulus;  /* Used only for MPZ and REDC:
+			 - the auxiliary modulus value (i.e. normalized 
+                           modulus, or -1/N (mod 2^bits) for REDC,
+                         - B^(n + ceil(n/2)) mod N for MPZ,
+  			   where B = 2^GMP_NUMB_BITS */
   mpz_t multiple;     /* The smallest multiple of N that is larger or
 			 equal to 2^bits for REDC/MODMULN */
   mpz_t R2, R3;       /* For MODMULN and REDC, R^2 and R^3 (mod orig_modulus), 
@@ -315,23 +302,49 @@ extern "C" {
 
 /* getprime.c */
 #define getprime __ECM(getprime)
-double   getprime       (double);
+double   getprime       ();
+#define getprime_clear __ECM(getprime_clear)
+void     getprime_clear ();
+#define getprime_seek __ECM(getprime_seek)
+void getprime_seek (double);
 
 /* pm1.c */
 #define pm1_rootsF __ECM(pm1_rootsF)
 int     pm1_rootsF       (mpz_t, listz_t, root_params_t *, unsigned long, 
                           mpres_t *, listz_t, mpmod_t);
 #define pm1_rootsG_init __ECM(pm1_rootsG_init)
-pm1_roots_state* pm1_rootsG_init  (mpres_t *, root_params_t *, mpmod_t);
+pm1_roots_state_t* pm1_rootsG_init  (mpres_t *, root_params_t *, mpmod_t);
 #define pm1_rootsG __ECM(pm1_rootsG)
-int     pm1_rootsG       (mpz_t, listz_t, unsigned long, pm1_roots_state *, 
+int     pm1_rootsG       (mpz_t, listz_t, unsigned long, pm1_roots_state_t *, 
                           listz_t, mpmod_t);
 #define pm1_rootsG_clear __ECM(pm1_rootsG_clear)
-void    pm1_rootsG_clear (pm1_roots_state *, mpmod_t);
+void    pm1_rootsG_clear (pm1_roots_state_t *, mpmod_t);
+
+/* pm1fs2.c */
+#define pm1fs2_memory_use __ECM(pm1fs2_ntt_memory_use)
+size_t  pm1fs2_memory_use (const unsigned long, const mpz_t, const int);
+#define pm1fs2_maxlen __ECM(pm1fs2_maxlen)
+unsigned long pm1fs2_maxlen (const size_t, const mpz_t, const int);
+#define pp1fs2_memory_use __ECM(pp1fs2_ntt_memory_use)
+size_t  pp1fs2_memory_use (const unsigned long, const mpz_t, const int, 
+                           const int);
+#define pp1fs2_maxlen __ECM(pp1fs2_maxlen)
+unsigned long pp1fs2_maxlen (const size_t, const mpz_t, const int, const int);
+#define choose_P __ECM(choose_P)
+long    choose_P (const mpz_t, const mpz_t, const unsigned long,
+                  const unsigned long, faststage2_param_t *, mpz_t, mpz_t,
+                  const int);
+#define pm1fs2 __ECM(pm1fs2)
+int	pm1fs2 (mpz_t, const mpres_t, mpmod_t, const faststage2_param_t *);
+#define pm1fs2_ntt __ECM(pm1fs2_ntt)
+int	pm1fs2_ntt (mpz_t, const mpres_t, mpmod_t, const faststage2_param_t *);
+#define pp1fs2 __ECM(pp1fs2)
+int     pp1fs2 (mpz_t, const mpres_t, mpmod_t, const faststage2_param_t *);
+#define pp1fs2_ntt __ECM(pp1fs2_ntt)
+int     pp1fs2_ntt (mpz_t, const mpres_t, mpmod_t, const faststage2_param_t *,
+                    const int);
 
 /* bestd.c */
-#define eulerphi __ECM(eulerphi)
-unsigned long eulerphi (unsigned long);
 #define bestD __ECM(bestD)
 int     bestD (root_params_t *, unsigned long *, unsigned long *, mpz_t, 
                mpz_t, int, int, double, int, mpmod_t);
@@ -342,24 +355,29 @@ int  choose_S (mpz_t);
 #define add3 __ECM(add3)
 void add3 (mpres_t, mpres_t, mpres_t, mpres_t, mpres_t, mpres_t, mpres_t, 
            mpres_t, mpmod_t, mpres_t, mpres_t, mpres_t);
+#define duplicate __ECM(duplicate)
 void duplicate (mpres_t, mpres_t, mpres_t, mpres_t, mpmod_t, mpres_t, mpres_t,
                 mpres_t, mpres_t);
 
 #define ecm_mul __ECM(ecm_mul)
 void ecm_mul (mpres_t, mpres_t, mpz_t, mpmod_t, mpres_t);
+#define print_B1_B2_poly __ECM(print_B1_B2_poly)
+void print_B1_B2_poly (int, int, double, double, mpz_t, mpz_t, mpz_t, int S,  
+                       mpz_t, int);
+      
 
 /* ecm2.c */
 #define ecm_rootsF __ECM(ecm_rootsF)
 int     ecm_rootsF       (mpz_t, listz_t, root_params_t *, unsigned long, 
                           curve *, mpmod_t);
 #define ecm_rootsG_init __ECM(ecm_rootsG_init)
-ecm_roots_state* ecm_rootsG_init (mpz_t, curve *, root_params_t *, 
-                                  unsigned long, unsigned long, mpmod_t);
+ecm_roots_state_t* ecm_rootsG_init (mpz_t, curve *, root_params_t *, 
+                                    unsigned long, unsigned long, mpmod_t);
 #define ecm_rootsG __ECM(ecm_rootsG)
-int     ecm_rootsG       (mpz_t, listz_t, unsigned long, ecm_roots_state *, 
+int     ecm_rootsG       (mpz_t, listz_t, unsigned long, ecm_roots_state_t *, 
                           mpmod_t);
 #define ecm_rootsG_clear __ECM(ecm_rootsG_clear)
-void    ecm_rootsG_clear (ecm_roots_state *, mpmod_t);
+void    ecm_rootsG_clear (ecm_roots_state_t *, mpmod_t);
 #define ecm_findmatch __ECM(ecm_findmatch)
 long    ecm_findmatch (const unsigned long, root_params_t *, curve *, 
                        mpmod_t, mpz_t);
@@ -374,12 +392,12 @@ void  pp1_mul_prac     (mpres_t, unsigned long, mpmod_t, mpres_t, mpres_t,
 int   pp1_rootsF       (listz_t, root_params_t *, unsigned long, mpres_t *, 
                         listz_t, mpmod_t);
 #define pp1_rootsG __ECM(pp1_rootsG)
-int   pp1_rootsG   (listz_t, unsigned long, pp1_roots_state *, mpmod_t, 
+int   pp1_rootsG   (listz_t, unsigned long, pp1_roots_state_t *, mpmod_t, 
                     mpres_t*);
 #define pp1_rootsG_init __ECM(pp1_rootsG_init)
-pp1_roots_state* pp1_rootsG_init (mpres_t*, root_params_t *, mpmod_t);
+pp1_roots_state_t* pp1_rootsG_init (mpres_t*, root_params_t *, mpmod_t);
 #define pp1_rootsG_clear __ECM(pp1_rootsG_clear)
-void  pp1_rootsG_clear (pp1_roots_state *, mpmod_t);
+void  pp1_rootsG_clear (pp1_roots_state_t *, mpmod_t);
 
 /* stage2.c */
 #define stage2 __ECM(stage2)
@@ -389,9 +407,10 @@ int          stage2     (mpz_t, void *, mpmod_t, unsigned long, unsigned long,
 listz_t init_progression_coeffs (mpz_t, const unsigned long, const unsigned long, 
 				 const unsigned int, const unsigned int, 
 				 const unsigned int, const int);
-#define init_roots_state __ECM(init_roots_state)
-void init_roots_state   (ecm_roots_state *, const int, const unsigned long, 
-			 const unsigned long, const double);
+#define init_roots_params __ECM(init_roots_params)
+void init_roots_params  (progression_params_t *, const int, 
+			 const unsigned long, const unsigned long, 
+			 const double);
 #define memory_use __ECM(memory_use)
 double memory_use (unsigned long, unsigned int, unsigned int, mpmod_t);
 
@@ -429,7 +448,7 @@ void         list_mul_z (listz_t, listz_t, mpz_t, unsigned int, mpz_t);
 #define list_gcd __ECM(list_gcd)
 int          list_gcd   (mpz_t, listz_t, unsigned int, mpz_t);
 #define list_mulup __ECM(list_mulup)
-void          list_mulup (mpz_t, listz_t, unsigned int, mpz_t, mpz_t);
+void          list_mulup (listz_t, unsigned int, mpz_t, mpz_t);
 #define list_zero __ECM(list_zero)
 void         list_zero  (listz_t, unsigned int);
 #define list_mul __ECM(list_mul)
@@ -451,22 +470,20 @@ int       PolyFromRoots_Tree (listz_t, listz_t, unsigned int, listz_t, int,
                          mpz_t, listz_t*, FILE*, unsigned int);
 
 #define ntt_PolyFromRoots __ECM(ntt_PolyFromRoots)
-void	  ntt_PolyFromRoots (listz_t, listz_t, unsigned long, listz_t,
-		mpzspm_t);
+void	  ntt_PolyFromRoots (mpzv_t, mpzv_t, spv_size_t, mpzv_t, mpzspm_t);
 #define ntt_PolyFromRoots_Tree __ECM(ntt_PolyFromRoots_Tree)
-int       ntt_PolyFromRoots_Tree (listz_t, listz_t, unsigned long, listz_t,
-                         int, mpzspm_t, listz_t *, FILE *);
+int       ntt_PolyFromRoots_Tree (mpzv_t, mpzv_t, spv_size_t, mpzv_t,
+                         int, mpzspm_t, mpzv_t *, FILE *);
 #define ntt_polyevalT __ECM(ntt_polyevalT)
 int  ntt_polyevalT (mpzv_t, spv_size_t, mpzv_t *, mpzv_t, mpzspv_t,
 		mpzspm_t, char *);
 #define ntt_mul __ECM(ntt_mul)
 void  ntt_mul (mpzv_t, mpzv_t, mpzv_t, spv_size_t, mpzv_t, int, mpzspm_t);
 #define ntt_PrerevertDivision __ECM(ntt_PrerevertDivision)
-void  ntt_PrerevertDivision (listz_t, listz_t, listz_t, mpzspv_t, mpzspv_t,
-		unsigned long, listz_t, mpzspm_t);
+void  ntt_PrerevertDivision (mpzv_t, mpzv_t, mpzv_t, mpzspv_t, mpzspv_t,
+		spv_size_t, mpzv_t, mpzspm_t);
 #define ntt_PolyInvert __ECM(ntt_PolyInvert)
-void	     ntt_PolyInvert (listz_t, listz_t, unsigned long, listz_t,
-		mpzspm_t);
+void	     ntt_PolyInvert (mpzv_t, mpzv_t, spv_size_t, mpzv_t, mpzspm_t);
 
 #define PrerevertDivision __ECM(PrerevertDivision)
 int   PrerevertDivision (listz_t, listz_t, listz_t, unsigned int, listz_t,
@@ -508,62 +525,69 @@ unsigned int ks_wrapmul (listz_t, unsigned int, listz_t, unsigned int,
 
 /* mpmod.c */
 #define isbase2 __ECM(isbase2)
-int isbase2 (mpz_t, double);
+int isbase2 (const mpz_t, const double);
 #define mpmod_init __ECM(mpmod_init)
-void mpmod_init (mpmod_t, mpz_t, int);
+int mpmod_init (mpmod_t, const mpz_t, int);
 #define mpmod_init_MPZ __ECM(mpmod_init_MPZ)
-void mpmod_init_MPZ (mpmod_t, mpz_t);
+void mpmod_init_MPZ (mpmod_t, const mpz_t);
 #define mpmod_init_BASE2 __ECM(mpmod_init_BASE2)
-int mpmod_init_BASE2 (mpmod_t, int, mpz_t);
+int mpmod_init_BASE2 (mpmod_t, const int, const mpz_t);
 #define mpmod_init_MODMULN __ECM(mpmod_init_MODMULN)
-void mpmod_init_MODMULN (mpmod_t, mpz_t);
+void mpmod_init_MODMULN (mpmod_t, const mpz_t);
 #define mpmod_init_REDC __ECM(mpmod_init_REDC)
-void mpmod_init_REDC (mpmod_t, mpz_t);
+void mpmod_init_REDC (mpmod_t, const mpz_t);
 #define mpmod_clear __ECM(mpmod_clear)
 void mpmod_clear (mpmod_t);
+#define mpmod_copy __ECM(mpmod_copy)
+void mpmod_copy (mpmod_t, const mpmod_t);
 #define mpmod_pausegw __ECM(mpmod_pausegw)
-void mpmod_pausegw (mpmod_t modulus);
+void mpmod_pausegw (const mpmod_t modulus);
 #define mpmod_contgw __ECM(mpmod_contgw)
-void mpmod_contgw (mpmod_t modulus);
+void mpmod_contgw (const mpmod_t modulus);
 #define mpres_pow __ECM(mpres_pow)
-void mpres_pow (mpres_t, mpres_t, mpz_t, mpmod_t);
+void mpres_pow (mpres_t, const mpres_t, const mpz_t, mpmod_t);
 #define mpres_ui_pow __ECM(mpres_ui_pow)
-void mpres_ui_pow (mpres_t, unsigned int, mpres_t, mpmod_t);
+void mpres_ui_pow (mpres_t, const unsigned long, const mpres_t, mpmod_t);
 #define mpres_mul __ECM(mpres_mul)
-void mpres_mul (mpres_t, mpres_t, mpres_t, mpmod_t);
+void mpres_mul (mpres_t, const mpres_t, const mpres_t, mpmod_t);
+#define mpres_mul_z_to_z __ECM(mpres_mul_z_to_z)
+void mpres_mul_z_to_z (mpz_t, const mpres_t, const mpz_t, mpmod_t);
+#define mpres_set_z_for_gcd __ECM(mpres_set_z_for_gcd)
+void mpres_set_z_for_gcd (mpres_t, const mpz_t, mpmod_t);
 #define mpres_div_2exp __ECM(mpres_div_2exp)
-void mpres_div_2exp (mpres_t, mpres_t, unsigned int, mpmod_t);
+void mpres_div_2exp (mpres_t, const mpres_t, const unsigned int, mpmod_t);
 #define mpres_add_ui __ECM(mpres_add_ui)
-void mpres_add_ui (mpres_t, mpres_t, unsigned int, mpmod_t);
+void mpres_add_ui (mpres_t, const mpres_t, const unsigned long, mpmod_t);
 #define mpres_add __ECM(mpres_add)
-void mpres_add (mpres_t, mpres_t, mpres_t, mpmod_t);
+void mpres_add (mpres_t, const mpres_t, const mpres_t, mpmod_t);
 #define mpres_sub_ui __ECM(mpres_sub_ui)
-void mpres_sub_ui (mpres_t, mpres_t, unsigned int, mpmod_t);
+void mpres_sub_ui (mpres_t, const mpres_t, const unsigned long, mpmod_t);
 #define mpres_sub __ECM(mpres_sub)
-void mpres_sub (mpres_t, mpres_t, mpres_t, mpmod_t);
+void mpres_sub (mpres_t, const mpres_t, const mpres_t, mpmod_t);
 #define mpres_set_z __ECM(mpres_set_z)
-void mpres_set_z (mpres_t, mpz_t, mpmod_t);
+void mpres_set_z (mpres_t, const mpz_t, mpmod_t);
 #define mpres_get_z __ECM(mpres_get_z)
-void mpres_get_z (mpz_t, mpres_t, mpmod_t);
+void mpres_get_z (mpz_t, const mpres_t, mpmod_t);
 #define mpres_set_ui __ECM(mpres_set_ui)
-void mpres_set_ui (mpres_t, unsigned int, mpmod_t);
+void mpres_set_ui (mpres_t, const unsigned long, mpmod_t);
 #define mpres_init __ECM(mpres_init)
-void mpres_init (mpres_t, mpmod_t);
+void mpres_init (mpres_t, const mpmod_t);
+#define mpres_clear __ECM(mpres_clear)
+void mpres_clear (mpres_t, const mpmod_t);
 #define mpres_realloc __ECM(mpres_realloc)
-void mpres_realloc (mpres_t, mpmod_t);
+void mpres_realloc (mpres_t, const mpmod_t);
 #define mpres_mul_ui __ECM(mpres_mul_ui)
-void mpres_mul_ui (mpres_t, mpres_t, unsigned int, mpmod_t);
+void mpres_mul_ui (mpres_t, const mpres_t, const unsigned long, mpmod_t);
 #define mpres_neg __ECM(mpres_neg)
-void mpres_neg (mpres_t, mpres_t, mpmod_t);
+void mpres_neg (mpres_t, const mpres_t, mpmod_t);
 #define mpres_invert __ECM(mpres_invert)
-int  mpres_invert (mpres_t, mpres_t, mpmod_t);
+int  mpres_invert (mpres_t, const mpres_t, mpmod_t);
 #define mpres_gcd __ECM(mpres_gcd)
-void mpres_gcd (mpz_t, mpres_t, mpmod_t);
+void mpres_gcd (mpz_t, const mpres_t, const mpmod_t);
 #define mpres_out_str __ECM(mpres_out_str)
-void mpres_out_str (FILE *, unsigned int, mpres_t, mpmod_t);
+void mpres_out_str (FILE *, const unsigned int, const mpres_t, mpmod_t);
 #define mpres_is_zero __ECM(mpres_is_zero)
-int  mpres_is_zero (mpres_t, mpmod_t);
-#define mpres_clear(a,n) mpz_clear (a)
+int  mpres_is_zero (const mpres_t, mpmod_t);
 #define mpres_set(a,b,n) mpz_set (a, b)
 #define mpres_swap(a,b,n) mpz_swap (a, b)
 
@@ -575,7 +599,7 @@ void ecm_mul_lo_basecase (mp_ptr, mp_srcptr, mp_srcptr, mp_size_t);
 	
 /* median.c */
 #define TMulGen __ECM(TMulGen)
-unsigned int
+int
 TMulGen (listz_t, unsigned int, listz_t, unsigned int, listz_t, 
          unsigned int, listz_t, mpz_t);
 #define TMulGen_space __ECM(TMulGen_space)
@@ -590,7 +614,7 @@ unsigned int F_mul (mpz_t *, mpz_t *, mpz_t *, unsigned int, int,
                     unsigned int, mpz_t *);
 #define F_mul_trans __ECM(F_mul_trans)
 unsigned int F_mul_trans (mpz_t *, mpz_t *, mpz_t *, unsigned int,
-                          unsigned int, mpz_t *);
+                          unsigned int, unsigned int, mpz_t *);
 #define F_clear __ECM(F_clear)
 void F_clear ();
 
@@ -601,16 +625,18 @@ void   rhoinit (int, int);
 double ecmprob (double, double, double, double, int);
 
 /* auxlib.c */
-#define gcd __ECM(gcd)
-unsigned int gcd (unsigned int, unsigned int);
+#define mpz_add_si __ECM(mpz_add_si)
+void         mpz_add_si (mpz_t, mpz_t, long);
 #define mpz_sub_si __ECM(mpz_sub_si)
-void         mpz_sub_si (mpz_t, mpz_t, int);
+void         mpz_sub_si (mpz_t, mpz_t, long);
 #define mpz_divby3_1op __ECM(mpz_divby3_1op)
 void         mpz_divby3_1op (mpz_t);
-#define ceil_log2 __ECM(ceil_log2)
-unsigned int ceil_log2  (unsigned long);
+#define double_to_size __ECM(double_to_size)
+size_t   double_to_size (double d);
 #define cputime __ECM(cputime)
 long         cputime    (void);
+#define realtime __ECM(realtime)
+long         realtime    (void);
 #define elltime __ECM(elltime)
 long         elltime    (long, long);
 #define test_verbose __ECM(test_verbose)
@@ -623,6 +649,22 @@ void         set_verbose (int);
 int          inc_verbose (void);
 #define outputf __ECM(outputf)
 int          outputf (int, char *, ...);
+#define writechkfile __ECM(writechkfile)
+void writechkfile (char *, int, double, mpmod_t, mpres_t, mpres_t, mpres_t);
+
+/* auxarith.c */
+#define gcd __ECM(gcd)
+unsigned long gcd (unsigned long, unsigned long);
+#define eulerphi __ECM(eulerphi)
+unsigned long eulerphi (unsigned long);
+#define ceil_log2 __ECM(ceil_log2)
+unsigned int  ceil_log2  (unsigned long);
+#define is_prime __ECM(is_prime)
+int           is_prime (const unsigned long);
+#define next_prime __ECM(next_prime)
+unsigned long next_prime (const unsigned long);
+#define find_factor __ECM(find_factor)
+unsigned long find_factor (const unsigned long);
 
 /* random.c */
 #define pp1_random_seed __ECM(pp1_random_seed)
@@ -634,9 +676,6 @@ unsigned int get_random_ui (void);
 
 /* Fgw.c */
 #ifdef HAVE_GWNUM
-void Fgwinit (int);
-void Fgwclear (void);
-void Fgwmul (mpz_t, mpz_t, mpz_t);
 int  gw_ecm_stage1 (mpz_t, curve *, mpmod_t, double, double *, mpz_t);
 #endif
 
@@ -644,6 +683,65 @@ int  gw_ecm_stage1 (mpz_t, curve *, mpmod_t, double, double *, mpz_t);
 #ifdef NATIVE_REDC
 void ecm_redc3 (mp_ptr, mp_srcptr, mp_size_t, mp_limb_t);
 #endif
+
+/* mul_fft.h */
+#define mpn_mul_fft __ECM(mpn_mul_fft)
+int  mpn_mul_fft (mp_ptr, mp_size_t, mp_srcptr, mp_size_t, mp_srcptr, 
+                        mp_size_t, int);
+#define mpn_mul_fft_full __ECM(mpn_mul_fft_full)
+void mpn_mul_fft_full (mp_ptr, mp_srcptr, mp_size_t, mp_srcptr, 
+                             mp_size_t);
+#define mpn_fft_best_k __ECM(mpn_fft_best_k)
+int  mpn_fft_best_k (mp_size_t, int);
+#define mpn_fft_next_size __ECM(mpn_fft_next_size)
+mp_size_t mpn_fft_next_size (mp_size_t, int);
+
+
+/* sets_long.c */
+/* A set of long ints */
+typedef struct {
+  unsigned long card;
+  long elem[1];
+} set_long_t;
+
+/* A set of sets of long ints */
+typedef struct {
+  unsigned long nr;
+  set_long_t sets[1];
+} sets_long_t;
+
+#define quicksort_long __ECM(quicksort_long)
+void          quicksort_long (long *, unsigned long);
+#define sets_print __ECM(sets_print)
+void          sets_print (const int, sets_long_t *);
+#define sets_sumset __ECM(sets_sumset)
+void          sets_sumset (set_long_t *, const sets_long_t *);
+#define sets_sumset_minmax __ECM(sets_sumset_minmax)
+void          sets_sumset_minmax (mpz_t, const sets_long_t *, const int);
+#define sets_extract __ECM(sets_extract)
+void          sets_extract (sets_long_t *, size_t *, sets_long_t *, 
+                            const unsigned long);
+#define sets_get_factored_sorted __ECM(sets_get_factored_sorted)
+sets_long_t *  sets_get_factored_sorted (const unsigned long);
+
+/* Return the size in bytes of a set of cardinality c */
+#define set_sizeof __ECM(set_sizeof)
+ATTRIBUTE_UNUSED
+static size_t 
+set_sizeof (const unsigned long c)
+{
+  return sizeof (long) + (size_t) c * sizeof (unsigned long);
+}
+
+
+/* Return pointer to the next set in "*sets" */
+ATTRIBUTE_UNUSED
+static set_long_t *
+sets_nextset (const set_long_t *sets)
+{
+  return (set_long_t *) ((char *)sets + sizeof(unsigned long) + 
+                         sets->card * sizeof(long));
+}
 
 
 #if defined (__cplusplus)

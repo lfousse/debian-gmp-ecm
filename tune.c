@@ -1,6 +1,7 @@
 /* Tune program.
 
-  Copyright 2003, 2005 Paul Zimmermann, Alexander Kruppa, Dave Newman.
+  Copyright 2003, 2005, 2006, 2008 Paul Zimmermann, Alexander Kruppa, 
+  Dave Newman and Jason Papadopoulos.
 
   This program is free software; you can redistribute it and/or modify it
   under the terms of the GNU General Public License as published by the
@@ -14,7 +15,7 @@
 
   You should have received a copy of the GNU General Public License along
   with this program; see the file COPYING.  If not, write to the Free
-  Software Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
+  Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
   02111-1307, USA.
 */
 
@@ -26,8 +27,8 @@
 /* 250ms, we (probably) don't need any more precision */
 #define GRANULARITY 250
 #define MAX_LOG2_LEN 18 /* 2 * 131072 */ 
-#define MAX_LEN (1 << MAX_LOG2_LEN)
-#define MAX_LOG2_MPZSPV_NORMALISE_STRIDE (MIN (12, MAX_LOG2_LEN))
+#define MAX_LEN (1U << max_log2_len)
+#define MAX_LOG2_MPZSPV_NORMALISE_STRIDE (MIN (12, max_log2_len))
 #define M_str "95209938255048826235189575712705128366296557149606415206280987204268594538412191641776798249266895999715600261737863698825644292938050707507901970225804581"
 
 #define ELAPSED elltime (st, cputime () )
@@ -36,7 +37,7 @@
 #define TUNE_FUNC_LOOP(x) do { st = cputime (); do { x; k++; } \
     while (ELAPSED < GRANULARITY); st = ELAPSED; } while (0)
 #define TUNE_FUNC_END(x) if (tune_verbose) \
-  fprintf (stderr, #x "(%2zd) = %f\n", n, (double) k / (double) st); \
+  fprintf (stderr, #x "(%2ld) = %f\n", (long)n, (double) k / (double) st); \
   return (double) k / (double) st; }
 
 
@@ -59,6 +60,7 @@ spm_t spm;
 spv_t spv;
 mpzspv_t mpzspv;
 int tune_verbose;
+int max_log2_len = MAX_LOG2_LEN;
 
 size_t MPZMOD_THRESHOLD;
 size_t REDC_THRESHOLD;
@@ -152,31 +154,27 @@ tune_mpres_mul_redc (size_t n)
 
 TUNE_FUNC_START (tune_spv_ntt_gfp_dif_recursive)
   SPV_NTT_GFP_DIF_RECURSIVE_THRESHOLD = 1 << n;
-  TUNE_FUNC_LOOP (spv_ntt_gfp_dif (spv, 1 << n, spm->sp, spm->mul_c,
-	spm->prim_root));
+  TUNE_FUNC_LOOP (spv_ntt_gfp_dif (spv, n, spm));
 TUNE_FUNC_END (tune_spv_ntt_gfp_dif_recursive)
 
 
 TUNE_FUNC_START (tune_spv_ntt_gfp_dif_unrolled)
   SPV_NTT_GFP_DIF_RECURSIVE_THRESHOLD = ULONG_MAX;
-  TUNE_FUNC_LOOP (spv_ntt_gfp_dif (spv, 1 << n, spm->sp, spm->mul_c,
-	spm->prim_root));
+  TUNE_FUNC_LOOP (spv_ntt_gfp_dif (spv, n, spm));
 TUNE_FUNC_END (tune_spv_ntt_gfp_dif_unrolled)
 
 
 TUNE_FUNC_START (tune_spv_ntt_gfp_dit_recursive)
   SPV_NTT_GFP_DIT_RECURSIVE_THRESHOLD = 1 << n;
 
-  TUNE_FUNC_LOOP (spv_ntt_gfp_dit (spv, 1 << n, spm->sp, spm->mul_c,
-	spm->prim_root));
+  TUNE_FUNC_LOOP (spv_ntt_gfp_dit (spv, n, spm));
 TUNE_FUNC_END (tune_spv_ntt_gfp_dit_recursive)
 
 
 TUNE_FUNC_START (tune_spv_ntt_gfp_dit_unrolled)
   SPV_NTT_GFP_DIT_RECURSIVE_THRESHOLD = ULONG_MAX;
 
-  TUNE_FUNC_LOOP (spv_ntt_gfp_dit (spv, 1 << n, spm->sp, spm->mul_c,
-	spm->prim_root));
+  TUNE_FUNC_LOOP (spv_ntt_gfp_dit (spv, n, spm));
 TUNE_FUNC_END (tune_spv_ntt_gfp_dit_unrolled)
 
 
@@ -361,18 +359,37 @@ print_timings (double (*f0)(size_t), double (*f1)(size_t),
     {
       f0_n = (f0)(n);
       f1_n = (f1)(n);
-      printf ("n=%2zd: %8.2f %8.2f (f%d)\n",
-          n, f0_n, f1_n, (f0_n <= f1_n) ? 1 : 0);
+      printf ("n=%2ld: %8.2f %8.2f (f%d)\n",
+          (long) n, f0_n, f1_n, (f0_n <= f1_n) ? 1 : 0);
     }
 }
 
-int main (int argc, char **argv)
+int
+main (int argc, char **argv)
 {
   spv_size_t i;
   unsigned long b;
 
-  if (argc > 1 && argv[1][0] == '-' && argv[1][1] == 'v')
-    tune_verbose = 1;
+  while (argc > 1)
+    {
+      if (strcmp (argv[1], "-v") == 0)
+        {
+          tune_verbose = 1;
+          argc --;
+          argv ++;
+        }
+      else if (argc > 2 && strcmp (argv[1], "-max_log2_len") == 0)
+        {
+          max_log2_len = atoi (argv[2]);
+          argc -= 2;
+          argv += 2;
+        }
+      else
+        {
+          fprintf (stderr, "Usage: tune [-v] [-max_log2_len nnn]\n");
+          exit (1);
+        }
+    }
   
   gmp_randinit_default (gmp_randstate);
   mpz_init_set_str (M, M_str, 10);
@@ -426,37 +443,37 @@ int main (int argc, char **argv)
 	  
   SPV_NTT_GFP_DIF_RECURSIVE_THRESHOLD = 1 << crossover
       (tune_spv_ntt_gfp_dif_unrolled, tune_spv_ntt_gfp_dif_recursive,
-	  1, MAX_LOG2_LEN);
+	  1, max_log2_len);
 
   printf ("#define SPV_NTT_GFP_DIF_RECURSIVE_THRESHOLD %lu\n",
       (unsigned long) SPV_NTT_GFP_DIF_RECURSIVE_THRESHOLD);
    
   SPV_NTT_GFP_DIT_RECURSIVE_THRESHOLD = 1 << crossover
       (tune_spv_ntt_gfp_dit_unrolled, tune_spv_ntt_gfp_dit_recursive,
-	  1, MAX_LOG2_LEN);
+	  1, max_log2_len);
 
   printf ("#define SPV_NTT_GFP_DIT_RECURSIVE_THRESHOLD %lu\n",
       (unsigned long) SPV_NTT_GFP_DIT_RECURSIVE_THRESHOLD);
   
   MUL_NTT_THRESHOLD = 1 << crossover2 (tune_list_mul, tune_ntt_mul, 1,
-      MAX_LOG2_LEN, 2);
+      max_log2_len, 2);
 
   printf ("#define MUL_NTT_THRESHOLD %lu\n", (unsigned long) MUL_NTT_THRESHOLD);
 
   PREREVERTDIVISION_NTT_THRESHOLD = 1 << crossover2 (tune_PrerevertDivision,
-      tune_ntt_PrerevertDivision, 1, MAX_LOG2_LEN, 2);
+      tune_ntt_PrerevertDivision, 1, max_log2_len, 2);
 
   printf ("#define PREREVERTDIVISION_NTT_THRESHOLD %lu\n",
       (unsigned long) PREREVERTDIVISION_NTT_THRESHOLD);
 
   POLYINVERT_NTT_THRESHOLD = 1 << crossover (tune_PolyInvert,
-      tune_ntt_PolyInvert, 1, MAX_LOG2_LEN);
+      tune_ntt_PolyInvert, 1, max_log2_len);
 
   printf ("#define POLYINVERT_NTT_THRESHOLD %lu\n", 
       (unsigned long) POLYINVERT_NTT_THRESHOLD);
   
   POLYEVALT_NTT_THRESHOLD = 1 << crossover (tune_polyevalT,
-      tune_ntt_polyevalT, 1, MAX_LOG2_LEN);
+      tune_ntt_polyevalT, 1, max_log2_len);
 
   printf ("#define POLYEVALT_NTT_THRESHOLD %lu\n", 
       (unsigned long) POLYEVALT_NTT_THRESHOLD);

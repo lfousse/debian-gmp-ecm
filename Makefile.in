@@ -39,15 +39,17 @@ noinst_PROGRAMS = tune$(EXEEXT) ecmfactor$(EXEEXT)
 @MEMORY_DEBUG_TRUE@am__append_1 = memory.c
 @MEMORY_DEBUG_TRUE@am__append_2 = memory.c
 @WITH_GWNUM_TRUE@am__append_3 = Fgw.c
-@WITH_GWNUM_FALSE@ecm_DEPENDENCIES = libecm.a
-@MAKE_MANPAGE_TRUE@am__append_4 = ecm.1
+@WITH_GWNUM_FALSE@ecm_DEPENDENCIES = libecm.la
+@WITH_GWNUM_TRUE@am__append_4 = -Wl,gwdata.ld
+@MAKE_MANPAGE_TRUE@am__append_5 = ecm.1
 subdir = .
 SUBDIRS =
-DIST_COMMON = README $(am__configure_deps) $(include_HEADERS) \
-	$(noinst_HEADERS) $(srcdir)/Makefile.am $(srcdir)/Makefile.in \
-	$(srcdir)/config.h.in $(top_srcdir)/configure AUTHORS COPYING \
-	COPYING.LIB ChangeLog INSTALL NEWS TODO compile config.guess \
-	config.sub depcomp install-sh missing
+DIST_COMMON = README $(am__configure_deps) $(dist_man_MANS) \
+	$(include_HEADERS) $(noinst_HEADERS) $(srcdir)/Makefile.am \
+	$(srcdir)/Makefile.in $(srcdir)/config.h.in \
+	$(top_srcdir)/configure AUTHORS COPYING COPYING.LIB ChangeLog \
+	INSTALL NEWS TODO compile config.guess config.sub depcomp \
+	install-sh ltmain.sh missing
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/acinclude.m4 \
 	$(top_srcdir)/configure.in
@@ -66,41 +68,36 @@ am__vpath_adj = case $$p in \
 am__strip_dir = `echo $$p | sed -e 's|^.*/||'`;
 am__installdirs = "$(DESTDIR)$(libdir)" "$(DESTDIR)$(bindir)" \
 	"$(DESTDIR)$(man1dir)" "$(DESTDIR)$(includedir)"
-libLIBRARIES_INSTALL = $(INSTALL_DATA)
-LIBRARIES = $(lib_LIBRARIES)
-AR = ar
-ARFLAGS = cru
-libecm_a_AR = $(AR) $(ARFLAGS)
-libecm_a_LIBADD =
-am__libecm_a_SOURCES_DIST = ecm.c ecm2.c pm1.c pp1.c getprime.c \
+libLTLIBRARIES_INSTALL = $(INSTALL)
+LTLIBRARIES = $(lib_LTLIBRARIES)
+libecm_la_LIBADD =
+am__libecm_la_SOURCES_DIST = ecm.c ecm2.c pm1.c pp1.c getprime.c \
 	listz.c lucas.c stage2.c toomcook.c mpmod.c mul_lo.c \
 	polyeval.c median.c schoen_strass.c ks-multiply.c rho.c \
 	bestd.c auxlib.c random.c factor.c sp.c spv.c spm.c mpzspm.c \
-	mpzspv.c ntt_gfp.c ecm_ntt.c memory.c Fgw.c
-@MEMORY_DEBUG_TRUE@am__objects_1 = memory.$(OBJEXT)
-@WITH_GWNUM_TRUE@am__objects_2 = Fgw.$(OBJEXT)
-am_libecm_a_OBJECTS = ecm.$(OBJEXT) ecm2.$(OBJEXT) pm1.$(OBJEXT) \
-	pp1.$(OBJEXT) getprime.$(OBJEXT) listz.$(OBJEXT) \
-	lucas.$(OBJEXT) stage2.$(OBJEXT) toomcook.$(OBJEXT) \
-	mpmod.$(OBJEXT) mul_lo.$(OBJEXT) polyeval.$(OBJEXT) \
-	median.$(OBJEXT) schoen_strass.$(OBJEXT) ks-multiply.$(OBJEXT) \
-	rho.$(OBJEXT) bestd.$(OBJEXT) auxlib.$(OBJEXT) \
-	random.$(OBJEXT) factor.$(OBJEXT) sp.$(OBJEXT) spv.$(OBJEXT) \
-	spm.$(OBJEXT) mpzspm.$(OBJEXT) mpzspv.$(OBJEXT) \
-	ntt_gfp.$(OBJEXT) ecm_ntt.$(OBJEXT) $(am__objects_1) \
-	$(am__objects_2)
-@ENABLE_ASM_REDC_TRUE@nodist_libecm_a_OBJECTS = redc.$(OBJEXT) \
-@ENABLE_ASM_REDC_TRUE@	mulredc1.$(OBJEXT) mulredc2.$(OBJEXT) \
-@ENABLE_ASM_REDC_TRUE@	mulredc3.$(OBJEXT) mulredc4.$(OBJEXT) \
-@ENABLE_ASM_REDC_TRUE@	mulredc5.$(OBJEXT) mulredc6.$(OBJEXT) \
-@ENABLE_ASM_REDC_TRUE@	mulredc7.$(OBJEXT) mulredc8.$(OBJEXT) \
-@ENABLE_ASM_REDC_TRUE@	mulredc9.$(OBJEXT) mulredc10.$(OBJEXT) \
-@ENABLE_ASM_REDC_TRUE@	mulredc11.$(OBJEXT) mulredc12.$(OBJEXT) \
-@ENABLE_ASM_REDC_TRUE@	mulredc13.$(OBJEXT) mulredc14.$(OBJEXT) \
-@ENABLE_ASM_REDC_TRUE@	mulredc15.$(OBJEXT) mulredc16.$(OBJEXT) \
-@ENABLE_ASM_REDC_TRUE@	mulredc17.$(OBJEXT) mulredc18.$(OBJEXT) \
-@ENABLE_ASM_REDC_TRUE@	mulredc19.$(OBJEXT) mulredc20.$(OBJEXT)
-libecm_a_OBJECTS = $(am_libecm_a_OBJECTS) $(nodist_libecm_a_OBJECTS)
+	mpzspv.c ntt_gfp.c ecm_ntt.c pm1fs2.c mul_fft.c sets_long.c \
+	auxarith.c memory.c Fgw.c
+@MEMORY_DEBUG_TRUE@am__objects_1 = memory.lo
+@WITH_GWNUM_TRUE@am__objects_2 = Fgw.lo
+am_libecm_la_OBJECTS = ecm.lo ecm2.lo pm1.lo pp1.lo getprime.lo \
+	listz.lo lucas.lo stage2.lo toomcook.lo mpmod.lo mul_lo.lo \
+	polyeval.lo median.lo schoen_strass.lo ks-multiply.lo rho.lo \
+	bestd.lo auxlib.lo random.lo factor.lo sp.lo spv.lo spm.lo \
+	mpzspm.lo mpzspv.lo ntt_gfp.lo ecm_ntt.lo pm1fs2.lo mul_fft.lo \
+	sets_long.lo auxarith.lo $(am__objects_1) $(am__objects_2)
+@ENABLE_ASM_REDC_TRUE@nodist_libecm_la_OBJECTS = redc.lo mulredc1.lo \
+@ENABLE_ASM_REDC_TRUE@	mulredc2.lo mulredc3.lo mulredc4.lo \
+@ENABLE_ASM_REDC_TRUE@	mulredc5.lo mulredc6.lo mulredc7.lo \
+@ENABLE_ASM_REDC_TRUE@	mulredc8.lo mulredc9.lo mulredc10.lo \
+@ENABLE_ASM_REDC_TRUE@	mulredc11.lo mulredc12.lo mulredc13.lo \
+@ENABLE_ASM_REDC_TRUE@	mulredc14.lo mulredc15.lo mulredc16.lo \
+@ENABLE_ASM_REDC_TRUE@	mulredc17.lo mulredc18.lo mulredc19.lo \
+@ENABLE_ASM_REDC_TRUE@	mulredc20.lo
+libecm_la_OBJECTS = $(am_libecm_la_OBJECTS) \
+	$(nodist_libecm_la_OBJECTS)
+libecm_la_LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) \
+	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
+	$(libecm_la_LDFLAGS) $(LDFLAGS) -o $@
 binPROGRAMS_INSTALL = $(INSTALL_PROGRAM)
 PROGRAMS = $(bin_PROGRAMS) $(noinst_PROGRAMS)
 am_ecm_OBJECTS = ecm-auxi.$(OBJEXT) ecm-b1_ainc.$(OBJEXT) \
@@ -109,16 +106,17 @@ am_ecm_OBJECTS = ecm-auxi.$(OBJEXT) ecm-b1_ainc.$(OBJEXT) \
 	ecm-getprime.$(OBJEXT)
 ecm_OBJECTS = $(am_ecm_OBJECTS)
 ecm_LDADD = $(LDADD)
-ecm_LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(ecm_LDFLAGS) $(LDFLAGS) -o \
-	$@
+ecm_LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) \
+	--mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(ecm_LDFLAGS) \
+	$(LDFLAGS) -o $@
 am_ecmfactor_OBJECTS = ecmfactor.$(OBJEXT)
 ecmfactor_OBJECTS = $(am_ecmfactor_OBJECTS)
 ecmfactor_LDADD = $(LDADD)
-ecmfactor_DEPENDENCIES = libecm.a
+ecmfactor_DEPENDENCIES = libecm.la
 am__tune_SOURCES_DIST = mpmod.c tune.c mul_lo.c listz.c auxlib.c \
 	ks-multiply.c toomcook.c schoen_strass.c polyeval.c median.c \
 	ecm_ntt.c ntt_gfp.c mpzspv.c mpzspm.c sp.c spv.c spm.c \
-	random.c memory.c
+	random.c mul_fft.c auxarith.c memory.c
 @MEMORY_DEBUG_TRUE@am__objects_3 = tune-memory.$(OBJEXT)
 am_tune_OBJECTS = tune-mpmod.$(OBJEXT) tune-tune.$(OBJEXT) \
 	tune-mul_lo.$(OBJEXT) tune-listz.$(OBJEXT) \
@@ -128,31 +126,40 @@ am_tune_OBJECTS = tune-mpmod.$(OBJEXT) tune-tune.$(OBJEXT) \
 	tune-ecm_ntt.$(OBJEXT) tune-ntt_gfp.$(OBJEXT) \
 	tune-mpzspv.$(OBJEXT) tune-mpzspm.$(OBJEXT) tune-sp.$(OBJEXT) \
 	tune-spv.$(OBJEXT) tune-spm.$(OBJEXT) tune-random.$(OBJEXT) \
+	tune-mul_fft.$(OBJEXT) tune-auxarith.$(OBJEXT) \
 	$(am__objects_3)
-@ENABLE_ASM_REDC_TRUE@nodist_tune_OBJECTS = redc.$(OBJEXT) \
-@ENABLE_ASM_REDC_TRUE@	mulredc1.$(OBJEXT) mulredc2.$(OBJEXT) \
-@ENABLE_ASM_REDC_TRUE@	mulredc3.$(OBJEXT) mulredc4.$(OBJEXT) \
-@ENABLE_ASM_REDC_TRUE@	mulredc5.$(OBJEXT) mulredc6.$(OBJEXT) \
-@ENABLE_ASM_REDC_TRUE@	mulredc7.$(OBJEXT) mulredc8.$(OBJEXT) \
-@ENABLE_ASM_REDC_TRUE@	mulredc9.$(OBJEXT) mulredc10.$(OBJEXT) \
-@ENABLE_ASM_REDC_TRUE@	mulredc11.$(OBJEXT) mulredc12.$(OBJEXT) \
-@ENABLE_ASM_REDC_TRUE@	mulredc13.$(OBJEXT) mulredc14.$(OBJEXT) \
-@ENABLE_ASM_REDC_TRUE@	mulredc15.$(OBJEXT) mulredc16.$(OBJEXT) \
-@ENABLE_ASM_REDC_TRUE@	mulredc17.$(OBJEXT) mulredc18.$(OBJEXT) \
-@ENABLE_ASM_REDC_TRUE@	mulredc19.$(OBJEXT) mulredc20.$(OBJEXT)
-tune_OBJECTS = $(am_tune_OBJECTS) $(nodist_tune_OBJECTS)
-tune_DEPENDENCIES =
+tune_OBJECTS = $(am_tune_OBJECTS)
+@ENABLE_ASM_REDC_TRUE@tune_DEPENDENCIES = redc.lo mulredc1.o \
+@ENABLE_ASM_REDC_TRUE@	mulredc2.o mulredc3.o mulredc4.o \
+@ENABLE_ASM_REDC_TRUE@	mulredc5.o mulredc6.o mulredc7.o \
+@ENABLE_ASM_REDC_TRUE@	mulredc8.o mulredc9.o mulredc10.o \
+@ENABLE_ASM_REDC_TRUE@	mulredc11.o mulredc12.o mulredc13.o \
+@ENABLE_ASM_REDC_TRUE@	mulredc14.o mulredc15.o mulredc16.o \
+@ENABLE_ASM_REDC_TRUE@	mulredc17.o mulredc18.o mulredc19.o \
+@ENABLE_ASM_REDC_TRUE@	mulredc20.o
 DEFAULT_INCLUDES = -I.@am__isrc@
 depcomp = $(SHELL) $(top_srcdir)/depcomp
 am__depfiles_maybe = depfiles
+CPPASCOMPILE = $(CCAS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
+	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CCASFLAGS) $(CCASFLAGS)
+LTCPPASCOMPILE = $(LIBTOOL) $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) \
+	--mode=compile $(CCAS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
+	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CCASFLAGS) $(CCASFLAGS)
 COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
+LTCOMPILE = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) \
+	--mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
+	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
 CCLD = $(CC)
-LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
-SOURCES = $(libecm_a_SOURCES) $(nodist_libecm_a_SOURCES) \
-	$(ecm_SOURCES) $(ecmfactor_SOURCES) $(tune_SOURCES) \
-	$(nodist_tune_SOURCES)
-DIST_SOURCES = $(am__libecm_a_SOURCES_DIST) $(ecm_SOURCES) \
+LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) \
+	--mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) \
+	$(LDFLAGS) -o $@
+CCASCOMPILE = $(CCAS) $(AM_CCASFLAGS) $(CCASFLAGS)
+LTCCASCOMPILE = $(LIBTOOL) $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) \
+	--mode=compile $(CCAS) $(AM_CCASFLAGS) $(CCASFLAGS)
+SOURCES = $(libecm_la_SOURCES) $(nodist_libecm_la_SOURCES) \
+	$(ecm_SOURCES) $(ecmfactor_SOURCES) $(tune_SOURCES)
+DIST_SOURCES = $(am__libecm_la_SOURCES_DIST) $(ecm_SOURCES) \
 	$(ecmfactor_SOURCES) $(am__tune_SOURCES_DIST)
 RECURSIVE_TARGETS = all-recursive check-recursive dvi-recursive \
 	html-recursive info-recursive install-data-recursive \
@@ -163,7 +170,7 @@ RECURSIVE_TARGETS = all-recursive check-recursive dvi-recursive \
 	ps-recursive uninstall-recursive
 man1dir = $(mandir)/man1
 NROFF = nroff
-MANS = $(man_MANS)
+MANS = $(dist_man_MANS) $(man_MANS)
 includeHEADERS_INSTALL = $(INSTALL_HEADER)
 HEADERS = $(include_HEADERS) $(noinst_HEADERS)
 RECURSIVE_CLEAN_TARGETS = mostlyclean-recursive clean-recursive	\
@@ -184,24 +191,35 @@ distcleancheck_listfiles = find . -type f -print
 ACLOCAL = @ACLOCAL@
 ALLOCA = @ALLOCA@
 AMTAR = @AMTAR@
+AR = @AR@
 AUTOCONF = @AUTOCONF@
 AUTOHEADER = @AUTOHEADER@
 AUTOMAKE = @AUTOMAKE@
 AWK = @AWK@
 CC = @CC@
 CCAS = @CCAS@
+CCASDEPMODE = @CCASDEPMODE@
+CCASFLAGS = @CCASFLAGS@
 CCDEPMODE = @CCDEPMODE@
 CFLAGS = @CFLAGS@
 CPP = @CPP@
 CPPFLAGS = @CPPFLAGS@
+CXX = @CXX@
+CXXCPP = @CXXCPP@
+CXXDEPMODE = @CXXDEPMODE@
+CXXFLAGS = @CXXFLAGS@
 CYGPATH_W = @CYGPATH_W@
 DEFS = @DEFS@
 DEPDIR = @DEPDIR@
+ECHO = @ECHO@
 ECHO_C = @ECHO_C@
 ECHO_N = @ECHO_N@
 ECHO_T = @ECHO_T@
+ECM_FASTOBJ = @ECM_FASTOBJ@
 EGREP = @EGREP@
 EXEEXT = @EXEEXT@
+F77 = @F77@
+FFLAGS = @FFLAGS@
 GREP = @GREP@
 INCLUDES = @INCLUDES@
 INSTALL = @INSTALL@
@@ -209,10 +227,12 @@ INSTALL_DATA = @INSTALL_DATA@
 INSTALL_PROGRAM = @INSTALL_PROGRAM@
 INSTALL_SCRIPT = @INSTALL_SCRIPT@
 INSTALL_STRIP_PROGRAM = @INSTALL_STRIP_PROGRAM@
-LDADD = libecm.a
+LDADD = libecm.la
 LDFLAGS = @LDFLAGS@
 LIBOBJS = @LIBOBJS@
 LIBS = @LIBS@
+LIBTOOL = @LIBTOOL@
+LN_S = @LN_S@
 LTLIBOBJS = @LTLIBOBJS@
 M4 = @M4@
 MAKEINFO = @MAKEINFO@
@@ -227,6 +247,7 @@ PACKAGE_VERSION = @PACKAGE_VERSION@
 PATH_SEPARATOR = @PATH_SEPARATOR@
 POW_LIB = @POW_LIB@
 RANLIB = @RANLIB@
+SED = @SED@
 SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
 STRIP = @STRIP@
@@ -238,6 +259,8 @@ abs_srcdir = @abs_srcdir@
 abs_top_builddir = @abs_top_builddir@
 abs_top_srcdir = @abs_top_srcdir@
 ac_ct_CC = @ac_ct_CC@
+ac_ct_CXX = @ac_ct_CXX@
+ac_ct_F77 = @ac_ct_F77@
 am__include = @am__include@
 am__leading_dot = @am__leading_dot@
 am__quote = @am__quote@
@@ -282,54 +305,74 @@ sysconfdir = @sysconfdir@
 target_alias = @target_alias@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-lib_LIBRARIES = libecm.a
-libecm_a_SOURCES = ecm.c ecm2.c pm1.c pp1.c getprime.c listz.c lucas.c \
-	stage2.c toomcook.c mpmod.c mul_lo.c polyeval.c median.c \
-	schoen_strass.c ks-multiply.c rho.c bestd.c auxlib.c random.c \
-	factor.c sp.c spv.c spm.c mpzspm.c mpzspv.c ntt_gfp.c \
-	ecm_ntt.c $(am__append_1) $(am__append_3)
+lib_LTLIBRARIES = libecm.la
+libecm_la_SOURCES = ecm.c ecm2.c pm1.c pp1.c getprime.c listz.c \
+	lucas.c stage2.c toomcook.c mpmod.c mul_lo.c polyeval.c \
+	median.c schoen_strass.c ks-multiply.c rho.c bestd.c auxlib.c \
+	random.c factor.c sp.c spv.c spm.c mpzspm.c mpzspv.c ntt_gfp.c \
+	ecm_ntt.c pm1fs2.c mul_fft.c sets_long.c auxarith.c \
+	$(am__append_1) $(am__append_3)
+libecm_la_LDFLAGS = '-version-info 0:0:0'
 ecm_CPPFLAGS = -DOUTSIDE_LIBECM $(AM_CPPFLAGS)
 ecm_SOURCES = auxi.c b1_ainc.c candi.c eval.c random.c main.c trial.c \
               resume.c getprime.c
 
+# We add the list of speed critical object files to the ecm linker flags 
+# which isn't very clean, but it seems to be the only way of getting them
+# in front of the full list of input object files. Automake does not allow
+# modifying the ecm_OBJECTS variable directly.
+ecm_LDFLAGS = $(ECM_FASTOBJ) $(am__append_4)
 tune_CPPFLAGS = -DTUNE $(AM_CPPFLAGS)
-tune_LDADD = 
+# tune_LDADD =
 tune_SOURCES = mpmod.c tune.c mul_lo.c listz.c auxlib.c ks-multiply.c \
 	toomcook.c schoen_strass.c polyeval.c median.c ecm_ntt.c \
 	ntt_gfp.c mpzspv.c mpzspm.c sp.c spv.c spm.c random.c \
-	$(am__append_2)
-@ENABLE_ASM_REDC_TRUE@nodist_libecm_a_SOURCES = redc.asm mulredc1.asm mulredc2.asm mulredc3.asm \
-@ENABLE_ASM_REDC_TRUE@    mulredc4.asm mulredc5.asm mulredc6.asm mulredc7.asm mulredc8.asm \
-@ENABLE_ASM_REDC_TRUE@    mulredc9.asm mulredc10.asm mulredc11.asm mulredc12.asm mulredc13.asm \
-@ENABLE_ASM_REDC_TRUE@    mulredc14.asm mulredc15.asm mulredc16.asm mulredc17.asm mulredc18.asm \
-@ENABLE_ASM_REDC_TRUE@    mulredc19.asm mulredc20.asm
+	mul_fft.c auxarith.c $(am__append_2)
 
-@ENABLE_ASM_REDC_TRUE@nodist_tune_SOURCES = redc.asm mulredc1.asm mulredc2.asm mulredc3.asm \
-@ENABLE_ASM_REDC_TRUE@    mulredc4.asm mulredc5.asm mulredc6.asm mulredc7.asm mulredc8.asm \
-@ENABLE_ASM_REDC_TRUE@    mulredc9.asm mulredc10.asm mulredc11.asm mulredc12.asm mulredc13.asm \
-@ENABLE_ASM_REDC_TRUE@    mulredc14.asm mulredc15.asm mulredc16.asm mulredc17.asm mulredc18.asm \
-@ENABLE_ASM_REDC_TRUE@    mulredc19.asm mulredc20.asm
+# The code in redc.S needs preprocessing by cpp, since we need different
+# addressing in PIC and non-PIC mode. Hence the upper-case .S, which
+# signifies a file that is to be run through cpp before assembly
+@ENABLE_ASM_REDC_TRUE@nodist_libecm_la_SOURCES = redc.S mulredc1.s mulredc2.s mulredc3.s \
+@ENABLE_ASM_REDC_TRUE@    mulredc4.s mulredc5.s mulredc6.s mulredc7.s mulredc8.s \
+@ENABLE_ASM_REDC_TRUE@    mulredc9.s mulredc10.s mulredc11.s mulredc12.s mulredc13.s \
+@ENABLE_ASM_REDC_TRUE@    mulredc14.s mulredc15.s mulredc16.s mulredc17.s mulredc18.s \
+@ENABLE_ASM_REDC_TRUE@    mulredc19.s mulredc20.s
+
+# .s and .S files don't get cleaned by default?
+@ENABLE_ASM_REDC_TRUE@CLEANFILES = redc.S mulredc1.s mulredc2.s mulredc3.s \
+@ENABLE_ASM_REDC_TRUE@    mulredc4.s mulredc5.s mulredc6.s mulredc7.s mulredc8.s \
+@ENABLE_ASM_REDC_TRUE@    mulredc9.s mulredc10.s mulredc11.s mulredc12.s mulredc13.s \
+@ENABLE_ASM_REDC_TRUE@    mulredc14.s mulredc15.s mulredc16.s mulredc17.s mulredc18.s \
+@ENABLE_ASM_REDC_TRUE@    mulredc19.s mulredc20.s
+
+@ENABLE_ASM_REDC_TRUE@tune_LDADD = redc.lo mulredc1.o mulredc2.o mulredc3.o \
+@ENABLE_ASM_REDC_TRUE@    mulredc4.o mulredc5.o mulredc6.o mulredc7.o mulredc8.o \
+@ENABLE_ASM_REDC_TRUE@    mulredc9.o mulredc10.o mulredc11.o mulredc12.o mulredc13.o \
+@ENABLE_ASM_REDC_TRUE@    mulredc14.o mulredc15.o mulredc16.o mulredc17.o mulredc18.o \
+@ENABLE_ASM_REDC_TRUE@    mulredc19.o mulredc20.o
 
 @WITH_GWNUM_TRUE@ecm_DEPENDENCIES = $(LDADD) gwdata.ld
-@WITH_GWNUM_TRUE@ecm_LDFLAGS = -Wl,gwdata.ld
 ecmfactor_SOURCES = ecmfactor.c
 include_HEADERS = ecm.h
 noinst_HEADERS = ecm-impl.h ecm-gmp.h ecm-ecm.h sp.h longlong.h ecm-params.h \
                  asmredc.h
 
-EXTRA_DIST = test.pm1 test.pp1 test.ecm ecm.1 README.lib ecm.xml \
+EXTRA_DIST = test.pm1 test.pp1 test.ecm README.lib ecm.xml \
              ecm-params.h.alpha-ev5 ecm-params.h.athlon64 \
              ecm-params.h.default ecm-params.h.alpha-ev6 \
              ecm-params.h.athlon ecm-params.h.powerpc7450 \
-             configfsf.sub configfsf.guess
+             ecm-params.h.pentium3 ecm-params.h.pentium4 \
+             ecm-params.h.pentiumm configfsf.sub configfsf.guess
 
-DIST_SUBDIRS = athlon pentium4 x86_64
-man_MANS = $(am__append_4)
+DIST_SUBDIRS = athlon pentium4 x86_64 build.vc9
+DISTCLEANFILES = config.m4
+dist_man_MANS = ecm.1
+man_MANS = $(am__append_5)
 all: config.h
 	$(MAKE) $(AM_MAKEFLAGS) all-recursive
 
 .SUFFIXES:
-.SUFFIXES: .asm .c .o .obj
+.SUFFIXES: .S .asm .c .lo .o .obj .s
 am--refresh:
 	@:
 $(srcdir)/Makefile.in:  $(srcdir)/Makefile.am  $(am__configure_deps)
@@ -380,49 +423,46 @@ $(srcdir)/config.h.in:  $(am__configure_deps)
 
 distclean-hdr:
 	-rm -f config.h stamp-h1
-install-libLIBRARIES: $(lib_LIBRARIES)
+install-libLTLIBRARIES: $(lib_LTLIBRARIES)
 	@$(NORMAL_INSTALL)
 	test -z "$(libdir)" || $(MKDIR_P) "$(DESTDIR)$(libdir)"
-	@list='$(lib_LIBRARIES)'; for p in $$list; do \
+	@list='$(lib_LTLIBRARIES)'; for p in $$list; do \
 	  if test -f $$p; then \
 	    f=$(am__strip_dir) \
-	    echo " $(libLIBRARIES_INSTALL) '$$p' '$(DESTDIR)$(libdir)/$$f'"; \
-	    $(libLIBRARIES_INSTALL) "$$p" "$(DESTDIR)$(libdir)/$$f"; \
-	  else :; fi; \
-	done
-	@$(POST_INSTALL)
-	@list='$(lib_LIBRARIES)'; for p in $$list; do \
-	  if test -f $$p; then \
-	    p=$(am__strip_dir) \
-	    echo " $(RANLIB) '$(DESTDIR)$(libdir)/$$p'"; \
-	    $(RANLIB) "$(DESTDIR)$(libdir)/$$p"; \
+	    echo " $(LIBTOOL) --mode=install $(libLTLIBRARIES_INSTALL) $(INSTALL_STRIP_FLAG) '$$p' '$(DESTDIR)$(libdir)/$$f'"; \
+	    $(LIBTOOL) --mode=install $(libLTLIBRARIES_INSTALL) $(INSTALL_STRIP_FLAG) "$$p" "$(DESTDIR)$(libdir)/$$f"; \
 	  else :; fi; \
 	done
 
-uninstall-libLIBRARIES:
+uninstall-libLTLIBRARIES:
 	@$(NORMAL_UNINSTALL)
-	@list='$(lib_LIBRARIES)'; for p in $$list; do \
+	@list='$(lib_LTLIBRARIES)'; for p in $$list; do \
 	  p=$(am__strip_dir) \
-	  echo " rm -f '$(DESTDIR)$(libdir)/$$p'"; \
-	  rm -f "$(DESTDIR)$(libdir)/$$p"; \
+	  echo " $(LIBTOOL) --mode=uninstall rm -f '$(DESTDIR)$(libdir)/$$p'"; \
+	  $(LIBTOOL) --mode=uninstall rm -f "$(DESTDIR)$(libdir)/$$p"; \
 	done
 
-clean-libLIBRARIES:
-	-test -z "$(lib_LIBRARIES)" || rm -f $(lib_LIBRARIES)
-libecm.a: $(libecm_a_OBJECTS) $(libecm_a_DEPENDENCIES) 
-	-rm -f libecm.a
-	$(libecm_a_AR) libecm.a $(libecm_a_OBJECTS) $(libecm_a_LIBADD)
-	$(RANLIB) libecm.a
+clean-libLTLIBRARIES:
+	-test -z "$(lib_LTLIBRARIES)" || rm -f $(lib_LTLIBRARIES)
+	@list='$(lib_LTLIBRARIES)'; for p in $$list; do \
+	  dir="`echo $$p | sed -e 's|/[^/]*$$||'`"; \
+	  test "$$dir" != "$$p" || dir=.; \
+	  echo "rm -f \"$${dir}/so_locations\""; \
+	  rm -f "$${dir}/so_locations"; \
+	done
+libecm.la: $(libecm_la_OBJECTS) $(libecm_la_DEPENDENCIES) 
+	$(libecm_la_LINK) -rpath $(libdir) $(libecm_la_OBJECTS) $(libecm_la_LIBADD) $(LIBS)
 install-binPROGRAMS: $(bin_PROGRAMS)
 	@$(NORMAL_INSTALL)
 	test -z "$(bindir)" || $(MKDIR_P) "$(DESTDIR)$(bindir)"
 	@list='$(bin_PROGRAMS)'; for p in $$list; do \
 	  p1=`echo $$p|sed 's/$(EXEEXT)$$//'`; \
 	  if test -f $$p \
+	     || test -f $$p1 \
 	  ; then \
 	    f=`echo "$$p1" | sed 's,^.*/,,;$(transform);s/$$/$(EXEEXT)/'`; \
-	   echo " $(INSTALL_PROGRAM_ENV) $(binPROGRAMS_INSTALL) '$$p' '$(DESTDIR)$(bindir)/$$f'"; \
-	   $(INSTALL_PROGRAM_ENV) $(binPROGRAMS_INSTALL) "$$p" "$(DESTDIR)$(bindir)/$$f" || exit 1; \
+	   echo " $(INSTALL_PROGRAM_ENV) $(LIBTOOL) --mode=install $(binPROGRAMS_INSTALL) '$$p' '$(DESTDIR)$(bindir)/$$f'"; \
+	   $(INSTALL_PROGRAM_ENV) $(LIBTOOL) --mode=install $(binPROGRAMS_INSTALL) "$$p" "$(DESTDIR)$(bindir)/$$f" || exit 1; \
 	  else :; fi; \
 	done
 
@@ -435,10 +475,18 @@ uninstall-binPROGRAMS:
 	done
 
 clean-binPROGRAMS:
-	-test -z "$(bin_PROGRAMS)" || rm -f $(bin_PROGRAMS)
+	@list='$(bin_PROGRAMS)'; for p in $$list; do \
+	  f=`echo $$p|sed 's/$(EXEEXT)$$//'`; \
+	  echo " rm -f $$p $$f"; \
+	  rm -f $$p $$f ; \
+	done
 
 clean-noinstPROGRAMS:
-	-test -z "$(noinst_PROGRAMS)" || rm -f $(noinst_PROGRAMS)
+	@list='$(noinst_PROGRAMS)'; for p in $$list; do \
+	  f=`echo $$p|sed 's/$(EXEEXT)$$//'`; \
+	  echo " rm -f $$p $$f"; \
+	  rm -f $$p $$f ; \
+	done
 ecm$(EXEEXT): $(ecm_OBJECTS) $(ecm_DEPENDENCIES) 
 	@rm -f ecm$(EXEEXT)
 	$(ecm_LINK) $(ecm_OBJECTS) $(ecm_LDADD) $(LIBS)
@@ -455,9 +503,10 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Fgw.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/auxlib.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bestd.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Fgw.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/auxarith.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/auxlib.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bestd.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ecm-auxi.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ecm-b1_ainc.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ecm-candi.Po@am__quote@
@@ -467,33 +516,38 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ecm-random.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ecm-resume.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ecm-trial.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ecm.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ecm2.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ecm_ntt.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ecm.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ecm2.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ecm_ntt.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ecmfactor.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/factor.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/getprime.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ks-multiply.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/listz.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lucas.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/median.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/memory.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mpmod.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mpzspm.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mpzspv.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mul_lo.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ntt_gfp.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/pm1.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/polyeval.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/pp1.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/random.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/rho.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/schoen_strass.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/sp.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/spm.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/spv.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/stage2.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/toomcook.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/factor.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/getprime.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ks-multiply.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/listz.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lucas.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/median.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/memory.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mpmod.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mpzspm.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mpzspv.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mul_fft.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mul_lo.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ntt_gfp.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/pm1.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/pm1fs2.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/polyeval.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/pp1.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/random.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/redc.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/rho.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/schoen_strass.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/sets_long.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/sp.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/spm.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/spv.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/stage2.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/toomcook.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/tune-auxarith.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/tune-auxlib.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/tune-ecm_ntt.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/tune-ks-multiply.Po@am__quote@
@@ -503,6 +557,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/tune-mpmod.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/tune-mpzspm.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/tune-mpzspv.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/tune-mul_fft.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/tune-mul_lo.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/tune-ntt_gfp.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/tune-polyeval.Po@am__quote@
@@ -513,6 +568,27 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/tune-spv.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/tune-toomcook.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/tune-tune.Po@am__quote@
+
+.S.o:
+@am__fastdepCCAS_TRUE@	$(CPPASCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
+@am__fastdepCCAS_TRUE@	mv -f $(DEPDIR)/$*.Tpo $(DEPDIR)/$*.Po
+@AMDEP_TRUE@@am__fastdepCCAS_FALSE@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCCAS_FALSE@	DEPDIR=$(DEPDIR) $(CCASDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCCAS_FALSE@	$(CPPASCOMPILE) -c -o $@ $<
+
+.S.obj:
+@am__fastdepCCAS_TRUE@	$(CPPASCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ `$(CYGPATH_W) '$<'`
+@am__fastdepCCAS_TRUE@	mv -f $(DEPDIR)/$*.Tpo $(DEPDIR)/$*.Po
+@AMDEP_TRUE@@am__fastdepCCAS_FALSE@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCCAS_FALSE@	DEPDIR=$(DEPDIR) $(CCASDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCCAS_FALSE@	$(CPPASCOMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
+
+.S.lo:
+@am__fastdepCCAS_TRUE@	$(LTCPPASCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
+@am__fastdepCCAS_TRUE@	mv -f $(DEPDIR)/$*.Tpo $(DEPDIR)/$*.Plo
+@AMDEP_TRUE@@am__fastdepCCAS_FALSE@	source='$<' object='$@' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCCAS_FALSE@	DEPDIR=$(DEPDIR) $(CCASDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCCAS_FALSE@	$(LTCPPASCOMPILE) -c -o $@ $<
 
 .c.o:
 @am__fastdepCC_TRUE@	$(COMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
@@ -527,6 +603,13 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(COMPILE) -c `$(CYGPATH_W) '$<'`
+
+.c.lo:
+@am__fastdepCC_TRUE@	$(LTCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/$*.Tpo $(DEPDIR)/$*.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$<' object='$@' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LTCOMPILE) -c -o $@ $<
 
 ecm-auxi.o: auxi.c
 @am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ecm_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT ecm-auxi.o -MD -MP -MF $(DEPDIR)/ecm-auxi.Tpo -c -o ecm-auxi.o `test -f 'auxi.c' || echo '$(srcdir)/'`auxi.c
@@ -906,6 +989,34 @@ tune-random.obj: random.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(tune_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o tune-random.obj `if test -f 'random.c'; then $(CYGPATH_W) 'random.c'; else $(CYGPATH_W) '$(srcdir)/random.c'; fi`
 
+tune-mul_fft.o: mul_fft.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(tune_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT tune-mul_fft.o -MD -MP -MF $(DEPDIR)/tune-mul_fft.Tpo -c -o tune-mul_fft.o `test -f 'mul_fft.c' || echo '$(srcdir)/'`mul_fft.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/tune-mul_fft.Tpo $(DEPDIR)/tune-mul_fft.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='mul_fft.c' object='tune-mul_fft.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(tune_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o tune-mul_fft.o `test -f 'mul_fft.c' || echo '$(srcdir)/'`mul_fft.c
+
+tune-mul_fft.obj: mul_fft.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(tune_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT tune-mul_fft.obj -MD -MP -MF $(DEPDIR)/tune-mul_fft.Tpo -c -o tune-mul_fft.obj `if test -f 'mul_fft.c'; then $(CYGPATH_W) 'mul_fft.c'; else $(CYGPATH_W) '$(srcdir)/mul_fft.c'; fi`
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/tune-mul_fft.Tpo $(DEPDIR)/tune-mul_fft.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='mul_fft.c' object='tune-mul_fft.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(tune_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o tune-mul_fft.obj `if test -f 'mul_fft.c'; then $(CYGPATH_W) 'mul_fft.c'; else $(CYGPATH_W) '$(srcdir)/mul_fft.c'; fi`
+
+tune-auxarith.o: auxarith.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(tune_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT tune-auxarith.o -MD -MP -MF $(DEPDIR)/tune-auxarith.Tpo -c -o tune-auxarith.o `test -f 'auxarith.c' || echo '$(srcdir)/'`auxarith.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/tune-auxarith.Tpo $(DEPDIR)/tune-auxarith.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='auxarith.c' object='tune-auxarith.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(tune_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o tune-auxarith.o `test -f 'auxarith.c' || echo '$(srcdir)/'`auxarith.c
+
+tune-auxarith.obj: auxarith.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(tune_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT tune-auxarith.obj -MD -MP -MF $(DEPDIR)/tune-auxarith.Tpo -c -o tune-auxarith.obj `if test -f 'auxarith.c'; then $(CYGPATH_W) 'auxarith.c'; else $(CYGPATH_W) '$(srcdir)/auxarith.c'; fi`
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/tune-auxarith.Tpo $(DEPDIR)/tune-auxarith.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='auxarith.c' object='tune-auxarith.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(tune_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o tune-auxarith.obj `if test -f 'auxarith.c'; then $(CYGPATH_W) 'auxarith.c'; else $(CYGPATH_W) '$(srcdir)/auxarith.c'; fi`
+
 tune-memory.o: memory.c
 @am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(tune_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT tune-memory.o -MD -MP -MF $(DEPDIR)/tune-memory.Tpo -c -o tune-memory.o `test -f 'memory.c' || echo '$(srcdir)/'`memory.c
 @am__fastdepCC_TRUE@	mv -f $(DEPDIR)/tune-memory.Tpo $(DEPDIR)/tune-memory.Po
@@ -919,6 +1030,24 @@ tune-memory.obj: memory.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='memory.c' object='tune-memory.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(tune_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o tune-memory.obj `if test -f 'memory.c'; then $(CYGPATH_W) 'memory.c'; else $(CYGPATH_W) '$(srcdir)/memory.c'; fi`
+
+.s.o:
+	$(CCASCOMPILE) -c -o $@ $<
+
+.s.obj:
+	$(CCASCOMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
+
+.s.lo:
+	$(LTCCASCOMPILE) -c -o $@ $<
+
+mostlyclean-libtool:
+	-rm -f *.lo
+
+clean-libtool:
+	-rm -rf .libs _libs
+
+distclean-libtool:
+	-rm -f libtool
 install-man1: $(man1_MANS) $(man_MANS)
 	@$(NORMAL_INSTALL)
 	test -z "$(man1dir)" || $(MKDIR_P) "$(DESTDIR)$(man1dir)"
@@ -1257,7 +1386,10 @@ distcleancheck: distclean
 	       exit 1; } >&2
 check-am: all-am
 check: check-recursive
-all-am: Makefile $(LIBRARIES) $(PROGRAMS) $(MANS) $(HEADERS) config.h
+all-am: Makefile $(LTLIBRARIES) $(PROGRAMS) $(MANS) $(HEADERS) \
+		config.h
+install-binPROGRAMS: install-libLTLIBRARIES
+
 installdirs: installdirs-recursive
 installdirs-am:
 	for dir in "$(DESTDIR)$(libdir)" "$(DESTDIR)$(bindir)" "$(DESTDIR)$(man1dir)" "$(DESTDIR)$(includedir)"; do \
@@ -1280,24 +1412,26 @@ install-strip:
 mostlyclean-generic:
 
 clean-generic:
+	-test -z "$(CLEANFILES)" || rm -f $(CLEANFILES)
 
 distclean-generic:
 	-test -z "$(CONFIG_CLEAN_FILES)" || rm -f $(CONFIG_CLEAN_FILES)
+	-test -z "$(DISTCLEANFILES)" || rm -f $(DISTCLEANFILES)
 
 maintainer-clean-generic:
 	@echo "This command is intended for maintainers to use"
 	@echo "it deletes files that may require special tools to rebuild."
 clean: clean-recursive
 
-clean-am: clean-binPROGRAMS clean-generic clean-libLIBRARIES \
-	clean-noinstPROGRAMS mostlyclean-am
+clean-am: clean-binPROGRAMS clean-generic clean-libLTLIBRARIES \
+	clean-libtool clean-noinstPROGRAMS mostlyclean-am
 
 distclean: distclean-recursive
 	-rm -f $(am__CONFIG_DISTCLEAN_FILES)
 	-rm -rf ./$(DEPDIR)
 	-rm -f Makefile
 distclean-am: clean-am distclean-compile distclean-generic \
-	distclean-hdr distclean-tags
+	distclean-hdr distclean-libtool distclean-tags
 
 dvi: dvi-recursive
 
@@ -1313,7 +1447,7 @@ install-data-am: install-includeHEADERS install-man
 
 install-dvi: install-dvi-recursive
 
-install-exec-am: install-binPROGRAMS install-libLIBRARIES
+install-exec-am: install-binPROGRAMS install-libLTLIBRARIES
 
 install-html: install-html-recursive
 
@@ -1336,7 +1470,8 @@ maintainer-clean-am: distclean-am maintainer-clean-generic
 
 mostlyclean: mostlyclean-recursive
 
-mostlyclean-am: mostlyclean-compile mostlyclean-generic
+mostlyclean-am: mostlyclean-compile mostlyclean-generic \
+	mostlyclean-libtool
 
 pdf: pdf-recursive
 
@@ -1347,7 +1482,7 @@ ps: ps-recursive
 ps-am:
 
 uninstall-am: uninstall-binPROGRAMS uninstall-includeHEADERS \
-	uninstall-libLIBRARIES uninstall-man
+	uninstall-libLTLIBRARIES uninstall-man
 
 uninstall-man: uninstall-man1
 
@@ -1356,44 +1491,46 @@ uninstall-man: uninstall-man1
 
 .PHONY: $(RECURSIVE_CLEAN_TARGETS) $(RECURSIVE_TARGETS) CTAGS GTAGS \
 	all all-am am--refresh check check-am clean clean-binPROGRAMS \
-	clean-generic clean-libLIBRARIES clean-noinstPROGRAMS ctags \
-	ctags-recursive dist dist-all dist-bzip2 dist-gzip dist-shar \
-	dist-tarZ dist-zip distcheck distclean distclean-compile \
-	distclean-generic distclean-hdr distclean-tags distcleancheck \
-	distdir distuninstallcheck dvi dvi-am html html-am info \
-	info-am install install-am install-binPROGRAMS install-data \
+	clean-generic clean-libLTLIBRARIES clean-libtool \
+	clean-noinstPROGRAMS ctags ctags-recursive dist dist-all \
+	dist-bzip2 dist-gzip dist-shar dist-tarZ dist-zip distcheck \
+	distclean distclean-compile distclean-generic distclean-hdr \
+	distclean-libtool distclean-tags distcleancheck distdir \
+	distuninstallcheck dvi dvi-am html html-am info info-am \
+	install install-am install-binPROGRAMS install-data \
 	install-data-am install-dvi install-dvi-am install-exec \
 	install-exec-am install-html install-html-am \
 	install-includeHEADERS install-info install-info-am \
-	install-libLIBRARIES install-man install-man1 install-pdf \
+	install-libLTLIBRARIES install-man install-man1 install-pdf \
 	install-pdf-am install-ps install-ps-am install-strip \
 	installcheck installcheck-am installdirs installdirs-am \
 	maintainer-clean maintainer-clean-generic mostlyclean \
-	mostlyclean-compile mostlyclean-generic pdf pdf-am ps ps-am \
-	tags tags-recursive uninstall uninstall-am \
+	mostlyclean-compile mostlyclean-generic mostlyclean-libtool \
+	pdf pdf-am ps ps-am tags tags-recursive uninstall uninstall-am \
 	uninstall-binPROGRAMS uninstall-includeHEADERS \
-	uninstall-libLIBRARIES uninstall-man uninstall-man1
+	uninstall-libLTLIBRARIES uninstall-man uninstall-man1
 
 
 @WITH_GWNUM_TRUE@  gwdata.ld :
 @WITH_GWNUM_TRUE@	echo "SECTIONS { .data : { . = ALIGN(0x20); *(_GWDATA) } }" >gwdata.ld
+@WITH_GWNUM_TRUE@  # Use ecm_DEPENDENCIES += gwdata.ld instead? Is that possible?
 @WITH_GWNUM_TRUE@  Fgwtest : Fgw.c gwdata.ld
 @WITH_GWNUM_TRUE@	$(CC) $(CFLAGS) $(CPPFLAGS) -g -DTESTDRIVE -Wl,gwdata.ld -o Fgwtest Fgw.c libecm.a $(LIBS)
 
-ecm-params:	tune
+ecm-params:	tune$(EXEEXT)
 		@echo Optimising parameters for your system, please be patient.
 		test -z "ecm-params.h" || rm -f ecm-params.h
 		./tune > ecm-params.h
 
-check: ecm
-	$(srcdir)/test.pp1 ./ecm
-	$(srcdir)/test.pm1 ./ecm
-	$(srcdir)/test.ecm ./ecm
+check: ecm$(EXEEXT)
+	$(srcdir)/test.pp1 ./ecm$(EXEEXT)
+	$(srcdir)/test.pm1 ./ecm$(EXEEXT)
+	$(srcdir)/test.ecm ./ecm$(EXEEXT)
 
-.asm.o:
-	$(M4) -DOPERATION_$* `test -f $< || echo '$(srcdir)/'`$< >tmp-$*.s
-	$(CCAS) $(COMPILE_FLAGS) tmp-$*.s -o $@
-	rm -f tmp-$*.s
+.asm.s:
+	$(M4) -DOPERATION_$* `test -f $< || echo '$(srcdir)/'`$< >$*.s
+.asm.S:
+	$(M4) -DOPERATION_$* `test -f $< || echo '$(srcdir)/'`$< >$*.S
 
 ecm.1: ecm.xml
 	xsltproc -o ecm.1 $(XSLDIR)/manpages/docbook.xsl ecm.xml

@@ -3,6 +3,8 @@ For example, <xxx dot yyy at zzz dot to> should read <xxx.yyy@xxx.to>.
 
 Pierrick Gaudry <gaudry at lix dot polytechnique dot fr>
 	contributed efficient assembly code for combined mul/redc.
+Brian Gladman <brg at gladman dot plus dot com>
+        contributed the Visual C build files
 Jim Fougeron <jfoug at cox dot net>
 	contributed the expression parser, the primality testing tools,
 	and several command-line options.
@@ -14,7 +16,10 @@ Alexander Kruppa <firstname.lastname@mytum.de> (substitute appropriately)
 	multiplication code, the special code for Fermat numbers, and
 	many other nice things.
 Dave Newman <david dot newman at jesus dot ox dot ac dot uk>
-	contributed the Kronecker-Schönhage multiplication code.
+	contributed the Kronecker-Schönhage multiplication code,
+	and the NTT code.
+Jason S. Papadopoulos <jasonp at boo dot net> contributed optimizations 
+        to the NTT code.
 Paul Zimmermann <zimmerma at loria dot fr>
 	author of the first version of the program.
 

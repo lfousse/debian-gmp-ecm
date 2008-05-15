@@ -14,7 +14,7 @@
 
   You should have received a copy of the GNU General Public License along
   with this program; see the file COPYING.  If not, write to the Free
-  Software Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
+  Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
   02111-1307, USA.
 */
 
@@ -23,8 +23,9 @@
 
 #include "config.h"
 
-#if WANT_ASSERT
 #include <assert.h>
+#define ASSERT_ALWAYS(expr)   assert (expr)
+#ifdef WANT_ASSERT
 #define ASSERT(expr)   assert (expr)
 #else
 #define ASSERT(expr)   do {} while (0)
@@ -76,15 +77,12 @@ unsigned int get_random_ui (void);
 #define OUTPUT_TRACE 4
 #define OUTPUT_ERROR -1
 
+#define MAX_NUMBER_PRINT_LEN 1000
+
 /* auxlib.c */
 int  test_verbose (int);
 void set_verbose (int);
 int  inc_verbose ();
-
-/* different methods implemented */
-#define ECM_ECM 0
-#define ECM_PM1 1
-#define ECM_PP1 2
 
 /* Return codes */
 /* Bit coded values: 1: error, 2: proper factor found, 4: factor is prime, 
@@ -96,7 +94,9 @@ int  inc_verbose ();
 #define ECM_PRIME_FAC_PRIME_COFAC (2+4+8)
 
 /* getprime2.c */
-double getprime (double);
+double getprime ();
+void getprime_clear ();
+void getprime_seek (double);
 #define WANT_FREE_PRIME_TABLE(p) (p < 0.0)
 #define FREE_PRIME_TABLE -1.0
 
@@ -180,22 +180,22 @@ void pm1_random_seed  (mpz_t, mpz_t, gmp_randstate_t);
 #define ABS(x) ((x) >= 0 ? (x) : -(x))
 
 /* could go in auxi.c as a function */
-#if HAVE_SETPRIORITY
+#ifdef HAVE_SETPRIORITY
 # include <sys/time.h>
-# if HAVE_SYS_RESOURCE_H
+# ifdef HAVE_SYS_RESOURCE_H
 #  include <sys/resource.h>
 # endif
 # define NICE10 setpriority (PRIO_PROCESS, 0, 10)
 # define NICE20 setpriority (PRIO_PROCESS, 0, 20)
 
-#elif HAVE_NICE
-# if HAVE_UNISTD_H
+#elif defined(HAVE_NICE)
+# ifdef HAVE_UNISTD_H
 #  include <unistd.h>
 # endif
 # define NICE10 nice (10)
 # define NICE20 nice (20)
 
-#elif HAVE_WINDOWS_H
+#elif defined(HAVE_WINDOWS_H)
 # include <windows.h>
 # define NICE10 do { \
    SetPriorityClass (GetCurrentProcess (), BELOW_NORMAL_PRIORITY_CLASS); \

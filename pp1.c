@@ -16,8 +16,8 @@
 
   You should have received a copy of the GNU Lesser General Public License
   along with the ECM Library; see the file COPYING.LIB.  If not, write to
-  the Free Software Foundation, Inc., 59 Temple Place - Suite 330, Boston,
-  MA 02111-1307, USA.
+  the Free Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston,
+  MA 02110-1301, USA.
 
   References:
 
@@ -32,7 +32,7 @@
 #include <stdlib.h>
 #include "ecm-impl.h"
 
-#if HAVE_LIMITS_H
+#ifdef HAVE_LIMITS_H
 # include <limits.h>
 #else
 # ifndef ULONG_MAX
@@ -124,18 +124,22 @@ unnegate:
 	   B1done: stage 1 was already done up to that limit
 	   go: if <> 1, group order to preload
    Output: a is the factor found, or the value at end of stage 1
+	   B1done is set to B1 if stage 1 completed normally,
+	   or to the largest prime processed if interrupted, but never
+	   to a smaller value than B1done was upon function entry.
    Return value: non-zero iff a factor was found.
 */
 static int
 pp1_stage1 (mpz_t f, mpres_t P0, mpmod_t n, double B1, double *B1done, 
-            mpz_t go, int (*stop_asap)(void))
+            mpz_t go, int (*stop_asap)(void), char *chkfilename)
 {
-  double B0, p, q, r;
+  double B0, p, q, r, last_chkpnt_p;
   mpz_t g;
   mpres_t P, Q;
   mpres_t R, S, T;
   int youpi = ECM_NO_FACTOR_FOUND;
   unsigned int max_size, size_n;
+  long last_chkpnt_time;
 
   mpz_init (g);
   mpres_init (P, n);
@@ -171,8 +175,10 @@ pp1_stage1 (mpz_t f, mpres_t P0, mpmod_t n, double B1, double *B1done,
 
   mpz_set_ui (g, 1);
 
+  last_chkpnt_p = 2.;
+  last_chkpnt_time = cputime ();
   /* first loop through small primes <= sqrt(B1) */
-  for (p = 2.0; p <= B0; p = getprime (p))
+  for (p = 2.0; p <= B0; p = getprime ())
     {
       for (q = 1, r = p; r <= B1; r *= p)
         if (r > *B1done) q *= p;
@@ -184,7 +190,8 @@ pp1_stage1 (mpz_t f, mpres_t P0, mpmod_t n, double B1, double *B1done,
           if (stop_asap != NULL && (*stop_asap) ())
             {
               outputf (OUTPUT_NORMAL, "Interrupted at prime %.0f\n", p);
-              *B1done = p;
+	      if (p > *B1done)
+		  *B1done = p;
               goto clear_and_exit;
             }
 	}
@@ -192,21 +199,47 @@ pp1_stage1 (mpz_t f, mpres_t P0, mpmod_t n, double B1, double *B1done,
 
   pp1_mul (P0, P0, g, n, P, Q);
 
-  /* then all primes > sqrt(B1) and taken with exponent 1 */
-  for (; p <= B1; p = getprime (p))
+#if 1
+  /* All primes sqrt(B1) < p <= B1 appear in exponent 1. All primes <= B1done
+     are already included in exponent of at least 1, so it's save to skip 
+     ahead to B1done+1 */
+  
+  if (*B1done > p)
     {
-      if (p > *B1done)
-        pp1_mul_prac (P0, (unsigned long) p, n, P, Q, R, S, T);
+      getprime_seek ((*B1done) + 1.);
+      p = getprime ();
+    }
+#endif
+
+  /* then all primes > sqrt(B1) and taken with exponent 1 */
+  for (; p <= B1; p = getprime ())
+    {
+      pp1_mul_prac (P0, (unsigned long) p, n, P, Q, R, S, T);
   
       if (stop_asap != NULL && (*stop_asap) ())
         {
           outputf (OUTPUT_NORMAL, "Interrupted at prime %.0f\n", p);
-          *B1done = p;
+	  if (p > *B1done)
+	      *B1done = p;
           goto clear_and_exit;
+        }
+      if (chkfilename != NULL && p > last_chkpnt_p + 10000. &&
+          elltime (last_chkpnt_time, cputime ()) > CHKPNT_PERIOD)
+        {
+          writechkfile (chkfilename, ECM_PP1, p, n, NULL, P0, NULL);
+          last_chkpnt_p = p;
+          last_chkpnt_time = cputime ();
         }
     }
 
-  *B1done = B1;
+  /* If stage 1 finished normally, p is the smallest prime >B1 here.
+     In that case, set to B1 */
+  if (p > B1)
+    p = B1;
+  
+  if (p > *B1done)
+    *B1done = p;
+  
   mpres_sub_ui (P, P0, 2, n);
 #ifndef FULL_REDUCTION
   mpres_normalize (P); /* needed for gcd */
@@ -215,7 +248,9 @@ pp1_stage1 (mpz_t f, mpres_t P0, mpmod_t n, double B1, double *B1done,
   youpi = mpz_cmp_ui (f, 1);
 
 clear_and_exit:
-  getprime (FREE_PRIME_TABLE); /* free the prime tables, and reinitialize */
+  if (chkfilename != NULL)
+    writechkfile (chkfilename, ECM_PP1, p, n, NULL, P0, NULL);
+  getprime_clear (); /* free the prime tables, and reinitialize */
   mpres_clear (Q, n);
   mpres_clear (R, n);
   mpres_clear (S, n);
@@ -249,28 +284,47 @@ pp1_check_factor (mpz_t a, mpz_t p)
 
 /* let alpha, beta be the roots of x^2-Px+1=0
    set a, b such that alpha^e = a*alpha+b (idem for beta),
-   i.e. a*x+b = rem(x^e, x^2-Px+1) */
+   i.e. a*x+b = rem(x^e, x^2-Px+1).
+   Since (x-alpha)*(x-beta) = x^2-Px+1, we have alpha*beta = 1
+   and alpha+beta = P, i.e. 1/alpha = beta = -alpha + P.
+   It seems that if x^e % (x^2-Px+1) = a*x+b, then
+   x^{-e+1} % (x^2-Px+1) = b*x+a. Proof?
+*/
+
 static void
 pp1_mul2 (mpres_t a, mpres_t b, mpres_t P, mpz_t e, mpmod_t n)
 {
   unsigned long l;
   mpres_t t;
+  mpz_t abs_e;
+  const int positive_e = (mpz_sgn (e) > 0);
 
-  if (mpz_cmp_ui (e, 0) == 0) /* x^0 = 1 */
+  if (mpz_cmp_ui (e, 0UL) == 0) /* x^0 = 1 */
     {
       mpres_set_ui (a, 0, n);
       mpres_set_ui (b, 1, n);
       return;
     }
-
-  /* now e >= 1 */
-  mpres_set_ui (a, 1, n);
-  mpres_set_ui (b, 0, n);
-
-  l = mpz_sizeinbase (e, 2) - 1; /* number of bits of e (minus 1) */
-
+  
   mpres_init (t, n);
+  mpz_init (abs_e);
+  mpz_abs (abs_e, e);
 
+  if (positive_e)
+    {
+      mpres_set_ui (a, 1, n);
+      mpres_set_ui (b, 0, n);
+    }
+  else
+    {
+      /* Set to -x+P */
+      mpres_set_ui (a, 1, n);
+      mpres_neg (a, a, n);
+      mpres_set (b, P, n);
+    }
+
+  l = mpz_sizeinbase (abs_e, 2) - 1; /* number of bits of e (minus 1) */
+  
   while (l--)
     {
       /* square: (ax+b)^2 = (a^2P+2ab) x + (b^2-a^2) */
@@ -281,16 +335,31 @@ pp1_mul2 (mpres_t a, mpres_t b, mpres_t P, mpz_t e, mpmod_t n)
       mpres_sub (b, b, t, n); /* b^2-a^2 */
       mpres_mul (t, t, P, n); /* a^2P */
       mpres_add (a, t, a, n); /* a^2P+2ab */
-
-      if (mpz_tstbit (e, l)) /* multiply: (ax+b)*x = (aP+b) x - a */
-        {
-          mpres_mul (t, a, P, n);
-          mpres_add (t, t, b, n);
-          mpres_neg (b, a, n);
-          mpz_swap (a, t);
-        }
+      
+      if (mpz_tstbit (abs_e, l))
+	{
+	  if (positive_e)
+	    {
+	      /* multiply: (ax+b)*x = (aP+b) x - a */
+	      mpres_mul (t, a, P, n);
+	      mpres_add (t, t, b, n);
+	      mpres_neg (b, a, n);
+	      mpres_set (a, t, n);
+	    }
+	  else
+	    {
+	      /* multiply: (ax+b)*(-x+P) = 
+                           -ax^2+(aP-b)x+b*P == 
+			   -bx + (bP + a) (mod x^2-P*x+1) */
+	      mpres_mul (t, b, P, n);
+	      mpres_add (t, t, a, n);
+	      mpres_neg (a, b, n);
+	      mpres_set (b, t, n);
+	    }
+	}
     }
 
+  mpz_clear (abs_e);
   mpres_clear (t, n);
 }
 
@@ -348,15 +417,17 @@ pp1_rootsF (listz_t F, root_params_t *root_params, unsigned long dF,
   mpres_t fd[3];
   mpres_t u, v; /* auxiliary variables */
   listz_t coeffs;
-  ecm_roots_state state;
+  ecm_roots_state_t state;
+  progression_params_t *params = &state.params; /* for less typing */
 
   if (dF == 0)
     return youpi;
 
   st1 = st = cputime ();
 
-  outputf (OUTPUT_DEVVERBOSE, "pp1_rootsF: d1 = %lu, d2 = %lu, dF = %lu\n",
-	   root_params->d1, root_params->d2, dF);
+  outputf (OUTPUT_DEVVERBOSE, 
+	   "pp1_rootsF: d1 = %lu, d2 = %lu, S = %d, dF = %lu\n",
+	   root_params->d1, root_params->d2, root_params->S, dF);
 
   mpres_init (u, modulus);
   mpres_init (v, modulus);
@@ -371,10 +442,10 @@ pp1_rootsF (listz_t F, root_params_t *root_params, unsigned long dF,
       pp1_mul (fd[2], *x, *t, modulus, u, v);
       mpres_get_z (F[0], fd[2], modulus);
   
-      mpz_set_ui (*t, 7);
+      mpz_set_ui (*t, 7UL);
       pp1_mul (fd[0], fd[2], *t, modulus, u, v);
 
-      mpz_set_ui (*t, 6);
+      mpz_set_ui (*t, 6UL);
       pp1_mul (fd[1], fd[2], *t, modulus, u, v);
 
       /* fd[0] = V_{7*d2}(P), fd[1] = V_{6*d2}(P), fd[2] = V_{d2}(P) */
@@ -393,8 +464,11 @@ pp1_rootsF (listz_t F, root_params_t *root_params, unsigned long dF,
 	  /* V_{m+n} = V_m * V_n - V_{m-n} */
 	  /* fd[0] = V_m, fd[1] = V_n, fd[2] = V_{m-n} */
 	  mpres_swap (fd[0], fd[2], modulus);
+	  /* fd[0] = V_{m-n}, fd[1] = V_n, fd[2] = V_m */
 	  mpres_mul (u, fd[2], fd[1], modulus);
+	  /* u = V_n * V_m */
 	  mpres_sub (fd[0], u, fd[0], modulus);
+	  /* fd[0] = V_n * V_m - V_{m-n} = V_{m+n}, hence */
 	  /* fd[0] = V_{m+n}, fd[1] = V_n, fd[2] = V_m */
 	  j += 6;
 	  muls ++;
@@ -407,35 +481,35 @@ pp1_rootsF (listz_t F, root_params_t *root_params, unsigned long dF,
   else /* case |S| <> 1: this code works also for S=1, but is more
 	  expensive, since it can use up to 4*(d1/6) muls */
     {
-      init_roots_state (&state, root_params->S, root_params->d1, 
-                        root_params->d2, 1.0);
-      mpz_set_ui (*t, 0);
-      coeffs = init_progression_coeffs (*t, state.dsieve, root_params->d2, 1, 
-                                        6, state.S, state.dickson_a);
+      init_roots_params (params, root_params->S, root_params->d1, 
+                         root_params->d2, 1.0);
+      mpz_set_ui (*t, 0UL);
+      coeffs = init_progression_coeffs (*t, params->dsieve, root_params->d2, 1, 
+                                        6, params->S, params->dickson_a);
       
       if (coeffs == NULL)
         return ECM_ERROR;
 
-      state.fd = (point *) malloc (state.size_fd * sizeof (point));
+      state.fd = (point *) malloc (params->size_fd * sizeof (point));
       if (state.fd == NULL)
         {
-	  clear_list (coeffs, state.size_fd);
+	  clear_list (coeffs, params->size_fd);
 	  return ECM_ERROR;
         }
-      for (i = 0; i < state.size_fd; i++)
+      for (i = 0; i < params->size_fd; i++)
 	{
           mpres_init (state.fd[i].x, modulus);
           mpres_init (state.fd[i].y, modulus);
 	  /* if i = k*(S+1) + S for k>=1, we can copy x and y from i - (S+1) */
-	  if (i > state.S && (i % (state.S + 1) == state.S))
+	  if (i > params->S && (i % (params->S + 1) == params->S))
 	    {
-	      mpres_set (state.fd[i].x, state.fd[state.S].x, modulus);
-	      mpres_set (state.fd[i].y, state.fd[state.S].y, modulus);
+	      mpres_set (state.fd[i].x, state.fd[params->S].x, modulus);
+	      mpres_set (state.fd[i].y, state.fd[params->S].y, modulus);
 	    }
 	  else
 	    pp1_mul2 (state.fd[i].x, state.fd[i].y, x[0], coeffs[i], modulus);
 	}
-      clear_list (coeffs, state.size_fd);
+      clear_list (coeffs, params->size_fd);
 
       outputf (OUTPUT_VERBOSE,
 	       "Initializing table of differences for F took %ldms\n",
@@ -445,37 +519,37 @@ pp1_rootsF (listz_t F, root_params_t *root_params, unsigned long dF,
       for (i = 0; i < dF && !youpi;)
 	{
 	  /* Is this a rsieve value where we computed Dickson(j * d2) * X? */
-	  if (gcd (state.rsieve, state.dsieve) == 1)
+	  if (gcd (params->rsieve, params->dsieve) == 1)
 	    {
 	      /* Did we use every progression since the last update? */
-	      if (state.next == state.nr)
+	      if (params->next == params->nr)
 		{
 		  /* Yes, time to update again */
-		  addWnm (state.fd, x[0], modulus, state.nr, state.S, &muls);
-		  state.next = 0;
+		  addWnm (state.fd, x[0], modulus, params->nr, params->S, &muls);
+		  params->next = 0;
 		}
 
 	      /* Is this a j value where we want Dickson(j*d2)*X as a root? */
-	      if (gcd (state.rsieve, root_params->d1) == 1)
+	      if (gcd (params->rsieve, root_params->d1) == 1)
 		{
 		  /* we have alpha^k = x * alpha + y
 		     thus alpha^k + beta^k = x * P + 2 * y.
                      FIXME: can we avoid returning to the Lucas form?
                   */
-		  mpres_mul (u, state.fd[state.next * (state.S + 1)].x, x[0],
+		  mpres_mul (u, state.fd[params->next * (params->S + 1)].x, x[0],
 			     modulus);
-		  mpres_mul_ui (v, state.fd[state.next * (state.S + 1)].y,
+		  mpres_mul_ui (v, state.fd[params->next * (params->S + 1)].y,
 				2, modulus);
 		  mpres_add (u, u, v, modulus);
 		  mpres_get_z (F[i++], u, modulus);
 		}
 
-	      state.next ++;
+	      params->next ++;
 	    }
-	  state.rsieve += 6;
+	  params->rsieve += 6;
 	}
 
-      for (i = 0; i < state.size_fd; i++)
+      for (i = 0; i < params->size_fd; i++)
         {
           mpres_clear (state.fd[i].x, modulus);
           mpres_clear (state.fd[i].y, modulus);
@@ -495,23 +569,25 @@ pp1_rootsF (listz_t F, root_params_t *root_params, unsigned long dF,
 }
 
 /* return NULL if an error occurred */
-pp1_roots_state *
+pp1_roots_state_t *
 pp1_rootsG_init (mpres_t *x, root_params_t *root_params, mpmod_t modulus)
 {
   mpres_t P;
-  pp1_roots_state *state;
+  pp1_roots_state_t *state;
+  progression_params_t *params; /* for less typing */
   unsigned long i;
 
   ASSERT (gcd (root_params->d1, root_params->d2) == 1);
 
-  state = (pp1_roots_state *) malloc (sizeof (pp1_roots_state));
+  state = (pp1_roots_state_t *) malloc (sizeof (pp1_roots_state_t));
   if (state == NULL)
     return NULL;
+  params = &(state->params);
 
   /* we don't need the sign anymore after pp1_rootsG_init */
-  state->S = ABS(root_params->S); 
+  params->S = ABS(root_params->S); 
 
-  if (state->S == 1)
+  if (params->S == 1)
     {
       mpz_t t;
       mpz_init (t);
@@ -519,16 +595,16 @@ pp1_rootsG_init (mpres_t *x, root_params_t *root_params, mpmod_t modulus)
       for (i = 0; i < 4; i++)
         mpres_init (state->tmp[i], modulus);
 
-      state->dsieve = root_params->d2; /* needed in pp1_rootsG */
+      params->dsieve = root_params->d2; /* needed in pp1_rootsG */
       /* We want to skip values where gcd((i0 + i) * d1, d2) != 1.
 	 We can test for gcd(i0 + i, d2) instead and let pp1_rootsG()
-	 advance state->rsieve in steps of 1 */
-      /* state->rsieve = i0 % d2 */
-      state->rsieve = mpz_fdiv_ui (root_params->i0, root_params->d2);
+	 advance params->rsieve in steps of 1 */
+      /* params->rsieve = i0 % d2 */
+      params->rsieve = mpz_fdiv_ui (root_params->i0, root_params->d2);
       
       outputf (OUTPUT_DEVVERBOSE, "pp1_rootsG_init: i0 = %Zd, state: "
                "dsieve = %d, rsieve = %d, S = %d\n", root_params->i0, 
-               state->dsieve, state->rsieve, state->S);
+               params->dsieve, params->rsieve, params->S);
       
       mpz_set_ui (t, root_params->d1);
       pp1_mul (state->tmp[1], *x, t, modulus, state->tmp[3], P);
@@ -546,14 +622,14 @@ pp1_rootsG_init (mpres_t *x, root_params_t *root_params, mpmod_t modulus)
     {
       listz_t coeffs;
       
-      state->dickson_a = (root_params->S < 0) ? -1 : 0;
-      state->nr = (root_params->d2 > 1) ? root_params->d2 - 1 : 1;
-      state->size_fd = state->nr * (state->S + 1);
-      state->next = 0;
-      state->dsieve = 1;
-      state->rsieve = 1;
+      params->dickson_a = (root_params->S < 0) ? -1 : 0;
+      params->nr = (root_params->d2 > 1) ? root_params->d2 - 1 : 1;
+      params->size_fd = params->nr * (params->S + 1);
+      params->next = 0;
+      params->dsieve = 1;
+      params->rsieve = 1;
 
-      state->fd = (point *) malloc (state->size_fd * sizeof (point));
+      state->fd = (point *) malloc (params->size_fd * sizeof (point));
       if (state->fd == NULL)
         {
           free (state);
@@ -561,7 +637,7 @@ pp1_rootsG_init (mpres_t *x, root_params_t *root_params, mpmod_t modulus)
         }
       
       coeffs = init_progression_coeffs (root_params->i0, root_params->d2, 
-                 root_params->d1, 1, 1, state->S, state->dickson_a);
+                 root_params->d1, 1, 1, params->S, params->dickson_a);
       if (coeffs == NULL)
         {
           free (state->fd);
@@ -569,40 +645,40 @@ pp1_rootsG_init (mpres_t *x, root_params_t *root_params, mpmod_t modulus)
           return NULL;
         }
 
-      for (i = 0; i < state->size_fd; i++) 
+      for (i = 0; i < params->size_fd; i++) 
         {
           mpres_init (state->fd[i].x, modulus);
           mpres_init (state->fd[i].y, modulus);
           /* The S-th coeff of all progressions is identical */
-          if (i > state->S && i % (state->S + 1) == state->S) 
+          if (i > params->S && i % (params->S + 1) == params->S) 
             {
               /* Simply copy from the first progression */
-              mpres_set (state->fd[i].x, state->fd[state->S].x, modulus); 
-              mpres_set (state->fd[i].y, state->fd[state->S].y, modulus); 
+              mpres_set (state->fd[i].x, state->fd[params->S].x, modulus); 
+              mpres_set (state->fd[i].y, state->fd[params->S].y, modulus); 
             }
           else
             pp1_mul2 (state->fd[i].x, state->fd[i].y, x[0], coeffs[i], modulus);
         }
 
-      clear_list (coeffs, state->size_fd);
+      clear_list (coeffs, params->size_fd);
     }
 
   return state;
 }
 
 void 
-pp1_rootsG_clear (pp1_roots_state *state, ATTRIBUTE_UNUSED mpmod_t modulus)
+pp1_rootsG_clear (pp1_roots_state_t *state, ATTRIBUTE_UNUSED mpmod_t modulus)
 {
   unsigned long i;
 
-  if (state->S == 1)
+  if (state->params.S == 1)
     {
       for (i = 0; i < 4; i++)
         mpres_clear (state->tmp[i], modulus);
     }
   else
     {
-      for (i = 0; i < state->size_fd; i++)
+      for (i = 0; i < state->params.size_fd; i++)
         {
           mpres_clear (state->fd[i].x, modulus);
           mpres_clear (state->fd[i].y, modulus);
@@ -614,38 +690,39 @@ pp1_rootsG_clear (pp1_roots_state *state, ATTRIBUTE_UNUSED mpmod_t modulus)
 }
 
 int
-pp1_rootsG (listz_t G, unsigned long dF, pp1_roots_state *state, mpmod_t modulus,
-            mpres_t *x)
+pp1_rootsG (listz_t G, unsigned long dF, pp1_roots_state_t *state, 
+	    mpmod_t modulus, mpres_t *x)
 {
   unsigned long i;
   unsigned long muls = 0;
   long st;
+  progression_params_t *params = &(state->params); /* for less typing */
 
   st = cputime ();
 
-  /* state->S is positive: we don't need the sign anymore, since the
+  /* params->S is positive: we don't need the sign anymore, since the
      polynomial is defined by the table of differences */
 
-  if (state->S == 1)
+  if (params->S == 1)
     {
       for (i = 0; i < dF;)
         {
-          if (gcd (state->rsieve, state->dsieve) == 1)
+          if (gcd (params->rsieve, params->dsieve) == 1)
             {
               outputf (OUTPUT_TRACE, "pp1_rootsG: Taking root G[%d], rsieve = %d\n", 
-                       i, state->rsieve);
+                       i, params->rsieve);
               mpres_get_z (G[i++], state->tmp[0], modulus);
             }
           else
             {
               outputf (OUTPUT_TRACE, "pp1_rootsG: NOT taking root, rsieve = %d, gcd = %d\n", 
-                       state->rsieve, gcd (state->rsieve, state->dsieve));
+                       params->rsieve, gcd (params->rsieve, params->dsieve));
             }
 
           mpres_swap (state->tmp[0], state->tmp[2], modulus);
           mpres_mul (state->tmp[3], state->tmp[2], state->tmp[1], modulus);
           mpres_sub (state->tmp[0], state->tmp[3], state->tmp[0], modulus);
-          state->rsieve++;
+          params->rsieve++;
         }
     }
   else
@@ -657,26 +734,26 @@ pp1_rootsG (listz_t G, unsigned long dF, pp1_roots_state *state, mpmod_t modulus
       for (i = 0; i < dF;)
         {
           /* Did we use every progression since the last update? */
-          if (state->next == state->nr)
+          if (params->next == params->nr)
             {
               /* Yes, time to update again */
-              addWnm (state->fd, x[0], modulus, state->nr, state->S, &muls);
-              state->next = 0;
+              addWnm (state->fd, x[0], modulus, params->nr, params->S, &muls);
+              params->next = 0;
             }
       
           /* Is this a root we should skip? (Take only if gcd == 1) */
-          if (gcd (state->rsieve, state->dsieve) == 1)
+          if (gcd (params->rsieve, params->dsieve) == 1)
             {
-              mpres_mul (u, state->fd[state->next * (state->S + 1)].x, x[0],
+              mpres_mul (u, state->fd[params->next * (params->S + 1)].x, x[0],
                          modulus);
-              mpres_mul_ui (v, state->fd[state->next * (state->S + 1)].y,
+              mpres_mul_ui (v, state->fd[params->next * (params->S + 1)].y,
                             2, modulus);
               mpres_add (u, u, v, modulus);
               mpres_get_z (G[i++], u, modulus);
             }
       
-          state->next ++;
-          state->rsieve ++;
+          params->next ++;
+          params->rsieve ++;
         }
       mpres_clear (u, modulus);
       mpres_clear (v, modulus);
@@ -710,8 +787,8 @@ int
 pp1 (mpz_t f, mpz_t p, mpz_t n, mpz_t go, double *B1done, double B1,
      mpz_t B2min_parm, mpz_t B2_parm, double B2scale, unsigned long k, 
      const int S, int verbose, int repr, int use_ntt, FILE *os, FILE *es, 
-     char *TreeFilename, double maxmem, gmp_randstate_t rng, 
-     int (*stop_asap)(void))
+     char *chkfilename, char *TreeFilename, double maxmem, 
+     gmp_randstate_t rng, int (*stop_asap)(void))
 {
   int youpi = ECM_NO_FACTOR_FOUND;
   int po2 = 0;    /* Whether we should use power-of-2 poly degree */
@@ -721,6 +798,9 @@ pp1 (mpz_t f, mpz_t p, mpz_t n, mpz_t go, double *B1done, double B1,
   mpz_t B2min, B2; /* Local B2, B2min to avoid changing caller's values */
   unsigned long dF;
   root_params_t root_params;
+  faststage2_param_t faststage2_params;
+  const int stage2_variant = (S == 1 || S == ECM_DEFAULT_S);
+  int twopass = 0;
 
   set_verbose (verbose);
   ECM_STDOUT = (os == NULL) ? stdout : os;
@@ -740,7 +820,6 @@ pp1 (mpz_t f, mpz_t p, mpz_t n, mpz_t go, double *B1done, double B1,
 
   mpz_init_set (B2min, B2min_parm);
   mpz_init_set (B2, B2_parm);
-  mpz_init (root_params.i0);
 
   /* Set default B2. See ecm.c for comments */
   if (ECM_IS_DEFAULT_B2(B2))
@@ -750,74 +829,135 @@ pp1 (mpz_t f, mpz_t p, mpz_t n, mpz_t go, double *B1done, double B1,
   if (mpz_sgn (B2min) < 0)
     mpz_set_d (B2min, B1);
 
-  if (repr == ECM_MOD_MPZ)
-    mpmod_init_MPZ (modulus, n);
-  else   if (repr == ECM_MOD_MODMULN)
-    mpmod_init_MODMULN (modulus, n);
-  else if (repr == ECM_MOD_REDC)
-    mpmod_init_REDC (modulus, n);
-  else if (abs (repr) > 16)
-    {
-      if (mpmod_init_BASE2 (modulus, repr, n) == ECM_ERROR)
-        return ECM_ERROR;
-    }
-  else /* automatic choice */
-    mpmod_init (modulus, n, repr);
+  mpmod_init (modulus, n, repr);
 
   if (use_ntt)
     po2 = 1;
   
-  if (bestD (&root_params, &k, &dF, B2min, B2, po2, use_ntt, maxmem,
-             (TreeFilename != NULL), modulus) == ECM_ERROR)
+  if (stage2_variant != 0)
     {
-      youpi = ECM_ERROR;
-      goto clear_and_exit;
+      long P;
+      const unsigned long lmax = 1UL<<28; /* An upper bound */
+      unsigned long lmax_NTT, lmax_noNTT;
+      
+      mpz_init (faststage2_params.m_1);
+      
+      /* Find out what the longest transform length is we can do at all.
+	 If no maxmem is given, the non-NTT can theoretically do any length. */
+
+      lmax_NTT = 0;
+      if (use_ntt)
+	{
+	  unsigned long t, t2 = 0;
+	  /* See what transform length that the NTT can handle (due to limited 
+	     primes and limited memory) */
+	  t = mpzspm_max_len (n);
+	  lmax_NTT = MIN (lmax, t);
+	  if (maxmem != 0.)
+	    {
+	      t = pp1fs2_maxlen (double_to_size (maxmem), n, use_ntt, 0);
+	      t = MIN (t, lmax_NTT);
+	      /* Maybe the two pass variant lets us use a longer transform */
+	      t2 = pp1fs2_maxlen (double_to_size (maxmem), n, use_ntt, 1);
+	      t2 = MIN (t2, lmax_NTT);
+	      if (t2 > t)
+		{
+		  t = t2;
+		  twopass = 1;
+		}
+	      lmax_NTT = t;
+	    }
+	  outputf (OUTPUT_DEVVERBOSE, "NTT can handle lmax <= %lu\n", lmax_NTT);
+	}
+
+      /* See what transform length that the non-NTT code can handle */
+      lmax_noNTT = lmax;
+      if (maxmem != 0.)
+	{
+	  unsigned long t;
+	  t = pp1fs2_maxlen (double_to_size (maxmem), n, 0, 0);
+	  lmax_noNTT = MIN (lmax_noNTT, t);
+	  outputf (OUTPUT_DEVVERBOSE, "non-NTT can handle lmax <= %lu\n", 
+		   lmax_noNTT);
+	}
+
+      P = choose_P (B2min, B2, MAX(lmax_noNTT, lmax_NTT), k, 
+		    &faststage2_params, B2min, B2, use_ntt);
+      if (P == ECM_ERROR)
+	{
+	  mpz_clear (faststage2_params.m_1);
+	  return ECM_ERROR;
+	}
+
+      /* See if the selected parameters let us use NTT or not */
+      if (faststage2_params.l > lmax_NTT)
+	use_ntt = 0;
+      
+      if (maxmem != 0.)
+	{
+	  unsigned long MB;
+	  char *s;
+	  if (!use_ntt)
+	    s = "out";
+	  else if (twopass)
+	    s = " two pass";
+	  else
+	    s = " one pass";
+
+	  MB = pp1fs2_memory_use (faststage2_params.l, n, use_ntt, twopass)
+	    / 1048576;
+	  outputf (OUTPUT_VERBOSE, "Using lmax = %lu with%s NTT which takes "
+		   "about %luMB of memory\n", faststage2_params.l, s, MB);
+	}
     }
-  
-  /* Set default degree for Brent-Suyama extension */
-  root_params.S = S;
-  if (root_params.S == ECM_DEFAULT_S)
+  else 
     {
-      if (modulus->repr == ECM_MOD_BASE2 && modulus->Fermat > 0)
-        {
-          /* For Fermat numbers, default is 1 (no Brent-Suyama) */
-          root_params.S = 1;
-        }
-      else
-        {
-          mpz_t t;
-          mpz_init (t);
-          mpz_sub (t, B2, B2min);
-          root_params.S = choose_S (t);
-          mpz_clear (t);
-        }
+      mpz_init (root_params.i0);
+      root_params.d2 = 0; /* Enable automatic choice of d2 */
+      if (bestD (&root_params, &k, &dF, B2min, B2, po2, use_ntt, maxmem,
+		 (TreeFilename != NULL), modulus) == ECM_ERROR)
+	{
+	  youpi = ECM_ERROR;
+	  goto clear_and_exit;
+	}
+      
+      /* Set default degree for Brent-Suyama extension */
+      root_params.S = S;
+      if (root_params.S == ECM_DEFAULT_S)
+	{
+	  if (modulus->repr == ECM_MOD_BASE2 && modulus->Fermat > 0)
+	    {
+	      /* For Fermat numbers, default is 1 (no Brent-Suyama) */
+	      root_params.S = 1;
+	    }
+	  else
+	    {
+	      mpz_t t;
+	      mpz_init (t);
+	      mpz_sub (t, B2, B2min);
+	      root_params.S = choose_S (t);
+	      mpz_clear (t);
+	    }
+	}
     }
 
-  if (test_verbose (OUTPUT_NORMAL))
+  /* Print B1, B2, polynomial and x0 */
+  print_B1_B2_poly (OUTPUT_NORMAL, ECM_PP1, B1, *B1done, B2min_parm, B2min, 
+		    B2, (stage2_variant == 0) ? root_params.S : 1, p, 0);
+
+  /* If we do a stage 2, print its parameters */
+  if (mpz_cmp (B2, B2min) >= 0)
     {
-      outputf (OUTPUT_NORMAL, "Using ");
-      if (ECM_IS_DEFAULT_B1_DONE(*B1done))
-        outputf (OUTPUT_NORMAL, "B1=%1.0f", B1);
+      if (stage2_variant != 0)
+        outputf (OUTPUT_VERBOSE, "P = %lu, l = %lu, s_1 = %lu, k = s_2 = %lu, "
+                 "m_1 = %Zd\n", faststage2_params.P, faststage2_params.l,
+                 faststage2_params.s_1,faststage2_params.s_2,
+                 faststage2_params.m_1);
       else
-        outputf (OUTPUT_NORMAL, "B1=%1.0f-%1.0f", *B1done, B1);
-      if (mpz_cmp_d (B2min, B1) == 0)
-        outputf (OUTPUT_NORMAL, ", B2=%Zd", B2);
-      else
-        outputf (OUTPUT_NORMAL, ", B2=%Zd-%Zd", B2min, B2);
-
-      if (root_params.S > 0)
-        outputf (OUTPUT_NORMAL, ", polynomial x^%u", root_params.S);
-      else
-        outputf (OUTPUT_NORMAL, ", polynomial Dickson(%u)", 
-		 -root_params.S);
-       /* don't print x0 in resume case */
-      if (ECM_IS_DEFAULT_B1_DONE(*B1done)) 
-        outputf (OUTPUT_NORMAL, ", x0=%Zd", p);
-      outputf (OUTPUT_NORMAL, "\n");
+        outputf (OUTPUT_VERBOSE, "dF=%lu, k=%lu, d=%lu, d2=%lu, i0=%Zd\n", 
+                 dF, k, root_params.d1, root_params.d2, 
+                 S == 1 ? faststage2_params.m_1 : root_params.i0);
     }
-
-  outputf (OUTPUT_VERBOSE, "dF=%lu, k=%lu, d=%lu, d2=%lu, i0=%Zd\n", 
-           dF, k, root_params.d1, root_params.d2, root_params.i0);
 
   mpres_init (a, modulus);
   mpres_set_z (a, p, modulus);
@@ -833,7 +973,8 @@ pp1 (mpz_t f, mpz_t p, mpz_t n, mpz_t go, double *B1done, double B1,
     }
 
   if (B1 > *B1done)
-    youpi = pp1_stage1 (f, a, modulus, B1, B1done, go, stop_asap);
+    youpi = pp1_stage1 (f, a, modulus, B1, B1done, go, stop_asap, 
+                        chkfilename);
 
   outputf (OUTPUT_NORMAL, "Step 1 took %ldms\n", elltime (st, cputime ()));
   if (test_verbose (OUTPUT_RESVERBOSE))
@@ -852,8 +993,18 @@ pp1 (mpz_t f, mpz_t p, mpz_t n, mpz_t go, double *B1done, double B1,
     goto clear_and_exit;
       
   if (youpi == ECM_NO_FACTOR_FOUND && mpz_cmp (B2, B2min) >= 0)
-    youpi = stage2 (f, &a, modulus, dF, k, &root_params, ECM_PP1, 
-                    use_ntt, TreeFilename, stop_asap);
+    {
+      if (stage2_variant != 0)
+        {
+          if (use_ntt)
+            youpi = pp1fs2_ntt (f, a, modulus, &faststage2_params, twopass);
+          else 
+            youpi = pp1fs2 (f, a, modulus, &faststage2_params);
+        }
+      else
+	youpi = stage2 (f, &a, modulus, dF, k, &root_params, ECM_PP1, 
+			use_ntt, TreeFilename, stop_asap);
+    }
 
   if (youpi > 0 && test_verbose (OUTPUT_NORMAL))
     pp1_check_factor (p, f); /* tell user if factor was found by P-1 */
@@ -861,7 +1012,10 @@ pp1 (mpz_t f, mpz_t p, mpz_t n, mpz_t go, double *B1done, double B1,
  clear_and_exit:
   mpres_clear (a, modulus);
   mpmod_clear (modulus);
-  mpz_clear (root_params.i0);
+  if (stage2_variant != 0)
+    mpz_clear (faststage2_params.m_1);
+  else
+    mpz_clear (root_params.i0);
   mpz_clear (B2);
   mpz_clear (B2min);
 

@@ -16,8 +16,8 @@
 
   You should have received a copy of the GNU Lesser General Public License
   along with the ECM Library; see the file COPYING.LIB.  If not, write to
-  the Free Software Foundation, Inc., 59 Temple Place - Suite 330, Boston,
-  MA 02111-1307, USA.
+  the Free Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston,
+  MA 02110-1301, USA.
 */
 
 #include <stdio.h>
@@ -29,11 +29,11 @@
 # include "ecm-impl.h"
 #endif
 
-#if HAVE_UNISTD_H
+#ifdef HAVE_UNISTD_H
 # include <unistd.h> /* getpid */
 #endif
 
-#if TIME_WITH_SYS_TIME
+#ifdef TIME_WITH_SYS_TIME
 # include <sys/time.h>
 # include <time.h>
 #else
@@ -156,7 +156,7 @@ get_random_ui (void)
       fclose (rndfd);
     }
 
-#if HAVE_GETTIMEOFDAY
+#ifdef HAVE_GETTIMEOFDAY
   if (gettimeofday (&tv, NULL) == 0)
     {
 #ifndef OUTSIDE_LIBECM

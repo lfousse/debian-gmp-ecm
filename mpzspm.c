@@ -1,7 +1,7 @@
 /* mpzspm.c - "mpz small prime moduli" - pick a set of small primes large
    enough to represent a mpzv
 
-  Copyright 2005 Dave Newman.
+  Copyright 2005, 2008 Dave Newman and Jason Papadopoulos.
 
   The SP Library is free software; you can redistribute it and/or modify
   it under the terms of the GNU Lesser General Public License as published by
@@ -15,19 +15,103 @@
 
   You should have received a copy of the GNU Lesser General Public License
   along with the SP Library; see the file COPYING.LIB.  If not, write to
-  the Free Software Foundation, Inc., 59 Temple Place - Suite 330, Boston,
-  MA 02111-1307, USA.
+  the Free Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston,
+  MA 02110-1301, USA.
 */
 
 #include <stdio.h> /* for printf */
 #include <stdlib.h>
 #include "sp.h"
 
+
+/* Tables for the maximum possible modulus (in bit size) for different 
+   transform lengths l.
+   The modulus is limited by the condition that primes must be 
+   p_i == 1 (mod l), and \Prod_i p_i >= 4l (modulus * S)^2, 
+   where S=\Sum_i p_i.
+   Hence for each l=2^k, we take the product P and sum S of primes p_i,
+   SP_MIN <= p_i <= SP_MAX and p_i == 1 (mod l), and store 
+   floor (log_2 (sqrt (P / (4l S^2)))) in the table.
+   We only consider power-of-two transform lengths <= 2^31 here.
+
+   Table entries generated with
+   
+   l=2^k;p=1;P=1;S=0;while(p<=SP_MAX, if(p>=SP_MIN && isprime(p), S+=p; P*=p); \
+   p+=l);print(floor (log2 (sqrt (P / (4*l * S^2)))))
+
+   in Pari/GP for k=9 ... 24. k<9 simply were doubled and rounded down in 
+   each step.
+
+   We curently assume that SP_MIN == 2^(SP_NUMB_BITS-1) and 
+   SP_MAX == 2^(SP_NUMB_BITS).
+   
+*/
+
+#if (SP_NUMB_BITS == 30)
+static unsigned long sp_max_modulus_bits[32] = 
+  {0, 380000000, 190000000, 95000000, 48000000, 24000000, 12000000, 6000000, 
+   3000000, 1512786, 756186, 378624, 188661, 93737, 46252, 23342, 11537, 5791, 
+   3070, 1563, 782, 397, 132, 43, 0, 0, 0, 0, 0, 0, 0, 0};
+#elif (SP_NUMB_BITS == 31)
+static unsigned long sp_max_modulus_bits[32] = 
+  {0, 750000000, 380000000, 190000000, 95000000, 48000000, 24000000, 12000000, 
+   6000000, 3028766, 1512573, 756200, 379353, 190044, 94870, 47414, 23322, 
+   11620, 5891, 2910, 1340, 578, 228, 106, 60, 30, 0, 0, 0, 0, 0, 0};
+#elif (SP_NUMB_BITS == 32)
+static unsigned long sp_max_modulus_bits[32] = 
+  {0, 1520000000, 760000000, 380000000, 190000000, 95000000, 48000000, 
+   24000000, 12000000, 6041939, 3022090, 1509176, 752516, 376924, 190107, 
+   95348, 47601, 24253, 11971, 6162, 3087, 1557, 833, 345, 172, 78, 46, 15, 
+   0, 0, 0, 0};
+#elif (SP_NUMB_BITS >= 60)
+  /* There are so many primes, we can do pretty much any modulus with 
+     any transform length. I didn't bother computing the actual values. */
+static unsigned long sp_max_modulus_bits[32] =  
+  {0, ULONG_MAX, ULONG_MAX, ULONG_MAX, ULONG_MAX, ULONG_MAX, ULONG_MAX, 
+   ULONG_MAX, ULONG_MAX, ULONG_MAX, ULONG_MAX, ULONG_MAX, ULONG_MAX, ULONG_MAX, 
+   ULONG_MAX, ULONG_MAX, ULONG_MAX, ULONG_MAX, ULONG_MAX, ULONG_MAX, ULONG_MAX, 
+   ULONG_MAX, ULONG_MAX, ULONG_MAX, ULONG_MAX, ULONG_MAX, ULONG_MAX, ULONG_MAX, 
+   ULONG_MAX, ULONG_MAX, ULONG_MAX, ULONG_MAX};
+#else
+#error Table of maximal modulus for transform lengths not defined for this SP_MIN
+;
+#endif
+
+
+/* Returns the largest possible transform length we can do for modulus
+   without running out of primes */
+
+spv_size_t
+mpzspm_max_len (mpz_t modulus)
+{
+  int i;
+  size_t b;
+
+  b = mpz_sizeinbase (modulus, 2); /* b = floor (log_2 (modulus)) + 1 */
+  /* Transform length 2^k is ok if log2(modulus) <= sp_max_modulus_bits[k]
+     <==> ceil(log2(modulus)) <= sp_max_modulus_bits[k] 
+     <==> floor(log_2(modulus)) + 1 <= sp_max_modulus_bits[k] if modulus 
+     isn't a power of 2 */
+     
+  for (i = 0; i < 30; i++)
+    {
+      if (b > sp_max_modulus_bits[i + 1])
+	break;
+    }
+
+  return (spv_size_t)1 << i;
+}
+
+/* This function initializes a mpzspm_t structure which contains the number
+   of small primes, the small primes with associated primitive roots and 
+   precomputed data for the CRT to allow convolution products of length up 
+   to "max_len" with modulus "modulus". */
+
 mpzspm_t
 mpzspm_init (spv_size_t max_len, mpz_t modulus)
 {
   unsigned int ub, i, j;
-  mpz_t P, S, T;
+  mpz_t P, S, T, mp, mt; /* mp is p as mpz_t, mt is a temp mpz_t */
   sp_t p, a;
   mpzspm_t mpzspm;
   
@@ -55,40 +139,53 @@ mpzspm_init (spv_size_t max_len, mpz_t modulus)
   mpzspm->sp_num = 0;
 
   /* product of primes selected so far */
-  mpz_init_set_ui (P, 1);
+  mpz_init_set_ui (P, 1UL);
   /* sum of primes selected so far */
   mpz_init (S);
+  /* T is len*modulus^2, the upper bound on output coefficients of a 
+     convolution */
   mpz_init (T); 
   mpz_mul (T, modulus, modulus);
   mpz_mul_ui (T, T, max_len);
+  mpz_init (mp);
+  mpz_init (mt);
   
   /* find primes congruent to 1 mod max_len so we can do
    * a ntt of size max_len */
-  p = 1;
+  /* Find the largest p <= SP_MAX that is p == 1 (mod max_len) */
+  p = (SP_MAX / (sp_t) max_len) * (sp_t) max_len;
+  if (p == SP_MAX) /* If max_len | SP_MAX, the +1 might cause overflow */
+    p = p - (sp_t) max_len + (sp_t) 1;
+  else
+    p++;
+  
   do
     {
-      do
-        p -= max_len;
-      while (!sp_prime(p));
-      
-      /* all primes must have top bit set */
-      if (p < SP_MIN)
+      while (p >= SP_MIN && p > (sp_t) max_len && !sp_prime(p))
+        p -= (sp_t) max_len;
+
+      /* all primes must be in range */
+      if (p < SP_MIN || p <= (sp_t) max_len)
         {
-	  printf ("not enough primes in interval\n");
+	  printf ("not enough primes == 1 (mod %lu) in interval\n", 
+	          (unsigned long) max_len);
 	  return NULL;
 	}
       
       mpzspm->spm[mpzspm->sp_num++] = spm_init (max_len, p);
       
-      mpz_mul_ui (P, P, p);
-      mpz_add_ui (S, S, p);
+      mpz_set_sp (mp, p);
+      mpz_mul (P, P, mp);
+      mpz_add (S, S, mp);
 
-      /* we want P > 4 * max_len * (modulus * S)^2 */
+      /* we want P > 4 * max_len * (modulus * S)^2. The S^2 term is due to 
+         theorem 3.1 in Bernstein and Sorenson's paper */
       mpz_mul (T, S, modulus);
       mpz_mul (T, T, T);
       mpz_mul_ui (T, T, max_len);
-      mpz_add (T, T, T);
-      mpz_add (T, T, T);
+      mpz_mul_2exp (T, T, 2UL);
+      
+      p -= (sp_t) max_len;
     }
   while (mpz_cmp (P, T) <= 0);
 
@@ -108,10 +205,12 @@ mpzspm_init (spv_size_t max_len, mpz_t modulus)
   for (i = 0; i < mpzspm->sp_num; i++)
     {
       p = mpzspm->spm[i]->sp;
+      mpz_set_sp (mp, p);
       
       /* crt3[i] = (P / p)^{-1} mod p */
-      mpz_fdiv_q_ui (T, P, p);
-      a = mpz_fdiv_ui (T, p);
+      mpz_fdiv_q (T, P, mp);
+      mpz_fdiv_r (mt, T, mp);
+      a = mpz_get_sp (mt);
       mpzspm->crt3[i] = sp_inv (a, p, mpzspm->spm[i]->mul_c);
      
       /* crt1[i] = (P / p) mod modulus */
@@ -120,12 +219,18 @@ mpzspm_init (spv_size_t max_len, mpz_t modulus)
 
       /* crt4[i][j] = ((P / p[i]) mod modulus) mod p[j] */
       for (j = 0; j < mpzspm->sp_num; j++)
-	mpzspm->crt4[j][i] = mpz_fdiv_ui (mpzspm->crt1[i], mpzspm->spm[j]->sp);
+        {
+          mpz_set_sp (mp, mpzspm->spm[j]->sp);
+          mpz_fdiv_r (mt, mpzspm->crt1[i], mp);
+	  mpzspm->crt4[j][i] = mpz_get_sp (mt);
+        }
       
       /* crt5[i] = (-P mod modulus) mod p */
       mpz_mod (T, P, modulus);
       mpz_sub (T, modulus, T);
-      mpzspm->crt5[i] = mpz_fdiv_ui (T, p);
+      mpz_set_sp (mp, p);
+      mpz_fdiv_r (mt, T, mp);
+      mpzspm->crt5[i] = mpz_get_sp (mt);
     }
   
   mpz_set_ui (T, 0);
@@ -137,6 +242,8 @@ mpzspm_init (spv_size_t max_len, mpz_t modulus)
       mpz_sub (T, T, P);
     }
   
+  mpz_clear (mp);
+  mpz_clear (mt);
   mpz_clear (P);
   mpz_clear (S);
   mpz_clear (T);
@@ -168,4 +275,3 @@ void mpzspm_clear (mpzspm_t mpzspm)
   free (mpzspm->spm);
   free (mpzspm);
 }
-
