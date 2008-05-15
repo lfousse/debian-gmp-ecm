@@ -1,2 +1,2 @@
-debian/tmp/usr/lib/libecm.a
-debian/tmp/usr/include/ecm.h
+usr/lib/libecm.a
+usr/include/ecm.h

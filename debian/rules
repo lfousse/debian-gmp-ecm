@@ -27,7 +27,7 @@ endif
 config.status: configure
 	dh_testdir
 	# Add here commands to configure the package.
-	CFLAGS="$(CFLAGS)" ./configure --host=$(DEB_HOST_GNU_TYPE) --build=$(DEB_BUILD_GNU_TYPE) --prefix=/usr --mandir=\$${prefix}/share/man --infodir=\$${prefix}/share/info
+	CFLAGS="$(CFLAGS)" ./configure --host=$(DEB_HOST_GNU_TYPE) --build=$(DEB_BUILD_GNU_TYPE) --prefix=/usr --mandir=\$${prefix}/share/man --infodir=\$${prefix}/share/info --enable-shared
 
 
 build: build-stamp
@@ -69,6 +69,9 @@ install: build
 	mkdir -p $(CURDIR)/debian/tmp/usr/share/man/man1
 	cp ecm.1 debian/tmp/usr/share/man/man1
 
+	dh_install -s -i --sourcedir=debian/tmp
+	dh_makeshlibs -v -plibecm0
+
 
 # Build architecture-independent files here.
 binary-indep: build install
@@ -82,7 +85,6 @@ binary-arch: build install
 	dh_installdocs
 	dh_installexamples
 	dh_installman
-	dh_install
 	dh_strip
 	dh_compress
 	dh_link -p gmp-ecm usr/share/man/man1/ecm.1.gz usr/share/man/man1/gmp-ecm.1.gz

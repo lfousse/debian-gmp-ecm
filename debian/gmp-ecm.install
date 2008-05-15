@@ -1,2 +1,2 @@
-debian/tmp/usr/bin/ecm
-debian/tmp/usr/share/man/man1/ecm.1
+usr/bin/ecm
+usr/share/man/man1/ecm.1
