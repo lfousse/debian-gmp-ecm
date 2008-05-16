@@ -1,3 +1,9 @@
+gmp-ecm (6.2-1) unstable; urgency=low
+
+  * New Upstream Version
+
+ -- Laurent Fousse <laurent@komite.net>  Fri, 16 May 2008 22:23:26 +0200
+
 gmp-ecm (6.2~rc2-1) unstable; urgency=low
 
   * New Upstream release candidate.
