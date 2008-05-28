@@ -1,2 +1,3 @@
 usr/lib/libecm.a
+usr/lib/libecm.so
 usr/include/ecm.h

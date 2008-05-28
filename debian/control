@@ -52,7 +52,7 @@ Description: Factor integers using the Elliptic Curve Method (library)
 Package: libecm-dev
 Architecture: any
 Section: libdevel
-Depends: ${shlibs:Depends}
+Depends: libgmp3-dev (>= 4.2.dfsg-1), libecm0 (= ${binary:Version})
 Description: Factor integers using the Elliptic Curve Method (library)
  gmp-ecm is a free implementation of the Elliptic Curve Method (ECM)
  for integer factorization.
