@@ -79,6 +79,8 @@ typedef mp_limb_t UDItype;
 #if defined (__s390__) || defined (__hppa__)
 #define NO_ASM
 #endif
+
+#define LONGLONG_STANDALONE
 #include "longlong.h"
 
 /*********
