@@ -1,8 +1,10 @@
 gmp-ecm (6.2-1) unstable; urgency=low
 
   * New Upstream Version
+  * Fix build failure caused by longlong.h on some architecture,
+    patch from upstream r1298 (closes: #483161).
 
- -- Laurent Fousse <laurent@komite.net>  Fri, 16 May 2008 22:23:26 +0200
+ -- Laurent Fousse <laurent@komite.net>  Wed, 28 May 2008 10:39:04 +0200
 
 gmp-ecm (6.2~rc2-1) unstable; urgency=low
 
