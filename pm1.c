@@ -1,6 +1,7 @@
 /* Pollard 'P-1' algorithm.
 
-  Copyright 2001, 2002, 2003, 2004, 2005 Paul Zimmermann and Alexander Kruppa.
+  Copyright 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008
+  Paul Zimmermann and Alexander Kruppa.
 
   This file is part of the ECM Library.
 
@@ -115,6 +116,11 @@ mulcascade_mul_d (mul_casc *c, const double n, ATTRIBUTE_UNUSED mpz_t t)
   
   i = c->size++;
   c->val = (mpz_t*) realloc (c->val, c->size * sizeof (mpz_t));
+  if (c->val == NULL)
+    {
+      fprintf (stderr, "Cannot allocate memory in mulcascade_mul_d\n");
+      exit (1);
+    }
   mpz_init (c->val[i]);
   mpz_swap (c->val[i], c->val[i-1]);
 
@@ -153,6 +159,11 @@ mulcascade_mul (mul_casc *c, mpz_t n)
   
   i = c->size++;
   c->val = (mpz_t*) realloc (c->val, c->size * sizeof (mpz_t));
+  if (c->val == NULL)
+    {
+      fprintf (stderr, "Cannot allocate memory in mulcascade_mul\n");
+      exit (1);
+    }
   mpz_init (c->val[i]);
   mpz_swap (c->val[i], c->val[i-1]);
 
@@ -748,6 +759,30 @@ pm1_rootsG (mpz_t f, listz_t G, unsigned long dF, pm1_roots_state_t *state,
 }
 
 
+static void
+print_prob (double B1, const mpz_t B2, unsigned long dF, unsigned long k, 
+            int S, const mpz_t go)
+{
+  double prob;
+  int i;
+  char sep;
+
+  outputf (OUTPUT_VERBOSE, "Probability of finding a factor of n digits:\n");
+  if (go != NULL && mpz_cmp_ui (go, 1UL) <= 0)
+    outputf (OUTPUT_VERBOSE, 
+             "(Use -go parameter to specify known factors in p-1)\n");
+  outputf (OUTPUT_VERBOSE, "20\t25\t30\t35\t40\t45\t50\t55\t60\t65\n");
+  for (i = 20; i <= 65; i += 5)
+    {
+      sep = (i < 65) ? '\t' : '\n';
+      prob = pm1prob (B1, mpz_get_d (B2),
+                      pow (10., i - .5), (double) dF * dF * k, S, go);
+      outputf (OUTPUT_VERBOSE, "%.2g%c", prob, sep);
+    }
+}
+
+
+
 /******************************************************************************
 *                                                                             *
 *                                Pollard P-1                                  *
@@ -807,8 +842,14 @@ pm1 (mpz_t f, mpz_t p, mpz_t N, mpz_t go, double *B1done, double B1,
   
   /* Set default B2. See ecm.c for comments */
   if (ECM_IS_DEFAULT_B2(B2))
-    mpz_set_d (B2, B2scale * pow (B1 * PM1_COST, DEFAULT_B2_EXPONENT));
-
+    {
+      if (stage2_variant == 0)
+        mpz_set_d (B2, B2scale * pow (B1 * PM1_COST, DEFAULT_B2_EXPONENT));
+      else
+        mpz_set_d (B2, B2scale * pow (B1 * PM1FS2_COST, 
+                   PM1FS2_DEFAULT_B2_EXPONENT));
+    }
+  
   /* set B2min */
   if (mpz_sgn (B2min) < 0)
     mpz_set_d (B2min, B1);
@@ -872,6 +913,7 @@ pm1 (mpz_t f, mpz_t p, mpz_t N, mpz_t go, double *B1done, double B1,
       unsigned long lmax_NTT, lmax_noNTT;
 
       mpz_init (faststage2_params.m_1);
+      faststage2_params.l = 0;
 
       /* Find out what the longest transform length is we can do at all.
 	 If no maxmem is given, the non-NTT can theoretically do any length. */
@@ -977,7 +1019,7 @@ pm1 (mpz_t f, mpz_t p, mpz_t N, mpz_t go, double *B1done, double B1,
   
   /* Print B1, B2, polynomial and x0 */
   print_B1_B2_poly (OUTPUT_NORMAL, ECM_PM1, B1, *B1done, B2min_parm, B2min, 
-		    B2, (stage2_variant == 0) ? root_params.S : 1, p, 0);
+		    B2, (stage2_variant == 0) ? root_params.S : 1, p, 0, NULL);
 
   /* If we do a stage 2, print its parameters */
   if (mpz_cmp (B2, B2min) >= 0)
@@ -991,6 +1033,22 @@ pm1 (mpz_t f, mpz_t p, mpz_t N, mpz_t go, double *B1done, double B1,
         outputf (OUTPUT_VERBOSE, "dF=%lu, k=%lu, d=%lu, d2=%lu, i0=%Zd\n", 
                  dF, k, root_params.d1, root_params.d2, root_params.i0);
     }
+
+  if (test_verbose (OUTPUT_VERBOSE))
+    {
+      if (mpz_sgn (B2min_parm) >= 0)
+        {
+          outputf (OUTPUT_VERBOSE, 
+            "Can't compute success probabilities for B1 <> B2min\n");
+        }
+      else
+        {
+          rhoinit (256, 10);
+          print_prob (B1, B2, dF, k, 
+                      (stage2_variant == 0) ? root_params.S : 1, go);
+        }
+    }
+
 
   mpres_init (x, modulus);
   mpres_set_z (x, p, modulus);
@@ -1027,6 +1085,12 @@ pm1 (mpz_t f, mpz_t p, mpz_t N, mpz_t go, double *B1done, double B1,
       else
         youpi = stage2 (f, &x, modulus, dF, k, &root_params, ECM_PM1, 
                         use_ntt, TreeFilename, stop_asap);
+    }
+
+  if (test_verbose (OUTPUT_VERBOSE))
+    {
+      if (mpz_sgn (B2min_parm) < 0)
+        rhoinit (1, 0); /* Free memory of rhotable */
     }
 
 clear_and_exit:

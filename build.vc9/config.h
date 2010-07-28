@@ -1,6 +1,6 @@
 /* config.h.in.  Generated from configure.in by autoheader.  */
 
-#define VERSION "6.2-rc2"
+#define VERSION "6.3"
 
 #define PACKAGE_BUGREPORT "ecm-discuss@lists.gforge.inria.fr"
 
@@ -38,7 +38,7 @@
 #define HAVE_GETHOSTNAME 1
 
 /* Define to 1 if you have the `getrusage' function. */
-#undef HAVE_GETRUSAGE
+#define HAVE_GETRUSAGE   1
 
 /* Define to 1 if you have the `gettimeofday' function. */
 #undef HAVE_GETTIMEOFDAY
@@ -170,10 +170,7 @@
 #define HAVE_LONG_LONG		1
 
 /* Define to 1 to use asm redc on x86 or x86_64 */
-#define NATIVE_REDC   1     
-
-/* Define to 1 to use asm for udiv_qrnd on x86 or x86_64 */
-#undef HAVE_NATIVE_mpn_udiv_qrnnd
+#  define NATIVE_REDC   1         
 
 /* Define to 1 if your C compiler doesn't accept -c and -o together. */
 #undef NO_MINUS_C_MINUS_O
@@ -200,6 +197,9 @@
 
 /* Define to empty if `const' does not conform to ANSI C. */
 #undef const
+
+/* How to specify hot-spot attribute, if available */
+#define ATTRIBUTE_HOT 
 
 /* Define to `__inline__' or `__inline' if that's what the C compiler
    calls it, or to nothing if 'inline' is not supported under any name.  */

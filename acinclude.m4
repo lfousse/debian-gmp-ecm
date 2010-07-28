@@ -158,7 +158,7 @@ AC_DEFUN([GMP_TRY_ASSEMBLE],
 [cat >conftest.s <<EOF
 [$1]
 EOF
-gmp_assemble="$CCAS $CFLAGS conftest.s >conftest.out 2>&1"
+gmp_assemble="$CCAS $CCASFLAGS conftest.s >conftest.out 2>&1"
 if AC_TRY_EVAL(gmp_assemble); then
   cat conftest.out >&AC_FD_CC
   ifelse([$2],,:,[$2])
@@ -258,6 +258,20 @@ echo ["define(<LABEL_SUFFIX>, <\$][1$gmp_cv_asm_label_suffix>)"] >> $gmp_tmpconf
 ])
 
 
+dnl  ECM_INCLUDE(FILE)
+dnl  ---------------------
+dnl  Add an include_mpn() to config.m4.  FILE should be a path
+dnl  relative to the main source directory, for example
+dnl
+dnl      ECM_INCLUDE(`powerpc64/defs.m4')
+dnl
+
+AC_DEFUN([ECM_INCLUDE],
+[AC_REQUIRE([GMP_INIT])
+echo ["include($1)"] >> $gmp_tmpconfigm4
+])
+
+
 dnl  GMP_ASM_UNDERSCORE
 dnl  ------------------
 dnl  Determine whether global symbols need to be prefixed with an underscore.
@@ -295,7 +309,7 @@ EOF
 EOF
     ;;
   esac
-  gmp_compile="$CC $CFLAGS $CPPFLAGS -c conftes1.c >&AC_FD_CC && $CCAS $CFLAGS -c conftes2.s >&AC_FD_CC && $CC $CFLAGS conftes1.$OBJEXT conftes2.$OBJEXT >&AC_FD_CC"
+  gmp_compile="$CC $CFLAGS $CPPFLAGS -c conftes1.c >&AC_FD_CC && $CCAS $CCASFLAGS -c conftes2.s >&AC_FD_CC && $CC $CFLAGS $LDFLAGS conftes1.$OBJEXT conftes2.$OBJEXT >&AC_FD_CC"
   if AC_TRY_EVAL(gmp_compile); then
     eval tmp_result$tmp_underscore=yes
   else

@@ -1,5 +1,8 @@
 /* config.h.in.  Generated from configure.in by autoheader.  */
 
+/* How to specify hot-spot attribute, if available */
+#undef ATTRIBUTE_HOT
+
 /* Define to one of `_getb67', `GETB67', `getb67' for Cray-2 and Cray-YMP
    systems. This function is required for `alloca.c' support on those systems.
    */
@@ -26,6 +29,15 @@
 
 /* Define to 1 if you have the <dlfcn.h> header file. */
 #undef HAVE_DLFCN_H
+
+/* Define to 1 if you have the `fcntl' function. */
+#undef HAVE_FCNTL
+
+/* Define to 1 if you have the <fcntl.h> header file. */
+#undef HAVE_FCNTL_H
+
+/* Define to 1 if you have the `fileno' function. */
+#undef HAVE_FILENO
 
 /* Define to 1 if you have the `floor' function. */
 #undef HAVE_FLOOR
@@ -66,6 +78,12 @@
 /* Define to 1 if you have the `isxdigit' function. */
 #undef HAVE_ISXDIGIT
 
+/* Define to 1 if you have the `gsl' library (-lgsl). */
+#undef HAVE_LIBGSL
+
+/* Define to 1 if you have the `gslcblas' library (-lgslcblas). */
+#undef HAVE_LIBGSLCBLAS
+
 /* Define to 1 if you have the `m' library (-lm). */
 #undef HAVE_LIBM
 
@@ -89,6 +107,9 @@
 
 /* Define to 1 if you have the `memset' function. */
 #undef HAVE_MEMSET
+
+/* Define to 1 if you have the `mpn_sqr' function. */
+#undef HAVE_MPN_SQR
 
 /* Define to 1 if you have the `nice' function. */
 #undef HAVE_NICE
@@ -165,10 +186,17 @@
 /* Define to 1 if you have the `__gmpn_mod_34lsub1' function. */
 #undef HAVE___GMPN_MOD_34LSUB1
 
+/* Define to 1 if you have the `__gmpn_redc_1' function. */
+#undef HAVE___GMPN_REDC_1
+
+/* Define to the sub-directory in which libtool stores uninstalled libraries.
+   */
+#undef LT_OBJDIR
+
 /* Define to 1 if you want memory debugging */
 #undef MEMORY_DEBUG
 
-/* Define to 1 to use asm redc on x86 or x86_64 */
+/* Define to 1 to use asm redc */
 #undef NATIVE_REDC
 
 /* Define to 1 if your C compiler doesn't accept -c and -o together. */
@@ -214,6 +242,10 @@
 
 /* Define to 1 if you want shell command execution */
 #undef WANT_SHELLCMD
+
+/* Define to 1 if x86_64 ecm_redc3() and mulredc*() functions should be called
+   with Windows ABI */
+#undef WINDOWS64_ABI
 
 /* Define to empty if `const' does not conform to ANSI C. */
 #undef const

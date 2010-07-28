@@ -37,6 +37,7 @@ extern size_t REDC_THRESHOLD;
 extern size_t mpn_mul_lo_threshold[];
 
 #include <stdio.h> /* needed for "FILE *" */
+#include <limits.h>
 
 #if  defined (__STDC__)                                 \
   || defined (__cplusplus)                              \
@@ -87,6 +88,10 @@ extern FILE *ECM_STDOUT, *ECM_STDERR;
 #define PM1_COST 1.0 / 6.0
 #define PP1_COST 2.0 / 6.0
 #define ECM_COST 11.0 / 6.0
+/* For new P-/+1 stage 2: */
+#define PM1FS2_DEFAULT_B2_EXPONENT 1.7
+#define PM1FS2_COST 1.0 / 4.0
+#define PP1FS2_COST 1.0 / 4.0
 
 /* residues are fully reduced (i.e. in canonical mpz form) */
 #define FULL_REDUCTION
@@ -277,7 +282,7 @@ typedef struct
   int bits;           /* in case of a base 2 number, 2^k[+-]1, bits = [+-]k
                          in case of MODMULN or REDC representation, nr. of 
                          bits b so that 2^b > orig_modulus and 
-                         mp_bits_per_limb | b */
+                         GMP_NUMB_BITS | b */
   int Fermat;         /* If repr = 1 (base 2 number): If modulus is 2^(2^m)+1, 
                          i.e. bits = 2^m, then Fermat = 2^m, 0 otherwise.
                          If repr != 1, undefined */
@@ -363,7 +368,7 @@ void duplicate (mpres_t, mpres_t, mpres_t, mpres_t, mpmod_t, mpres_t, mpres_t,
 void ecm_mul (mpres_t, mpres_t, mpz_t, mpmod_t, mpres_t);
 #define print_B1_B2_poly __ECM(print_B1_B2_poly)
 void print_B1_B2_poly (int, int, double, double, mpz_t, mpz_t, mpz_t, int S,  
-                       mpz_t, int);
+                       mpz_t, int, mpz_t);
       
 
 /* ecm2.c */
@@ -379,8 +384,8 @@ int     ecm_rootsG       (mpz_t, listz_t, unsigned long, ecm_roots_state_t *,
 #define ecm_rootsG_clear __ECM(ecm_rootsG_clear)
 void    ecm_rootsG_clear (ecm_roots_state_t *, mpmod_t);
 #define ecm_findmatch __ECM(ecm_findmatch)
-long    ecm_findmatch (const unsigned long, root_params_t *, curve *, 
-                       mpmod_t, mpz_t);
+int     ecm_findmatch (unsigned long *, const unsigned long, root_params_t *, 
+                       const curve *, mpmod_t, const mpz_t);
 
 /* lucas.c */
 #define pp1_mul_prac __ECM(pp1_mul_prac)
@@ -513,7 +518,7 @@ void          toomcook4 (listz_t, listz_t, listz_t, unsigned int, listz_t);
 
 /* ks-multiply.c */
 #define kronecker_schonhage __ECM(kronecker_schonhage)
-int kronecker_schonhage (listz_t, listz_t, listz_t, unsigned int, listz_t);
+void kronecker_schonhage (listz_t, listz_t, listz_t, unsigned int, listz_t);
 #define TMulKS __ECM(TMulKS)
 int TMulKS     (listz_t, unsigned int, listz_t, unsigned int, listz_t,
                 unsigned int, mpz_t, int);
@@ -544,12 +549,14 @@ void mpmod_copy (mpmod_t, const mpmod_t);
 void mpmod_pausegw (const mpmod_t modulus);
 #define mpmod_contgw __ECM(mpmod_contgw)
 void mpmod_contgw (const mpmod_t modulus);
+#define mpres_equal __ECM(mpres_equal)
+int mpres_equal (const mpres_t, const mpres_t, mpmod_t);
 #define mpres_pow __ECM(mpres_pow)
 void mpres_pow (mpres_t, const mpres_t, const mpz_t, mpmod_t);
 #define mpres_ui_pow __ECM(mpres_ui_pow)
 void mpres_ui_pow (mpres_t, const unsigned long, const mpres_t, mpmod_t);
 #define mpres_mul __ECM(mpres_mul)
-void mpres_mul (mpres_t, const mpres_t, const mpres_t, mpmod_t);
+void mpres_mul (mpres_t, const mpres_t, const mpres_t, mpmod_t) ATTRIBUTE_HOT;
 #define mpres_mul_z_to_z __ECM(mpres_mul_z_to_z)
 void mpres_mul_z_to_z (mpz_t, const mpres_t, const mpz_t, mpmod_t);
 #define mpres_set_z_for_gcd __ECM(mpres_set_z_for_gcd)
@@ -559,17 +566,21 @@ void mpres_div_2exp (mpres_t, const mpres_t, const unsigned int, mpmod_t);
 #define mpres_add_ui __ECM(mpres_add_ui)
 void mpres_add_ui (mpres_t, const mpres_t, const unsigned long, mpmod_t);
 #define mpres_add __ECM(mpres_add)
-void mpres_add (mpres_t, const mpres_t, const mpres_t, mpmod_t);
+void mpres_add (mpres_t, const mpres_t, const mpres_t, mpmod_t) ATTRIBUTE_HOT;
 #define mpres_sub_ui __ECM(mpres_sub_ui)
 void mpres_sub_ui (mpres_t, const mpres_t, const unsigned long, mpmod_t);
+#define mpres_ui_sub __ECM(mpres_ui_sub)
+void mpres_ui_sub (mpres_t, const unsigned long, const mpres_t, mpmod_t);
 #define mpres_sub __ECM(mpres_sub)
-void mpres_sub (mpres_t, const mpres_t, const mpres_t, mpmod_t);
+void mpres_sub (mpres_t, const mpres_t, const mpres_t, mpmod_t) ATTRIBUTE_HOT;
 #define mpres_set_z __ECM(mpres_set_z)
 void mpres_set_z (mpres_t, const mpz_t, mpmod_t);
 #define mpres_get_z __ECM(mpres_get_z)
 void mpres_get_z (mpz_t, const mpres_t, mpmod_t);
 #define mpres_set_ui __ECM(mpres_set_ui)
 void mpres_set_ui (mpres_t, const unsigned long, mpmod_t);
+#define mpres_set_si __ECM(mpres_set_si)
+void mpres_set_si (mpres_t, const long, mpmod_t);
 #define mpres_init __ECM(mpres_init)
 void mpres_init (mpres_t, const mpmod_t);
 #define mpres_clear __ECM(mpres_clear)
@@ -578,6 +589,8 @@ void mpres_clear (mpres_t, const mpmod_t);
 void mpres_realloc (mpres_t, const mpmod_t);
 #define mpres_mul_ui __ECM(mpres_mul_ui)
 void mpres_mul_ui (mpres_t, const mpres_t, const unsigned long, mpmod_t);
+#define mpres_muldivbysomething_si __ECM(mpres_muldivbysomething_si)
+void mpres_muldivbysomething_si (mpres_t, const mpres_t, const long, mpmod_t);
 #define mpres_neg __ECM(mpres_neg)
 void mpres_neg (mpres_t, const mpres_t, mpmod_t);
 #define mpres_invert __ECM(mpres_invert)
@@ -623,6 +636,7 @@ void F_clear ();
 void   rhoinit (int, int);
 #define ecmprob __ECM(ecmprob)
 double ecmprob (double, double, double, double, int);
+double pm1prob (double, double, double, double, int, const mpz_t);
 
 /* auxlib.c */
 #define mpz_add_si __ECM(mpz_add_si)
@@ -679,11 +693,6 @@ unsigned int get_random_ui (void);
 int  gw_ecm_stage1 (mpz_t, curve *, mpmod_t, double, double *, mpz_t);
 #endif
 
-/* redc.asm */
-#ifdef NATIVE_REDC
-void ecm_redc3 (mp_ptr, mp_srcptr, mp_size_t, mp_limb_t);
-#endif
-
 /* mul_fft.h */
 #define mpn_mul_fft __ECM(mpn_mul_fft)
 int  mpn_mul_fft (mp_ptr, mp_size_t, mp_srcptr, mp_size_t, mp_srcptr, 
@@ -714,6 +723,8 @@ typedef struct {
 void          quicksort_long (long *, unsigned long);
 #define sets_print __ECM(sets_print)
 void          sets_print (const int, sets_long_t *);
+#define sets_max __ECM(sets_max)
+void          sets_max (mpz_t, const unsigned long);
 #define sets_sumset __ECM(sets_sumset)
 void          sets_sumset (set_long_t *, const sets_long_t *);
 #define sets_sumset_minmax __ECM(sets_sumset_minmax)
@@ -748,25 +759,19 @@ sets_nextset (const set_long_t *sets)
 }
 #endif
 
-#define TWO53 9007199254740992.0 /* 2^53 */
-
 /* a <- b * c where a and b are mpz, c is a double, and t an auxiliary mpz */
-#if (BITS_PER_MP_LIMB >= 53)
+/* Not sure how the preprocessor handles shifts by more than the integer 
+   width on 32 bit machines, so do the shift by 53 in two pieces */
+#if (((ULONG_MAX >> 27) >> 26) >= 1)
 #define mpz_mul_d(a, b, c, t) \
    mpz_mul_ui (a, b, (unsigned long int) c);
 #else
-#if (BITS_PER_MP_LIMB >= 32)
 #define mpz_mul_d(a, b, c, t) \
-   if (c < 4294967296.0) \
+   if (c < (double) ULONG_MAX) \
       mpz_mul_ui (a, b, (unsigned long int) c); \
    else { \
    mpz_set_d (t, c); \
    mpz_mul (a, b, t); }
-#else
-#define mpz_mul_d(a, b, c, t) \
-   mpz_set_d (t, c); \
-   mpz_mul (a, b, t);
-#endif
 #endif
 
 #endif /* _ECM_IMPL_H */

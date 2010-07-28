@@ -41,25 +41,34 @@ ordpow (const sp_t q, sp_t a, const sp_t sp, const sp_t mul_c)
   return i;
 }
 
-/* initialize roots of unity and twiddle factors for one NTT */
-static void
+/* initialize roots of unity and twiddle factors for one NTT.
+   If sucessful, returns 1.
+   If unsucessful, returns 0 (and frees allocated memory) */
+static int
 nttdata_init (const sp_t sp, const sp_t mul_c, 
 		const sp_t prim_root, const spv_size_t log2_len,
-		sp_nttdata_t data)
+		sp_nttdata_t data, spv_size_t breakover)
 {
   spv_t r, t;
   spv_size_t i, j, k;
 
   r = data->ntt_roots = 
 	  (spv_t) sp_aligned_malloc ((log2_len + 1) * sizeof(sp_t));
+  if (r == NULL)
+    return 0;
 
   i = log2_len;
   r[i] = prim_root;
   for (i--; (int)i >= 0; i--)
     r[i] = sp_sqr (r[i+1], sp, mul_c);
 
-  k = MIN(log2_len, NTT_GFP_TWIDDLE_BREAKOVER);
+  k = MIN(log2_len, breakover);
   t = data->twiddle = (spv_t) sp_aligned_malloc (sizeof(sp_t) << k);
+  if (t == NULL)
+    {
+      sp_aligned_free (r);
+      return 0;
+    }
   data->twiddle_size = 1 << k;
 
   for (i = k; i; i--) 
@@ -70,6 +79,7 @@ nttdata_init (const sp_t sp, const sp_t mul_c,
 
       t += j;
     }
+  return 1;
 }
 
 static void
@@ -79,13 +89,16 @@ nttdata_clear(sp_nttdata_t data)
   sp_aligned_free(data->twiddle);
 }
 
-/* Compute some constants, including a primitive n'th root of unity. */
+/* Compute some constants, including a primitive n'th root of unity. 
+   Returns NULL in case of error. */
 spm_t
 spm_init (spv_size_t n, sp_t sp)
 {
   sp_t a, b, bd, sc;
   spv_size_t q, nc, ntt_power;
   spm_t spm = (spm_t) malloc (sizeof (__spm_struct));
+  if (spm == NULL)
+    return NULL;
 
   ASSERT (sp % (sp_t) n == (sp_t) 1);
 
@@ -95,7 +108,7 @@ spm_init (spv_size_t n, sp_t sp)
   /* find an $n$-th primitive root $a$ of unity $(mod sp)$. */
 
   /* Construct a $b$ whose order $(mod sp)$ is equal to $n$.
-     We try different a values and test if the exponent of $q$ in $ord(a)$
+     We try different $a$ values and test if the exponent of $q$ in $ord(a)$
      is at least as large as in $n$. If it isn't, we move to another $a$.
      If it is, we optionally exponentiate to make the exponents equal and
      test for the remaining $q$'s.
@@ -180,15 +193,35 @@ spm_init (spv_size_t n, sp_t sp)
       ntt_power++;
     }
 
-  nttdata_init (sp, spm->mul_c, 
-		sp_pow (spm->prim_root, n >> ntt_power, sp, spm->mul_c),
-		ntt_power, spm->nttdata);
-  nttdata_init (sp, spm->mul_c, 
-		sp_pow (spm->inv_prim_root, n >> ntt_power, sp, spm->mul_c),
-		ntt_power, spm->inttdata);
+  if (!nttdata_init (sp, spm->mul_c, 
+		sp_pow (spm->prim_root, 
+			n >> ntt_power, sp, spm->mul_c),
+		ntt_power, spm->nttdata, 
+		NTT_GFP_TWIDDLE_DIF_BREAKOVER))
+    goto free_spm;
+  if (!nttdata_init (sp, spm->mul_c, 
+		sp_pow (spm->inv_prim_root, 
+			n >> ntt_power, sp, spm->mul_c),
+		ntt_power, spm->inttdata, 
+		NTT_GFP_TWIDDLE_DIT_BREAKOVER))
+    goto free_nttdata;
   spm->scratch = (spv_t) sp_aligned_malloc (
-		  	NTT_TWIDDLE_BLOCK_SIZE * sizeof(sp_t));
+		  	MAX_NTT_BLOCK_SIZE * sizeof(sp_t));
+  if (spm->scratch == NULL)
+    goto free_inttdata;
+    
   return spm;
+
+  free_inttdata:
+  nttdata_clear (spm->inttdata);
+  
+  free_nttdata:
+  nttdata_clear (spm->nttdata);
+
+  free_spm:
+  free (spm);
+
+  return NULL;
 }
 
 void

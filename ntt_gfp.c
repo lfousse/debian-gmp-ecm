@@ -32,7 +32,7 @@ static void bfly_dif(spv_t x0, spv_t x1, spv_t w,
 
   asm volatile (
        "movd %6, %%xmm6            \n\t"
-       "pshufd $0b01000100, %%xmm6, %%xmm5  \n\t"
+       "pshufd $0x44, %%xmm6, %%xmm5  \n\t"
        "pshufd $0, %%xmm6, %%xmm6  \n\t"
        "movd %7, %%xmm7            \n\t"
        "pshufd $0, %%xmm7, %%xmm7  \n\t"
@@ -78,24 +78,24 @@ static void bfly_dif(spv_t x0, spv_t x1, spv_t w,
        "psubq %%xmm2, %%xmm0       \n\t"
        "psubq %%xmm3, %%xmm1       \n\t"
 #else
-       "pshufd $0b11110101, %%xmm2, %%xmm2 \n\t"
+       "pshufd $0xf5, %%xmm2, %%xmm2 \n\t"
        "pmuludq %%xmm6, %%xmm2     \n\t"
-       "pshufd $0b11110101, %%xmm3, %%xmm3 \n\t"
+       "pshufd $0xf5, %%xmm3, %%xmm3 \n\t"
        "pmuludq %%xmm6, %%xmm3     \n\t"
        "psubq %%xmm2, %%xmm0       \n\t"
        "psubq %%xmm3, %%xmm1       \n\t"
 
        "psubq %%xmm5, %%xmm0       \n\t"
        "psubq %%xmm5, %%xmm1       \n\t"
-       "pshufd $0b11110101, %%xmm0, %%xmm2 \n\t"
-       "pshufd $0b11110101, %%xmm1, %%xmm3 \n\t"
+       "pshufd $0xf5, %%xmm0, %%xmm2 \n\t"
+       "pshufd $0xf5, %%xmm1, %%xmm3 \n\t"
        "pand %%xmm5, %%xmm2        \n\t"
        "pand %%xmm5, %%xmm3        \n\t"
        "paddq %%xmm2, %%xmm0       \n\t"
        "paddq %%xmm3, %%xmm1       \n\t"
 #endif
-       "pshufd $0b00001000, %%xmm0, %%xmm0 \n\t"
-       "pshufd $0b00001000, %%xmm1, %%xmm1 \n\t"
+       "pshufd $0x8, %%xmm0, %%xmm0 \n\t"
+       "pshufd $0x8, %%xmm1, %%xmm1 \n\t"
        "punpckldq %%xmm1, %%xmm0   \n\t"
        "psubd %%xmm6, %%xmm0       \n\t"
        "pxor %%xmm1, %%xmm1        \n\t"
@@ -111,6 +111,91 @@ static void bfly_dif(spv_t x0, spv_t x1, spv_t w,
        :"r"(x0), "r"(x1), "r"(w), "0"(i), "g"(len), "g"(p), "g"(d)
        :"%xmm0", "%xmm1", "%xmm2", "%xmm3",
         "%xmm5", "%xmm6", "%xmm7", "cc", "memory");
+#elif defined( _MSC_VER ) && defined( SSE2) 
+    __asm
+    {   push        esi
+        push        edi
+        mov         edi, x0
+        mov         esi, x1
+        mov         edx, w
+        xor         ecx, ecx
+        mov         eax, len
+        movd        xmm6, p
+        pshufd      xmm5, xmm6, 0x44
+        pshufd      xmm6, xmm6, 0
+        movd        xmm7, d
+        pshufd      xmm7, xmm7, 0
+
+    L0: movdqa      xmm0, [edi+ecx*4]
+        movdqa      xmm1, [esi+ecx*4]
+        movdqa      xmm2, xmm1
+        paddd       xmm1, xmm0
+        psubd       xmm0, xmm2
+        psubd       xmm1, xmm6
+
+        pxor        xmm2, xmm2
+        pcmpgtd     xmm2, xmm1
+        pand        xmm2, xmm6
+        paddd       xmm1, xmm2
+        movdqa      [edi+ecx*4], xmm1
+
+        pxor        xmm2, xmm2
+        pcmpgtd     xmm2, xmm0
+        pand        xmm2, xmm6
+        paddd       xmm0, xmm2
+
+        movdqa      xmm2, [edx+ecx*4]
+        add         ecx, 4
+        pshufd      xmm1, xmm0, 0x31
+        pshufd      xmm3, xmm2, 0x31
+        pmuludq     xmm0, xmm2
+        pmuludq     xmm1, xmm3
+
+        movdqa      xmm2, xmm0
+        movdqa      xmm3, xmm1
+        psrlq       xmm2, 2*SP_NUMB_BITS - W_TYPE_SIZE
+        pmuludq     xmm2, xmm7
+        psrlq       xmm3, 2*SP_NUMB_BITS - W_TYPE_SIZE
+        pmuludq     xmm3, xmm7
+
+#if SP_NUMB_BITS < W_TYPE_SIZE - 1
+        psrlq       xmm2, 33
+        pmuludq     xmm2, xmm6
+        psrlq       xmm3, 33
+        pmuludq     xmm3, xmm6
+        psubq       xmm0, xmm2
+        psubq       xmm1, xmm3
+#else
+        pshufd      xmm2, xmm2, 0xf5
+        pmuludq     xmm2, xmm6
+        pshufd      xmm3, xmm3, 0xf5
+        pmuludq     xmm3, xmm6
+        psubq       xmm0, xmm2
+        psubq       xmm1, xmm3
+
+        psubq       xmm0, xmm5
+        psubq       xmm1, xmm5
+        pshufd      xmm2, xmm0, 0xf5
+        pshufd      xmm3, xmm1, 0xf5
+        pand        xmm2, xmm5
+        pand        xmm3, xmm5
+        paddq       xmm0, xmm2
+        paddq       xmm1, xmm3
+#endif
+        pshufd      xmm0, xmm0, 0x8
+        pshufd      xmm1, xmm1, 0x8
+        punpckldq   xmm0, xmm1
+        psubd       xmm0, xmm6
+        pxor        xmm1, xmm1
+        pcmpgtd     xmm1, xmm0
+        pand        xmm1, xmm6
+        paddd       xmm0, xmm1
+        movdqa      [esi+ecx*4-16], xmm0
+        cmp         eax, ecx
+        jne         L0
+        pop         edi
+        pop         esi
+    }
 #else
   for (i = 0; i < len; i++)
     {
@@ -225,7 +310,7 @@ spv_ntt_gfp_dif (spv_t x, spv_size_t log2_len, spm_t data)
   sp_t p = data->sp;
   sp_t d = data->mul_c;
 
-  if (log2_len <= NTT_GFP_TWIDDLE_BREAKOVER)
+  if (log2_len <= NTT_GFP_TWIDDLE_DIF_BREAKOVER)
     { 
       spv_t w = data->nttdata->twiddle + 
 	        data->nttdata->twiddle_size - (1 << log2_len);
@@ -242,21 +327,22 @@ spv_ntt_gfp_dif (spv_t x, spv_size_t log2_len, spm_t data)
 
         {
           spv_size_t i;
+	  spv_size_t block_size = MIN(len, MAX_NTT_BLOCK_SIZE);
           sp_t root = roots[log2_len];
 	  spv_t w = data->scratch;
 
 	  w[0] = 1;
-	  for (i = 1; i < NTT_TWIDDLE_BLOCK_SIZE; i++)
+	  for (i = 1; i < block_size; i++)
 	    w[i] = sp_mul (w[i-1], root, p, d);
 
-          root = sp_pow (root, NTT_TWIDDLE_BLOCK_SIZE, p, d);
+          root = sp_pow (root, block_size, p, d);
 
-	  for (i = 0; i < len; i += NTT_TWIDDLE_BLOCK_SIZE)
+	  for (i = 0; i < len; i += block_size)
 	    {
 	      if (i)
-	        spv_mul_sp (w, w, root, NTT_TWIDDLE_BLOCK_SIZE, p, d);
+	        spv_mul_sp (w, w, root, block_size, p, d);
 
-	      bfly_dif (x0 + i, x1 + i, w, NTT_TWIDDLE_BLOCK_SIZE, p, d);
+	      bfly_dif (x0 + i, x1 + i, w, block_size, p, d);
 	    }
 	}
 	
@@ -276,7 +362,7 @@ static inline void bfly_dit(spv_t x0, spv_t x1, spv_t w,
 
   asm volatile (
        "movd %6, %%xmm6            \n\t"
-       "pshufd $0b01000100, %%xmm6, %%xmm5  \n\t"
+       "pshufd $0x44, %%xmm6, %%xmm5  \n\t"
        "pshufd $0, %%xmm6, %%xmm6  \n\t"
        "movd %7, %%xmm7            \n\t"
        "pshufd $0, %%xmm7, %%xmm7  \n\t"
@@ -304,24 +390,24 @@ static inline void bfly_dit(spv_t x0, spv_t x1, spv_t w,
        "psubq %%xmm2, %%xmm0       \n\t"
        "psubq %%xmm3, %%xmm1       \n\t"
 #else
-       "pshufd $0b11110101, %%xmm2, %%xmm2 \n\t"
+       "pshufd $0xf5, %%xmm2, %%xmm2 \n\t"
        "pmuludq %%xmm6, %%xmm2     \n\t"
-       "pshufd $0b11110101, %%xmm3, %%xmm3 \n\t"
+       "pshufd $0xf5, %%xmm3, %%xmm3 \n\t"
        "pmuludq %%xmm6, %%xmm3     \n\t"
        "psubq %%xmm2, %%xmm0       \n\t"
        "psubq %%xmm3, %%xmm1       \n\t"
 
        "psubq %%xmm5, %%xmm0       \n\t"
        "psubq %%xmm5, %%xmm1       \n\t"
-       "pshufd $0b11110101, %%xmm0, %%xmm2 \n\t"
-       "pshufd $0b11110101, %%xmm1, %%xmm3 \n\t"
+       "pshufd $0xf5, %%xmm0, %%xmm2 \n\t"
+       "pshufd $0xf5, %%xmm1, %%xmm3 \n\t"
        "pand %%xmm5, %%xmm2        \n\t"
        "pand %%xmm5, %%xmm3        \n\t"
        "paddq %%xmm2, %%xmm0       \n\t"
        "paddq %%xmm3, %%xmm1       \n\t"
 #endif
-       "pshufd $0b00001000, %%xmm0, %%xmm0 \n\t"
-       "pshufd $0b00001000, %%xmm1, %%xmm1 \n\t"
+       "pshufd $0x8, %%xmm0, %%xmm0 \n\t"
+       "pshufd $0x8, %%xmm1, %%xmm1 \n\t"
        "punpckldq %%xmm1, %%xmm0   \n\t"
        "psubd %%xmm6, %%xmm0       \n\t"
        "pxor %%xmm1, %%xmm1        \n\t"
@@ -355,6 +441,91 @@ static inline void bfly_dit(spv_t x0, spv_t x1, spv_t w,
        :"r"(x0), "r"(x1), "r"(w), "0"(i), "g"(len), "g"(p), "g"(d)
        :"%xmm0", "%xmm1", "%xmm2", "%xmm3",
         "%xmm5", "%xmm6", "%xmm7", "cc", "memory");
+#elif defined( _MSC_VER ) && defined( SSE2) 
+    __asm
+    {   push        esi
+        push        edi
+        mov         edi, x0
+        mov         esi, x1
+        mov         edx, w
+        xor         ecx, ecx
+        mov         eax, len
+        movd        xmm6, p
+        pshufd      xmm5, xmm6, 0x44
+        pshufd      xmm6, xmm6, 0
+        movd        xmm7, d
+        pshufd      xmm7, xmm7, 0
+
+    L0: movdqa      xmm0, [esi+ecx*4]
+        movdqa      xmm2, [edx+ecx*4]
+        pshufd      xmm1, xmm0, 0x31
+        pshufd      xmm3, xmm2, 0x31
+        pmuludq     xmm0, xmm2
+        pmuludq     xmm1, xmm3
+
+        movdqa      xmm2, xmm0
+        movdqa      xmm3, xmm1
+        psrlq       xmm2, 2*SP_NUMB_BITS - W_TYPE_SIZE
+        pmuludq     xmm2, xmm7
+        psrlq       xmm3, 2*SP_NUMB_BITS - W_TYPE_SIZE
+        pmuludq     xmm3, xmm7
+
+#if SP_NUMB_BITS < W_TYPE_SIZE - 1
+        psrlq       xmm2, 33
+        pmuludq     xmm2, xmm6
+        psrlq       xmm3, 33
+        pmuludq     xmm3, xmm6
+        psubq       xmm0, xmm2
+        psubq       xmm1, xmm3
+#else
+        pshufd      xmm2, xmm2, 0xf5
+        pmuludq     xmm2, xmm6
+        pshufd      xmm3, xmm3, 0xf5
+        pmuludq     xmm3, xmm6
+        psubq       xmm0, xmm2
+        psubq       xmm1, xmm3
+
+        psubq       xmm0, xmm5
+        psubq       xmm1, xmm5
+        pshufd      xmm2, xmm0, 0xf5
+        pshufd      xmm3, xmm1, 0xf5
+        pand        xmm2, xmm5
+        pand        xmm3, xmm5
+        paddq       xmm0, xmm2
+        paddq       xmm1, xmm3
+#endif
+        pshufd      xmm0, xmm0, 0x8
+        pshufd      xmm1, xmm1, 0x8
+        punpckldq   xmm0, xmm1
+        psubd       xmm0, xmm6
+        pxor        xmm1, xmm1
+        pcmpgtd     xmm1, xmm0
+        pand        xmm1, xmm6
+        paddd       xmm1, xmm0
+
+        movdqa      xmm0, [edi+ecx*4]
+        movdqa      xmm2, xmm1
+        paddd       xmm1, xmm0
+        psubd       xmm0, xmm2
+        psubd       xmm1, xmm6
+
+        pxor        xmm2, xmm2
+        pcmpgtd     xmm2, xmm1
+        pand        xmm2, xmm6
+        paddd       xmm1, xmm2
+        movdqa      [edi+ecx*4], xmm1
+
+        pxor        xmm2, xmm2
+        pcmpgtd     xmm2, xmm0
+        pand        xmm2, xmm6
+        paddd       xmm0, xmm2
+        movdqa      [esi+ecx*4], xmm0
+        add        ecx, 4
+        cmp         eax, ecx
+        jne         L0
+        pop         edi
+        pop         esi
+    }
 #else
   for (i = 0; i < len; i++)
     {
@@ -466,7 +637,7 @@ spv_ntt_gfp_dit (spv_t x, spv_size_t log2_len, spm_t data)
   sp_t p = data->sp;
   sp_t d = data->mul_c;
 
-  if (log2_len <= NTT_GFP_TWIDDLE_BREAKOVER)
+  if (log2_len <= NTT_GFP_TWIDDLE_DIT_BREAKOVER)
     {
       spv_t w = data->inttdata->twiddle + 
 	        data->inttdata->twiddle_size - (1 << log2_len);
@@ -484,21 +655,22 @@ spv_ntt_gfp_dit (spv_t x, spv_size_t log2_len, spm_t data)
 
         {
           spv_size_t i;
+	  spv_size_t block_size = MIN(len, MAX_NTT_BLOCK_SIZE);
           sp_t root = roots[log2_len];
 	  spv_t w = data->scratch;
 
 	  w[0] = 1;
-	  for (i = 1; i < NTT_TWIDDLE_BLOCK_SIZE; i++)
+	  for (i = 1; i < block_size; i++)
 	    w[i] = sp_mul (w[i-1], root, p, d);
 
-          root = sp_pow (root, NTT_TWIDDLE_BLOCK_SIZE, p, d);
+          root = sp_pow (root, block_size, p, d);
 
-	  for (i = 0; i < len; i += NTT_TWIDDLE_BLOCK_SIZE)
+	  for (i = 0; i < len; i += block_size)
 	    {
 	      if (i)
-	        spv_mul_sp (w, w, root, NTT_TWIDDLE_BLOCK_SIZE, p, d);
+	        spv_mul_sp (w, w, root, block_size, p, d);
 
-	      bfly_dit (x0 + i, x1 + i, w, NTT_TWIDDLE_BLOCK_SIZE, p, d);
+	      bfly_dit (x0 + i, x1 + i, w, block_size, p, d);
 	    }
 	}
     }

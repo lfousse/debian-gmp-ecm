@@ -297,8 +297,7 @@ memory_use (unsigned long dF, unsigned int sp_num, unsigned int Ftreelvl,
       wrap-case in PrerevertDivision respectively */
   mem += (24.0 + 1.0) * (double) (sp_num ? MIN(MUL_NTT_THRESHOLD, dF) : dF);
 #endif
-  mem *= (double) (mpz_size (modulus->orig_modulus))
-                  * (mp_bits_per_limb / 8.0)
+  mem *= (double) (mpz_size (modulus->orig_modulus)) * sizeof (mp_limb_t)
          + sizeof (mpz_t);
   
   if (sp_num)
@@ -367,7 +366,11 @@ stage2 (mpz_t f, void *X, mpmod_t modulus, unsigned long dF, unsigned long k,
       mpzspm = mpzspm_init (2 * dF, modulus->orig_modulus);
   
       if (mpzspm == NULL)
-        return ECM_ERROR;
+        {
+          outputf (OUTPUT_ERROR, "Could not initialise mpzspm, "
+                   "presumably out of memory\n");
+          return ECM_ERROR;
+        }
 
       outputf (OUTPUT_VERBOSE,
 	  "Using %u small primes for NTT\n", mpzspm->sp_num);
@@ -391,7 +394,7 @@ stage2 (mpz_t f, void *X, mpmod_t modulus, unsigned long dF, unsigned long k,
 
   MEMORY_TAG;
   F = init_list2 (dF + 1, mpz_sizeinbase (modulus->orig_modulus, 2) + 
-                          3 * mp_bits_per_limb);
+                          3 * GMP_NUMB_BITS);
   MEMORY_UNTAG;
   if (F == NULL)
     {
@@ -404,7 +407,7 @@ stage2 (mpz_t f, void *X, mpmod_t modulus, unsigned long dF, unsigned long k,
     sizeT += dF;
   MEMORY_TAG;
   T = init_list2 (sizeT, 2 * mpz_sizeinbase (modulus->orig_modulus, 2) + 
-                         3 * mp_bits_per_limb);
+                         3 * GMP_NUMB_BITS);
   MEMORY_UNTAG;
   if (T == NULL)
     {
@@ -456,7 +459,7 @@ stage2 (mpz_t f, void *X, mpmod_t modulus, unsigned long dF, unsigned long k,
         {
           MEMORY_TAG;
           Tree[i] = init_list2 (dF, mpz_sizeinbase (modulus->orig_modulus, 2) 
-                                    + mp_bits_per_limb);
+                                    + GMP_NUMB_BITS);
           MEMORY_UNTAG;
           if (Tree[i] == NULL)
             {
@@ -482,8 +485,12 @@ stage2 (mpz_t f, void *X, mpmod_t modulus, unsigned long dF, unsigned long k,
   if (TreeFilename != NULL)
     {
       FILE *TreeFile;
-      /* assume this "small" malloc will not fail in normal usage */
       char *fullname = (char *) malloc (strlen (TreeFilename) + 1 + 2 + 1);
+      if (fullname == NULL)
+        {
+          fprintf (stderr, "Cannot allocate memory in stage2\n");
+          exit (1);
+        }
       
       for (i = lgk; i > 0; i--)
         {
@@ -572,7 +579,7 @@ stage2 (mpz_t f, void *X, mpmod_t modulus, unsigned long dF, unsigned long k,
          but we need one more for TUpTree */
       MEMORY_TAG;
       invF = init_list2 (dF + 1, mpz_sizeinbase (modulus->orig_modulus, 2) + 
-                                 2 * mp_bits_per_limb);
+                                 2 * GMP_NUMB_BITS);
       MEMORY_UNTAG;
       if (invF == NULL)
 	{
@@ -614,7 +621,7 @@ stage2 (mpz_t f, void *X, mpmod_t modulus, unsigned long dF, unsigned long k,
      where i0*d <= B2min < (i0+1)*d */
   MEMORY_TAG;
   G = init_list2 (dF, mpz_sizeinbase (modulus->orig_modulus, 2) + 
-                      3 * mp_bits_per_limb);
+                      3 * GMP_NUMB_BITS);
   MEMORY_UNTAG;
   if (G == NULL)
     {
@@ -840,27 +847,37 @@ stage2 (mpz_t f, void *X, mpmod_t modulus, unsigned long dF, unsigned long k,
               mpz_gcd (T[dF + 1], T[k], T[dF]);
               if (mpz_cmp_ui (T[dF + 1], 1) > 0)
                 {
-                  long i; /* We need it as a signed type here */
-                  /* Find i so that $f(i d1) X = f(j d2) X$ over GF(f) */
-                  i = ecm_findmatch (j, root_params, (curve *)X, modulus, f);
+                  int sgn;
+                  /* Find i so that $f(i d1) X = +-f(j d2) X$ over GF(f) */
+                  sgn = ecm_findmatch (&i, j, root_params, (curve *)X, 
+                                       modulus, f);
                   
-                  mpz_add_ui (T[dF + 2], root_params->i0, abs (i));
-                  outputf (OUTPUT_RESVERBOSE, 
-                           "Divisor %Zd first occurs in T[%lu] = "
-                           "((f(%Zd*%lu)%cf(%lu*%lu))*X)_x\n", T[dF + 1], k, 
-                           T[dF + 2], root_params->d1, i < 0 ? '+' : '-',
-                           j, root_params->d2);
-                  
-                  mpz_mul_ui (T[dF + 2], T[dF + 2], root_params->d1);
-                  if (i < 0)
-                    mpz_add_ui (T[dF + 2], T[dF + 2], j * root_params->d2);
+                  if (sgn != 0)
+                    {
+                      mpz_add_ui (T[dF + 2], root_params->i0, i);
+                      outputf (OUTPUT_RESVERBOSE, 
+                               "Divisor %Zd first occurs in T[%lu] = "
+                               "((f(%Zd*%lu)%cf(%lu*%lu))*X)_x\n", T[dF + 1], k, 
+                               T[dF + 2], root_params->d1, sgn < 0 ? '+' : '-',
+                               j, root_params->d2);
+                      
+                      mpz_mul_ui (T[dF + 2], T[dF + 2], root_params->d1);
+                      if (sgn < 0)
+                        mpz_add_ui (T[dF + 2], T[dF + 2], j * root_params->d2);
+                      else
+                        mpz_sub_ui (T[dF + 2], T[dF + 2], j * root_params->d2);
+                      mpz_abs (T[dF + 2], T[dF + 2]);
+                      
+                      outputf (OUTPUT_RESVERBOSE, "Maybe largest group order "
+                               "factor is or divides %Zd\n", T[dF + 2]);
+                    }
                   else
-                    mpz_sub_ui (T[dF + 2], T[dF + 2], j * root_params->d2);
-                  mpz_abs (T[dF + 2], T[dF + 2]);
-                  
-                  outputf (OUTPUT_RESVERBOSE, "Maybe largest group order "
-                           "factor is or divides %Zd\n", T[dF + 2]);
-                  
+                    {
+                      outputf (OUTPUT_RESVERBOSE, 
+                               "Divisor %Zd first occurs in T[%lu], but could "
+                               "not determine associated i\n", 
+                               T[dF + 1], k);
+                    }
                   /* Don't report this divisor again */
                   mpz_divexact (T[dF], T[dF], T[dF + 1]);
                 }
@@ -902,6 +919,11 @@ free_Tree_i:
     {
       /* Unlink any treefiles still in use */
       char *fullname = (char *) malloc (strlen (TreeFilename) + 1 + 2 + 1);
+      if (fullname == NULL)
+        {
+          fprintf (stderr, "Cannot allocate memory in stage2\n");
+          exit (1);
+        }
       for (i = 0; i < treefiles_used; i++)
         {
           sprintf (fullname, "%s.%lu", TreeFilename, i);

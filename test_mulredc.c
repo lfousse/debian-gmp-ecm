@@ -1,24 +1,29 @@
+#include "config.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
 
 #include <gmp.h>
 
-#include "asmredc.h"
+#include "mulredc.h"
 
-void mp_print(mp_limb_t *x, int N) {
+void mp_print(const mp_limb_t *x, const int N) 
+{
   int i;
-  for (i = 0; i < N-1; ++i)
-    printf("%lu + W*(", x[i]);
-  printf("%lu", x[N-1]);
-  for (i = 0; i < N-1; ++i)
-    printf(")");
+  for (i = 0; i < N; ++i)
+    {
+      if (i>0) 
+        printf (" + ");
+      printf("%lu", x[i]);
+      if (i>0) 
+        printf ("*2^%d", i*GMP_NUMB_BITS); 
+    }
   printf("\n");
 }
 
 static mp_limb_t
-call_mulredc (int N, mp_limb_t *z, mp_limb_t *x, mp_limb_t *y, mp_limb_t *m,
-              mp_limb_t invm)
+call_mulredc (const int N, mp_limb_t *z, const mp_limb_t *x, const mp_limb_t *y, 
+              const mp_limb_t *m, const mp_limb_t invm)
 {
   mp_limb_t cy;
 
@@ -90,6 +95,82 @@ call_mulredc (int N, mp_limb_t *z, mp_limb_t *x, mp_limb_t *y, mp_limb_t *m,
   return cy;
 }
 
+#if defined(HAVE_NATIVE_MULREDC1_N)
+static mp_limb_t
+call_mulredc1 (const int N, mp_limb_t *z, const mp_limb_t x, const mp_limb_t *y, 
+               const mp_limb_t *m, const mp_limb_t invm)
+{
+  mp_limb_t cy;
+
+  switch (N) 
+    {
+     case 1:
+      cy = mulredc1(z, x, y[0], m[0], invm);
+      break;
+     case 2:
+      cy = mulredc1_2(z, x, y, m, invm);
+      break;
+     case 3:
+      cy = mulredc1_3(z, x, y, m, invm);
+      break;
+     case 4:
+      cy = mulredc1_4(z, x, y, m, invm);
+      break;
+     case 5:
+      cy = mulredc1_5(z, x, y, m, invm);
+      break;
+     case 6:
+      cy = mulredc1_6(z, x, y, m, invm);
+      break;
+     case 7:
+      cy = mulredc1_7(z, x, y, m, invm);
+      break;
+     case 8:
+      cy = mulredc1_8(z, x, y, m, invm);
+      break;
+     case 9:
+      cy = mulredc1_9(z, x, y, m, invm);
+      break;
+     case 10:
+      cy = mulredc1_10(z, x, y, m, invm);
+      break;
+     case 11:
+      cy = mulredc1_11(z, x, y, m, invm);
+      break;
+     case 12:
+      cy = mulredc1_12(z, x, y, m, invm);
+      break;
+     case 13:
+      cy = mulredc1_13(z, x, y, m, invm);
+      break;
+     case 14:
+      cy = mulredc1_14(z, x, y, m, invm);
+      break;
+     case 15:
+      cy = mulredc1_15(z, x, y, m, invm);
+      break;
+     case 16:
+      cy = mulredc1_16(z, x, y, m, invm);
+      break;
+     case 17:
+      cy = mulredc1_17(z, x, y, m, invm);
+      break;
+     case 18:
+      cy = mulredc1_18(z, x, y, m, invm);
+      break;
+     case 19:
+      cy = mulredc1_19(z, x, y, m, invm);
+      break;
+     case 20:
+      cy = mulredc1_20(z, x, y, m, invm);
+      break;
+     default:
+      cy = mulredc1_20(z, x, y, m, invm);
+    }
+  return cy;
+}
+#endif
+
 void test(mp_size_t N, int k)
 {
   mp_limb_t *x, *y, *yp, *z, *m, invm, cy, cy2, *tmp, *tmp2, *tmp3;
@@ -102,6 +183,13 @@ void test(mp_size_t N, int k)
   tmp = (mp_limb_t *) malloc((2*N+2)*sizeof(mp_limb_t));
   tmp2 = (mp_limb_t *) malloc((2*N+2)*sizeof(mp_limb_t));
   tmp3 = (mp_limb_t *) malloc((2*N+2)*sizeof(mp_limb_t));
+
+  if (x == NULL || y == NULL || z == NULL || m == NULL || tmp == NULL ||
+      tmp2 == NULL || tmp3 == NULL)
+    {
+      fprintf (stderr, "Cannot allocate memory in test_mulredc\n");
+      exit (1);
+    }
  
   mpn_random2(m, N);
   m[0] |= 1UL;
@@ -153,12 +241,12 @@ void test(mp_size_t N, int k)
         }
     }
     
-    // Mul followed by ecm_redc3
+    /* Mul followed by ecm_redc3 */
     mpn_mul_n(tmp, x, yp, N);
     ecm_redc3(tmp, m, N, invm);
     cy2 = mpn_add_n (tmp2, tmp + N, tmp, N);
 
-    // Mixed mul and redc
+    /* Mixed mul and redc */
     cy = call_mulredc (N, z, x, yp, m, invm);
     
     if (cy != cy2)
@@ -180,7 +268,7 @@ void test(mp_size_t N, int k)
     if (cy)
       printf("!");
     z[N] = cy;
-    // Check with pure gmp : multiply by 2^(N*GMP_NUMB_BITS) and compare.
+    /* Check with pure gmp : multiply by 2^(N*GMP_NUMB_BITS) and compare. */
     for (j=0; j < N; ++j) {
       tmp[j] = 0;
       tmp[j+N] = z[j]; 
@@ -194,6 +282,22 @@ void test(mp_size_t N, int k)
     mpn_tdiv_qr(tmp2, tmp3, 0, tmp, 2*N, m, N);
     
     assert(mpn_cmp(z, tmp3, N) == 0);
+
+#if defined(HAVE_NATIVE_MULREDC1_N)
+    /* Test mulredc1_n() */
+    z[N] = call_mulredc1 (N, z, x[0], yp, m, invm);
+    tmp[0] = 0;
+    for (j=0; j <= N; ++j) /* Multiply by 2^GMP_NUMB_BITS */
+      tmp[j+1] = z[j];
+    mpn_tdiv_qr(tmp2, tmp3, 0, tmp, N+2, m, N);
+    for (j=0; j < N; ++j)
+      z[j] = tmp3[j]; 
+
+    tmp[N] = mpn_mul_1 (tmp, yp, N, x[0]);
+    mpn_tdiv_qr(tmp2, tmp3, 0, tmp, N+1, m, N);
+    
+    assert(mpn_cmp(z, tmp3, N) == 0);
+#endif
   }
   
   free(tmp); free(tmp2); free(tmp3);
