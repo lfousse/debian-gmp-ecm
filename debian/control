@@ -3,12 +3,12 @@ Section: math
 Priority: optional
 Homepage: http://ecm.gforge.inria.fr/
 Maintainer: Laurent Fousse <laurent@komite.net>
-Build-Depends: debhelper (>= 4.0.0) , libgmp3-dev
+Build-Depends: debhelper (>= 7.0.0) , libgmp3-dev
 Standards-Version: 3.7.3
 
 Package: gmp-ecm
 Architecture: any
-Depends: ${shlibs:Depends}
+Depends: ${shlibs:Depends}, ${misc:Depends}
 Description: Factor integers using the Elliptic Curve Method
  gmp-ecm is a free implementation of the Elliptic Curve Method (ECM)
  for integer factorization.
@@ -24,12 +24,12 @@ Description: Factor integers using the Elliptic Curve Method
  found in December 1999 a prime factor of 54 digits using GMP-ECM.
  .
  See http://www.loria.fr/~zimmerma/records/ecmnet.html for more
- informations about ecmnet.
+ information about ecmnet.
 
 Package: libecm0
 Architecture: any
 Section: libs
-Depends: ${shlibs:Depends}
+Depends: ${shlibs:Depends}, ${misc:Depends}
 Description: Factor integers using the Elliptic Curve Method (library)
  gmp-ecm is a free implementation of the Elliptic Curve Method (ECM)
  for integer factorization.
@@ -45,14 +45,14 @@ Description: Factor integers using the Elliptic Curve Method (library)
  found in December 1999 a prime factor of 54 digits using GMP-ECM.
  .
  See http://www.loria.fr/~zimmerma/records/ecmnet.html for more
- informations about ecmnet.
+ information about ecmnet.
  .
  This package provides the shared library.
 
 Package: libecm-dev
 Architecture: any
 Section: libdevel
-Depends: libgmp3-dev (>= 4.2.dfsg-1), libecm0 (= ${binary:Version})
+Depends: libgmp3-dev (>= 4.2.dfsg-1), libecm0 (= ${binary:Version}), ${misc:Depends}
 Description: Factor integers using the Elliptic Curve Method (library)
  gmp-ecm is a free implementation of the Elliptic Curve Method (ECM)
  for integer factorization.
@@ -68,6 +68,6 @@ Description: Factor integers using the Elliptic Curve Method (library)
  found in December 1999 a prime factor of 54 digits using GMP-ECM.
  .
  See http://www.loria.fr/~zimmerma/records/ecmnet.html for more
- informations about ecmnet.
+ information about ecmnet.
  .
  This package provides the static library.
