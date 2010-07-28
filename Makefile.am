@@ -34,7 +34,7 @@ libecm_la_SOURCES = ecm.c ecm2.c pm1.c pp1.c getprime.c listz.c lucas.c \
 # Link the asm redc code (if we use it) into libecm.la
 libecm_la_CPPFLAGS = $(MULREDCINCPATH)
 libecm_la_CFLAGS = $(OPENMP_CFLAGS)
-libecm_la_LDFLAGS = '-version-info 0:0:0' $(MULREDCLIBPATH)
+libecm_la_LDFLAGS = '-version-info 0:0:0' $(MULREDCLIBPATH) $(GMPLIB)
 libecm_la_LIBADD = $(MULREDCLIBRARY)
 
 bin_PROGRAMS = ecm
