@@ -156,7 +156,7 @@ spv_pwmul (spv_t r, spv_t x, spv_t y, spv_size_t len, sp_t m, sp_t d)
 
   asm volatile (
        "movd %6, %%xmm6            \n\t"
-       "pshufd $0b01000100, %%xmm6, %%xmm5  \n\t"
+       "pshufd $0x44, %%xmm6, %%xmm5  \n\t"
        "pshufd $0, %%xmm6, %%xmm6  \n\t"
        "movd %7, %%xmm7            \n\t"
        "pshufd $0, %%xmm7, %%xmm7  \n\t"
@@ -184,24 +184,24 @@ spv_pwmul (spv_t r, spv_t x, spv_t y, spv_size_t len, sp_t m, sp_t d)
        "psubq %%xmm2, %%xmm0       \n\t"
        "psubq %%xmm3, %%xmm1       \n\t"
 #else
-       "pshufd $0b11110101, %%xmm2, %%xmm2 \n\t"
+       "pshufd $0xf5, %%xmm2, %%xmm2 \n\t"
        "pmuludq %%xmm6, %%xmm2     \n\t"
-       "pshufd $0b11110101, %%xmm3, %%xmm3 \n\t"
+       "pshufd $0xf5, %%xmm3, %%xmm3 \n\t"
        "pmuludq %%xmm6, %%xmm3     \n\t"
        "psubq %%xmm2, %%xmm0       \n\t"
        "psubq %%xmm3, %%xmm1       \n\t"
 
        "psubq %%xmm5, %%xmm0       \n\t"
        "psubq %%xmm5, %%xmm1       \n\t"
-       "pshufd $0b11110101, %%xmm0, %%xmm2 \n\t"
-       "pshufd $0b11110101, %%xmm1, %%xmm3 \n\t"
+       "pshufd $0xf5, %%xmm0, %%xmm2 \n\t"
+       "pshufd $0xf5, %%xmm1, %%xmm3 \n\t"
        "pand %%xmm5, %%xmm2        \n\t"
        "pand %%xmm5, %%xmm3        \n\t"
        "paddq %%xmm2, %%xmm0       \n\t"
        "paddq %%xmm3, %%xmm1       \n\t"
 #endif
-       "pshufd $0b00001000, %%xmm0, %%xmm0 \n\t"
-       "pshufd $0b00001000, %%xmm1, %%xmm1 \n\t"
+       "pshufd $0x8, %%xmm0, %%xmm0 \n\t"
+       "pshufd $0x8, %%xmm1, %%xmm1 \n\t"
        "punpckldq %%xmm1, %%xmm0   \n\t"
        "psubd %%xmm6, %%xmm0       \n\t"
 
@@ -220,6 +220,79 @@ spv_pwmul (spv_t r, spv_t x, spv_t y, spv_size_t len, sp_t m, sp_t d)
 	"g"(len & (spv_size_t)(~3)), "g"(m), "g"(d)
        :"%xmm0", "%xmm1", "%xmm2", "%xmm3",
         "%xmm5", "%xmm6", "%xmm7", "cc", "memory");
+#elif defined( _MSC_VER ) && defined( SSE2)
+    __asm
+    {   push        esi
+        push        edi
+        mov         edi, x
+        mov         esi, y
+        mov         edx, r
+        xor         ecx, ecx
+        mov         eax, len
+        and         eax, ~3
+
+        movd        xmm6, m
+        pshufd      xmm5, xmm6, 0x44
+        pshufd      xmm6, xmm6, 0
+        movd        xmm7, d
+        pshufd      xmm7, xmm7, 0
+
+    L0: movdqa      xmm0, [edi+ecx*4]
+        movdqa      xmm2, [esi+ecx*4]
+        pshufd      xmm1, xmm0, 0x31
+        pshufd      xmm3, xmm2, 0x31
+        pmuludq     xmm0, xmm2
+        pmuludq     xmm1, xmm3
+
+        movdqa      xmm2, xmm0
+        movdqa      xmm3, xmm1
+        psrlq       xmm2, 2*SP_NUMB_BITS - W_TYPE_SIZE
+        pmuludq     xmm2, xmm7
+        psrlq       xmm3, 2*SP_NUMB_BITS - W_TYPE_SIZE
+        pmuludq     xmm3, xmm7
+
+#if SP_NUMB_BITS < W_TYPE_SIZE - 1
+        psrlq       xmm2, 33
+        pmuludq     xmm2, xmm6
+        psrlq       xmm3, 33
+        pmuludq     xmm3, xmm6
+        psubq       xmm0, xmm2
+        psubq       xmm1, xmm3
+#else
+        pshufd      xmm2, xmm2, 0xf5
+        pmuludq     xmm2, xmm6
+        pshufd      xmm3, xmm3, 0xf5
+        pmuludq     xmm3, xmm6
+        psubq       xmm0, xmm2
+        psubq       xmm1, xmm3
+
+        psubq       xmm0, xmm5
+        psubq       xmm1, xmm5
+        pshufd      xmm2, xmm0, 0xf5
+        pshufd      xmm3, xmm1, 0xf5
+        pand        xmm2, xmm5
+        pand        xmm3, xmm5
+        paddq       xmm0, xmm2
+        paddq       xmm1, xmm3
+#endif
+        pshufd      xmm0, xmm0, 0x8
+        pshufd      xmm1, xmm1, 0x8
+        punpckldq   xmm0, xmm1
+        psubd       xmm0, xmm6
+
+        pxor        xmm1, xmm1
+        pcmpgtd     xmm1, xmm0
+        pand        xmm1, xmm6
+        paddd       xmm0, xmm1
+        movdqa      [edx+ecx*4], xmm0
+
+        add         ecx, 4
+        cmp         eax, ecx
+        jne         L0
+        mov         i, ecx
+        pop         edi
+        pop         esi
+    }
 #endif
 
   for (; i < len; i++)
@@ -255,7 +328,7 @@ spv_mul_sp (spv_t r, spv_t x, sp_t c, spv_size_t len, sp_t m, sp_t d)
        "movd %2, %%xmm4            \n\t"
        "pshufd $0, %%xmm4, %%xmm4  \n\t"
        "movd %6, %%xmm6            \n\t"
-       "pshufd $0b01000100, %%xmm6, %%xmm5  \n\t"
+       "pshufd $0x44, %%xmm6, %%xmm5  \n\t"
        "pshufd $0, %%xmm6, %%xmm6  \n\t"
        "movd %7, %%xmm7            \n\t"
        "pshufd $0, %%xmm7, %%xmm7  \n\t"
@@ -282,24 +355,24 @@ spv_mul_sp (spv_t r, spv_t x, sp_t c, spv_size_t len, sp_t m, sp_t d)
        "psubq %%xmm2, %%xmm0       \n\t"
        "psubq %%xmm3, %%xmm1       \n\t"
 #else
-       "pshufd $0b11110101, %%xmm2, %%xmm2 \n\t"
+       "pshufd $0xf5, %%xmm2, %%xmm2 \n\t"
        "pmuludq %%xmm6, %%xmm2     \n\t"
-       "pshufd $0b11110101, %%xmm3, %%xmm3 \n\t"
+       "pshufd $0xf5, %%xmm3, %%xmm3 \n\t"
        "pmuludq %%xmm6, %%xmm3     \n\t"
        "psubq %%xmm2, %%xmm0       \n\t"
        "psubq %%xmm3, %%xmm1       \n\t"
 
        "psubq %%xmm5, %%xmm0       \n\t"
        "psubq %%xmm5, %%xmm1       \n\t"
-       "pshufd $0b11110101, %%xmm0, %%xmm2 \n\t"
-       "pshufd $0b11110101, %%xmm1, %%xmm3 \n\t"
+       "pshufd $0xf5, %%xmm0, %%xmm2 \n\t"
+       "pshufd $0xf5, %%xmm1, %%xmm3 \n\t"
        "pand %%xmm5, %%xmm2        \n\t"
        "pand %%xmm5, %%xmm3        \n\t"
        "paddq %%xmm2, %%xmm0       \n\t"
        "paddq %%xmm3, %%xmm1       \n\t"
 #endif
-       "pshufd $0b00001000, %%xmm0, %%xmm0 \n\t"
-       "pshufd $0b00001000, %%xmm1, %%xmm1 \n\t"
+       "pshufd $0x8, %%xmm0, %%xmm0 \n\t"
+       "pshufd $0x8, %%xmm1, %%xmm1 \n\t"
        "punpckldq %%xmm1, %%xmm0   \n\t"
        "psubd %%xmm6, %%xmm0       \n\t"
 
@@ -318,6 +391,80 @@ spv_mul_sp (spv_t r, spv_t x, sp_t c, spv_size_t len, sp_t m, sp_t d)
 	"g"(len & (spv_size_t)(~3)), "g"(m), "g"(d)
        :"%xmm0", "%xmm1", "%xmm2", "%xmm3",
         "%xmm4", "%xmm5", "%xmm6", "%xmm7", "cc", "memory");
+#elif defined( _MSC_VER ) && defined( SSE2) 
+    __asm
+    {   push        esi
+        push        edi
+        xor         ecx, ecx
+        mov         edi, x
+        mov         esi, c
+        mov         edx, r
+        mov         eax, len
+        and         eax, ~3
+
+        movd        xmm4, esi
+        pshufd      xmm4, xmm4, 0
+        movd        xmm6, m
+        pshufd      xmm5, xmm6, 0x44
+        pshufd      xmm6, xmm6, 0
+        movd        xmm7, d
+        pshufd      xmm7, xmm7, 0
+
+    L0: movdqa      xmm0, [edi+ecx*4]
+        pshufd      xmm1, xmm0, 0x31
+        pshufd      xmm3, xmm4, 0x31
+        pmuludq     xmm0, xmm4
+        pmuludq     xmm1, xmm3
+
+        movdqa      xmm2, xmm0
+        movdqa      xmm3, xmm1
+        psrlq       xmm2, 2*SP_NUMB_BITS - W_TYPE_SIZE
+        pmuludq     xmm2, xmm7
+        psrlq       xmm3, 2*SP_NUMB_BITS - W_TYPE_SIZE
+        pmuludq     xmm3, xmm7
+
+#if SP_NUMB_BITS < W_TYPE_SIZE - 1
+        psrlq       xmm2, 33
+        pmuludq     xmm2, xmm6
+        psrlq       xmm3, 33
+        pmuludq     xmm3, xmm6
+        psubq       xmm0, xmm2
+        psubq       xmm1, xmm3
+#else
+        pshufd      xmm2, xmm2, 0xf5
+        pmuludq     xmm2, xmm6
+        pshufd      xmm3, xmm3, 0xf5
+        pmuludq     xmm3, xmm6
+        psubq       xmm0, xmm2
+        psubq       xmm1, xmm3
+
+        psubq       xmm0, xmm5
+        psubq       xmm1, xmm5
+        pshufd      xmm2, xmm0, 0xf5
+        pshufd      xmm3, xmm1, 0xf5
+        pand        xmm2, xmm5
+        pand        xmm3, xmm5
+        paddq       xmm0, xmm2
+        paddq       xmm1, xmm3
+#endif
+        pshufd      xmm0, xmm0, 0x8
+        pshufd      xmm1, xmm1, 0x8
+        punpckldq   xmm0, xmm1
+        psubd       xmm0, xmm6
+
+        pxor        xmm1, xmm1
+        pcmpgtd     xmm1, xmm0
+        pand        xmm1, xmm6
+        paddd       xmm0, xmm1
+        movdqa      [edx+ecx*4], xmm0
+
+        add         ecx, 4
+        cmp         eax, ecx
+        jne         L0
+        mov         i, ecx
+        pop         edi
+        pop         esi
+    }
 #endif
 
   for (; i < len; i++)

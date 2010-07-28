@@ -46,6 +46,9 @@
 #include "gwnum.h"
 #endif
 
+/* Used in print_config() */
+#include "ecm-params.h"
+
 /* #define DEBUG */
 
 /* people keeping track of champions and corresponding url's: ECM, P-1, P+1 */
@@ -58,7 +61,7 @@ static char *champion_url[3] =
  "http://www.loria.fr/~zimmerma/records/Pminus1.html",
  "http://www.loria.fr/~zimmerma/records/Pplus1.html"};
 /* minimal number of digits to enter the champions table for ECM, P-1, P+1 */
-static unsigned int champion_digits[3] = { 61, 50, 40 };
+static unsigned int champion_digits[3] = { 63, 50, 42 };
 
 /* probab_prime_p() can get called from other modules. Instead of passing
    prpcmd to those functions, we make it static here - this variable will
@@ -205,6 +208,7 @@ usage (void)
     printf ("  -modmuln     use Montgomery's MODMULN for modular reduction\n");
     printf ("  -redc        use Montgomery's REDC for modular reduction\n");
     printf ("  -nobase2     disable special base-2 code\n");
+    printf ("  -nobase2s2   disable special base-2 code in ecm stage 2 only\n");
     printf ("  -base2 n     force base 2 mode with 2^n+1 (n>0) or 2^|n|-1 (n<0)\n");
     printf ("  -ntt         enable NTT convolution routines in stage 2\n");
     printf ("  -no-ntt      disable NTT convolution routines in stage 2\n");
@@ -238,11 +242,157 @@ usage (void)
     printf ("  -B2scale f   Multiplies the default B2 value by f \n");
     printf ("  -go val      Preload with group order val, which can be a simple expression,\n");
     printf ("               or can use N as a placeholder for the number being factored.\n");
-
+    printf ("  -printconfig Print compile-time configuration and exit.\n");
 
     printf ("  -h, --help   Prints this help and exit.\n");
 }
 
+/* Print parameters that were used to build GMP-ECM */
+static void
+print_config ()
+{
+  printf ("Compilation options:\n");
+#ifdef __GNU_MP_VERSION_PATCHLEVEL
+  printf ("Included GMP header files version %d.%d.%d\n", 
+          __GNU_MP_VERSION, __GNU_MP_VERSION_MINOR, 
+          __GNU_MP_VERSION_PATCHLEVEL);
+#else
+  printf ("Included GMP header files version %d.%d\n", 
+          __GNU_MP_VERSION, __GNU_MP_VERSION_MINOR);
+#endif
+
+#ifdef GWNUM_VERSION
+  printf ("Included GWNUM header files version %s\n", GWNUM_VERSION);
+#else
+  printf ("GWNUM_VERSION undefined\n");
+#endif
+
+#ifdef HAVE_SSE2
+  printf ("HAVE_SSE2 = %d\n$", HAVE_SSE2);
+#else
+  printf ("HAVE_SSE2 undefined\n");
+#endif
+
+#ifdef HAVE___GMPN_ADD_NC
+  printf ("HAVE___GMPN_ADD_NC = %d\n", HAVE___GMPN_ADD_NC);
+#else
+  printf ("HAVE___GMPN_ADD_NC undefined\n");
+#endif
+
+#ifdef HAVE___GMPN_MOD_34LSUB1
+  printf ("HAVE___GMPN_MOD_34LSUB1 = %d\n", HAVE___GMPN_MOD_34LSUB1);
+#else
+  printf ("HAVE___GMPN_MOD_34LSUB1 undefined\n");
+#endif
+
+#ifdef HAVE___GMPN_REDC_1
+  printf ("HAVE___GMPN_REDC_1 = %d\n", HAVE___GMPN_REDC_1);
+#else
+  printf ("HAVE___GMPN_REDC_1 undefined\n");
+#endif
+
+#ifdef MEMORY_DEBUG
+  printf ("MEMORY_DEBUG = %d\n", MEMORY_DEBUG);
+#else
+  printf ("MEMORY_DEBUG undefined\n");
+#endif
+
+#ifdef NATIVE_REDC
+  printf ("NATIVE_REDC = %d\n", NATIVE_REDC);
+#ifdef TUNE_MULREDC_THRESH
+  printf ("TUNE_MULREDC_THRESH = %d\n", TUNE_MULREDC_THRESH);
+#else
+  printf ("TUNE_MULREDC_THRESH undefined\n");
+#endif
+#ifdef TUNE_SQRREDC_THRESH
+  printf ("TUNE_SQRREDC_THRESH = %d\n", TUNE_SQRREDC_THRESH);
+#else
+  printf ("TUNE_SQRREDC_THRESH undefined\n");
+#endif
+#ifdef WINDOWS64_ABI
+  printf ("WINDOWS64_ABI = %d\n", WINDOWS64_ABI);
+#else
+  printf ("WINDOWS64_ABI undefined\n");
+#endif
+#else
+  printf ("NATIVE_REDC undefined\n");
+#endif
+
+#ifdef WANT_ASSERT
+  printf ("WANT_ASSERT = %d\n", WANT_ASSERT);
+#else
+  printf ("WANT_ASSERT undefined\n");
+#endif
+
+#ifdef WANT_SHELLCMD
+  printf ("WANT_SHELLCMD = %d\n", WANT_SHELLCMD);
+#else
+  printf ("WANT_SHELLCMD undefined\n");
+#endif
+
+#ifdef _OPENMP
+  printf ("_OPENMP = %d\n", _OPENMP);
+#else
+  printf ("_OPENMP undefined\n");
+#endif
+
+#ifdef MPZMOD_THRESHOLD
+  printf ("MPZMOD_THRESHOLD = %d\n", MPZMOD_THRESHOLD);
+#else
+  printf ("MPZMOD_THRESHOLD undefined\n");
+#endif
+
+#ifdef REDC_THRESHOLD
+  printf ("REDC_THRESHOLD = %d\n", REDC_THRESHOLD);
+#else
+  printf ("REDC_THRESHOLD undefined\n");
+#endif
+
+#ifdef MUL_NTT_THRESHOLD
+  printf ("MUL_NTT_THRESHOLD = %d\n", MUL_NTT_THRESHOLD);
+#else
+  printf ("MUL_NTT_THRESHOLD undefined\n");
+#endif
+
+#ifdef NTT_GFP_TWIDDLE_DIF_BREAKOVER
+  printf ("NTT_GFP_TWIDDLE_DIF_BREAKOVER = %d\n", 
+	  NTT_GFP_TWIDDLE_DIF_BREAKOVER);
+#else
+  printf ("NTT_GFP_TWIDDLE_DIF_BREAKOVER undefined\n");
+#endif
+
+#ifdef NTT_GFP_TWIDDLE_DIT_BREAKOVER
+  printf ("NTT_GFP_TWIDDLE_DIT_BREAKOVER = %d\n", 
+	  NTT_GFP_TWIDDLE_DIT_BREAKOVER);
+#else
+  printf ("NTT_GFP_TWIDDLE_DIT_BREAKOVER undefined\n");
+#endif
+
+#ifdef PREREVERTDIVISION_NTT_THRESHOLD
+  printf ("PREREVERTDIVISION_NTT_THRESHOLD = %d\n", 
+          PREREVERTDIVISION_NTT_THRESHOLD);
+#else
+  printf ("PREREVERTDIVISION_NTT_THRESHOLD undefined\n");
+#endif
+
+#ifdef POLYINVERT_NTT_THRESHOLD
+  printf ("POLYINVERT_NTT_THRESHOLD = %d\n", POLYINVERT_NTT_THRESHOLD);
+#else
+  printf ("POLYINVERT_NTT_THRESHOLD undefined\n");
+#endif
+
+#ifdef POLYEVALT_NTT_THRESHOLD
+  printf ("POLYEVALT_NTT_THRESHOLD = %d\n", POLYEVALT_NTT_THRESHOLD);
+#else
+  printf ("POLYEVALT_NTT_THRESHOLD undefined\n");
+#endif
+
+#ifdef MPZSPV_NORMALISE_STRIDE
+  printf ("MPZSPV_NORMALISE_STRIDE = %d\n", MPZSPV_NORMALISE_STRIDE);
+#else
+  printf ("MPZSPV_NORMALISE_STRIDE undefined\n");
+#endif
+}
 
 
 /******************************************************************************
@@ -272,6 +422,7 @@ main (int argc, char *argv[])
         /* If a factor was found, indicate whether factor, cofactor are */
         /* prime. If no factor was found, both are zero. */
   int repr = ECM_MOD_DEFAULT; /* automatic choice */
+  int nobase2step2 = 0; /* flag to turn off base 2 arithmetic in ecm stage 2 */
   unsigned long k = ECM_DEFAULT_K; /* default number of blocks in stage 2 */
   int S = ECM_DEFAULT_S;
              /* Degree for Brent-Suyama extension requested by user.
@@ -282,7 +433,7 @@ main (int argc, char *argv[])
   char *savefilename = NULL, *resumefilename = NULL, *infilename = NULL;
   char *TreeFilename = NULL, *chkfilename = NULL;
   char rtime[256] = "", who[256] = "", comment[256] = "", program[256] = "";
-  FILE *savefile = NULL, *resumefile = NULL, *infile = NULL;
+  FILE *resumefile = NULL, *infile = NULL;
   mpz_t resume_lastN, resume_lastfac; /* When resuming residues from a file,
         store the last number processed and the factors found for this it */
   int resume_wasPrp = 0; /* 1 if resume_lastN/resume_lastfac is a PRP */
@@ -391,6 +542,12 @@ main (int argc, char *argv[])
 	  argv++;
 	  argc--;
         }
+      else if (strcmp (argv[1], "-nobase2s2") == 0)
+        {
+          nobase2step2 = 1;
+          argv++;
+          argc--;
+        }
       else if (strcmp (argv[1], "-ntt") == 0)
 	{
 	  use_ntt = 2; /* Use NTT, even for large input numbers */
@@ -424,7 +581,12 @@ main (int argc, char *argv[])
       else if (strcmp (argv[1], "-h") == 0 || strcmp (argv[1], "--help") == 0)
         {
           usage ();
-          exit (0);
+          exit (EXIT_SUCCESS);
+        }
+      else if (strcmp (argv[1], "-printconfig") == 0)
+        {
+          print_config ();
+          exit (EXIT_SUCCESS);
         }
       else if (strcmp (argv[1], "-d") == 0)
         {
@@ -635,8 +797,16 @@ main (int argc, char *argv[])
       else if ((argc > 2) && (strcmp (argv[1], "-go") == 0))
 	{
 	  if (go.cpOrigExpr)
-	    free (go.cpOrigExpr);
+            {
+              fprintf (stderr, "Warning, for multiple -go options, only the last one is taken into account.\n");
+              free (go.cpOrigExpr);
+            }
 	  go.cpOrigExpr = malloc (strlen (argv[2]) + 1);
+          if (go.cpOrigExpr == NULL)
+            {
+              fprintf (stderr, "Cannot allocate memory in main\n");
+              exit (1);
+            }
 	  strcpy (go.cpOrigExpr, argv[2]);
 	  if (strchr (go.cpOrigExpr, 'N'))
 	    {
@@ -704,10 +874,20 @@ main (int argc, char *argv[])
   if (verbose >= 1)
     {
 #ifdef HAVE_GWNUM
-      printf ("GMP-ECM %s [powered by GMP %s and GWNUM %s] [", 
+#ifdef NATIVE_REDC
+      printf ("GMP-ECM %s [configured with GMP %s, GWNUM %s and --enable-asm-redc] [", 
               VERSION, gmp_version, GWNUM_VERSION);
 #else
-      printf ("GMP-ECM %s [powered by GMP %s] [", VERSION, gmp_version);
+      printf ("GMP-ECM %s [configured with GMP %s and GWNUM %s] [", 
+              VERSION, gmp_version, GWNUM_VERSION);
+#endif
+#else
+#ifdef NATIVE_REDC
+      printf ("GMP-ECM %s [configured with GMP %s and --enable-asm-redc] [",
+              VERSION, gmp_version);
+#else
+      printf ("GMP-ECM %s [configured with GMP %s] [", VERSION, gmp_version);
+#endif
 #endif
       switch (method)
 	{
@@ -857,6 +1037,7 @@ main (int argc, char *argv[])
   params->k = k;
   params->S = S;
   params->repr = repr;
+  params->nobase2step2 = nobase2step2;
   params->chkfilename = chkfilename;
   params->TreeFilename = TreeFilename;
   params->maxmem = maxmem;
@@ -884,6 +1065,7 @@ main (int argc, char *argv[])
   /* Open save file for writing, if saving is requested */
   if (savefilename != NULL)
     {
+      FILE *savefile;
       /* Are we not appending and does this file already exist ? */
       if (!saveappend && access (savefilename, F_OK) == 0)
         {
@@ -891,12 +1073,14 @@ main (int argc, char *argv[])
                   savefilename);
           exit (EXIT_FAILURE);
         }
-      savefile = fopen (savefilename, saveappend ? "a" : "w");
+      /* Test if we can open the file for writing */
+      savefile = fopen (savefilename, "a");
       if (savefile == NULL)
         {
           fprintf (stderr, "Could not open file %s for writing\n", savefilename);
           exit (EXIT_FAILURE);
         }
+      fclose (savefile);
     }
 
   if (resumefile && (specific_sigma || mpz_sgn (A) || specific_x0))
@@ -923,7 +1107,7 @@ main (int argc, char *argv[])
      we could save by exiting cleanly, but the waiting for the code to check
      for signals may delay program end unacceptably */
 
-  if (savefile)
+  if (savefilename != NULL)
     {
       signal (SIGINT, &signal_handler);
       signal (SIGTERM, &signal_handler);
@@ -1010,10 +1194,12 @@ BreadthFirstDoAgain:;
 	}
     }
 
-  while (((breadthfirst && linenum < nCandidates) || feof (infile) == 0)
-         && !exit_asap_value)
+  while (((breadthfirst && linenum < nCandidates) || cnt > 0 || 
+          feof (infile) == 0) && !exit_asap_value)
     {
       trial_factor_found = 0;
+      params->B1done = B1done; /* may change with resume */
+      
       if (resumefile != NULL) /* resume case */
         {
 	  if (count != 1)
@@ -1021,9 +1207,8 @@ BreadthFirstDoAgain:;
 	      fprintf (stderr, "Error, option -c and -resume are incompatible\n");
 	      exit (EXIT_FAILURE);
 	    }
-
           if (!read_resumefile_line (&method, x, &n, sigma, A, orig_x0, 
-                &B1done, program, who, rtime, comment, resumefile))
+                &(params->B1done), program, who, rtime, comment, resumefile))
             break;
           
           if (mpz_cmp (n.n, resume_lastN) == 0)
@@ -1259,14 +1444,13 @@ BreadthFirstDoAgain:;
       params->method = method; /* may change with resume */
       mpz_set (params->x, x); /* may change with resume */
       /* if sigma is zero, then we use the A value instead */
-      params->sigma_is_A = mpz_sgn (sigma) == 0;
+      params->sigma_is_A = (mpz_sgn (sigma) == 0) ? 1 : 0;
       mpz_set (params->sigma, (params->sigma_is_A) ? A : sigma);
       mpz_set (params->go, go.Candi.n); /* may change if contains N */
-      params->B1done = B1done; /* may change with resume */
       mpz_set (params->B2min, B2min); /* may change with -c */
       /* Here's an ugly hack to pass B2scale to the library somehow.
          It gets piggy-backed onto B1done */
-      params->B1done = B1done + floor (B2scale * 128.) / 134217728.; 
+      params->B1done = params->B1done + floor (B2scale * 128.) / 134217728.; 
       /* Default, for P-1/P+1 with old stage 2 and ECM, use NTT only 
          for small input */
       if (use_ntt == 1 && (method == ECM_ECM || S != ECM_DEFAULT_S)) 
@@ -1305,6 +1489,12 @@ BreadthFirstDoAgain:;
           printf ("[%.24s]\n", ctime (&t));
         }
 
+#if 0
+      /* Test mpres_muldivbysomething_si() which is not called in normal
+         operation */
+      mpmod_selftest (n.n);
+#endif
+      
       /* now call the ecm library */
       result = ecm_factor (f, n.n, B1, params);
 
@@ -1460,24 +1650,15 @@ OutputFactorStuff:;
 
       /* Write composite cofactors to savefile if requested */
       /* If no factor was found, we consider cofactor composite and write it */
-      if (savefile != NULL && !n.isPrp)
+      if (savefilename != NULL && !n.isPrp)
         {
           mpz_mod (x, params->x, n.n); /* Reduce stage 1 residue wrt new co-
                                           factor, in case a factor was found */
           /* We write the B1done value to the safe file. This requires that
              a correct B1done is returned by the factoring functions */
-          write_resumefile_line (savefile, method, params->B1done, sigma, 
+          write_resumefile_line (savefilename, method, params->B1done, sigma, 
                                  A, x, &n, orig_x0, comment);
         }
-
-      /* Clean up any temp file left over.  At this time, we assume that if 
-         the user wants to resume the run, then they used -save file.  The 
-         temp save was ONLY to help in case of a power outage (or similar) 
-         for a long run.  It would allow finishing the current candidate, 
-         keeping the existing work done.   Now, we assume we are done. */
-#if !defined (DEBUG_AUTO_SAVE)
-      kill_temp_resume_file ();
-#endif
 
       /* advance B1, if autoincrement value had been set during command line parsing */
       if (!breadthfirst && autoincrementB1 > 0.0)
@@ -1500,8 +1681,6 @@ OutputFactorStuff:;
 
   if (infilename)	/* infile might be stdin, don't fclose that! */
     fclose (infile);
-  if (savefile)
-    fclose (savefile);
   if (resumefile)
     {
       fclose (resumefile);

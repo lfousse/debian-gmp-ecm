@@ -60,14 +60,20 @@
 %endmacro
 
 %macro mseq_2 4
-	mov     %2, rcx
-	adc	    %2, [rbp+8*(%3+1)]
+	mov     %2, [rbp+8*(%3+1)]
+	adc	    %2, rcx
+%if %3 < %4 - 1
 	setc	cl
+%endif
 	mul	    r14
 	add	    %1, rax
 	mov	    rax, [r9+8*%3]
 	adc	    %2, rdx
+%if %3 < %4 - 1
 	adc	    cl, 0
+%else
+	setc	cl
+%endif
 	mul	    r11
 %if %3 < %4 - 1
 	    add	    rax, %1
@@ -223,7 +229,7 @@ mulredc1:
 	ret
 
 %assign i 2
-%rep    19      ; 3..20 inclusive
+%rep    19      ; 2..20 inclusive
     mulredc i
     %assign i i + 1
 %endrep

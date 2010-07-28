@@ -107,24 +107,48 @@ const unsigned long Pvalues[] = {
     790524735UL, 821665845UL, 851275425UL, 863017155UL, 909984075UL,
     936020085UL, 984518535UL, 1017041025UL, 1052416365UL
 #if (ULONG_MAX > 4294967295)
-  , 1086110025UL, 1120314195UL, 1191785595UL, 1213887675UL, 1265809545UL, 
-    1282356075UL, 1331995665UL, 1391905515UL, 1423857435UL, 1479202725UL, 
-    1547100555UL, 1567520955UL, 1673196525UL, 1712565855UL, 1767130365UL, 
-    1830673845UL, 1883166285UL, 1973886915UL, 2001274275UL, 2109682575UL, 
-    2187280095UL, 2255177925UL, 2342475135UL, 2389442055UL, 2449171725UL, 
-    2553826275UL, 2647760115UL, 2788660875UL, 2808060255UL, 2953555605UL, 
-    3234846615UL, 3457939485UL, 3516137625UL, 3681032355UL, 3758629875UL, 
-    3904125225UL, 4127218095UL, 4360010655UL, 4573403835UL, 4796496705UL, 
-    4844995155UL, 5019589575UL, 5203883685UL, 5262081825UL, 5465775315UL, 
-    5766465705UL, 5898837945UL, 6164152995UL, 6464843385UL, 6804332535UL, 
-    6980458485UL, 7320968655UL, 7526103585UL, 7919796885UL, 8142889755UL, 
-    8589075495UL, 8906102205UL, 9171056895UL, 9704539845UL, 9927632715UL, 
-    10373818455UL
+   ,1086110025UL, 1110614505UL, 1147371225UL, 1191785595UL, 1213887675UL,
+    1265809545UL, 1282356075UL, 1331995665UL, 1391905515UL, 1450103655UL,
+    1479202725UL, 1547100555UL, 1555088535UL, 1673196525UL, 1712565855UL,
+    1767130365UL, 1830673845UL, 1883166285UL, 1954487535UL, 2001964965UL,
+    2119382265UL, 2187280095UL, 2255177925UL, 2342475135UL, 2390973585UL,
+    2421213795UL, 2555868315UL, 2672264595UL, 2788660875UL, 2856558705UL,
+    2953555605UL, 3050552505UL, 3234846615UL, 3457939485UL, 3516137625UL,
+    3681032355UL, 3758629875UL, 3904125225UL, 4127218095UL, 4360010655UL,
+    4573403835UL, 4796496705UL, 4844995155UL, 5019589575UL, 5203883685UL,
+    5262081825UL, 5465775315UL, 5766465705UL, 5898837945UL, 6164152995UL,
+    6358146795UL, 6411780375UL, 6804332535UL, 6980458485UL, 7172920755UL,
+    7473611145UL, 7716103395UL, 7968295335UL, 8182259085UL, 8342499165UL,
+    8812168365UL, 9023519505UL, 9704539845UL, 9927632715UL, 10373818455UL,
+    10439434005UL, 10820004195UL, 11043097065UL, 11489282805UL,
+    11877270405UL, 12381654285UL, 12604747155UL, 13080031965UL,
+    13274025765UL, 13642613985UL, 14389490115UL, 14583483915UL,
+    15058768725UL, 15611651055UL, 16174233075UL, 16397325945UL,
+    17289697425UL, 17735883165UL, 18143270145UL, 18381678315UL,
+    19074440385UL, 19559424885UL, 20636090475UL, 20941375455UL,
+    21800053275UL, 22643926305UL, 23148310185UL, 24205576395UL,
+    24546777255UL, 25544133615UL, 26389538175UL, 26863291455UL,
+    27813861075UL, 29113619535UL, 29494189725UL, 30520074585UL,
+    30684969315UL, 31790733975UL, 33575476935UL, 34467848415UL,
+    35202742575UL, 36427185795UL, 38037334335UL, 39240095895UL,
+    40365259935UL, 42053005995UL, 43168470345UL, 44953213305UL,
+    45845584785UL, 48522699225UL, 50307442185UL, 51869092275UL,
+    53653835235UL, 54546206715UL, 56680138515UL, 58784971245UL,
+    59386352025UL, 61908271425UL, 63431122755UL, 65700850215UL,
+    67931778915UL, 70162707615UL, 72616729185UL, 74120181135UL,
+    75740029365UL, 78417143805UL, 80871165375UL, 82840202445UL,
+    86448487125UL, 88466022645UL, 91133437395UL, 92918180355UL,
+    100280245065UL, 100726430805UL, 102811864155UL, 106749938295UL,
+    109000266375UL, 113219631525UL, 119689324755UL, 121027881975UL,
+    127943760945UL, 132628711215UL, 134859639915UL, 141775518885UL,
+    148691397855UL, 150922326555UL, 155607276825UL, 161320394235UL,
+    164977177365UL, 171446870595UL, 177470378085UL, 183270792705UL
 #endif
 };
 
 /* All the prime factors that can appear in eulerphi(P) */
-const unsigned long phiPfactors[] = {2UL, 3UL, 5UL, 7UL, 11UL, 13UL};
+const unsigned long phiPfactors[] = {2UL, 3UL, 5UL, 7UL, 11UL, 13UL, 
+				     17UL, 19UL};
 
 
 /* Some useful PARI functions:
@@ -134,6 +158,11 @@ const unsigned long phiPfactors[] = {2UL, 3UL, 5UL, 7UL, 11UL, 13UL};
 
    U(i,X) = { if (i==0, return(0)); if (i==1, return(1)); if(i%2 == 0, return (U (i/2, X) * V(i/2,X))); return (V ((i+1)/2, X)  *U( (i-1)/2, X) + 1)}
 */
+
+#ifndef _OPENMP
+static int omp_get_num_threads () {return 1;}
+static int omp_get_thread_num () {return 0;}
+#endif
 
 static void 
 ntt_sqr_reciprocal (mpzv_t, const mpzv_t, mpzspv_t, const spv_size_t, 
@@ -235,7 +264,7 @@ pm1fs2_memory_use (const unsigned long lmax, const mpz_t modulus,
       n += lmax / 2 * sizeof (mpz_t);
       /* Memory use due to temp space allocation in TMulKS appears to 
 	 approximately triple the estimated memory use. This is hard to
-	 estimate precisely, so let's got with the fudge factor of 3 here */
+	 estimate precisely, so let's go with the fudge factor of 3 here */
       n *= 3;
       outputf (OUTPUT_DEVVERBOSE, "pm1fs2_memory_use: Estimated memory use "
 	       "with lmax = %lu is %lu bytes\n", lmax, n);
@@ -337,44 +366,6 @@ pp1fs2_maxlen (const size_t memory, const mpz_t modulus, const int use_ntt,
 }
 
 
-/* Assumes that S == 0 at recursion entry! */
-static void
-maxS (mpz_t S, unsigned long P)
-{
-  unsigned long p, pk;
-  unsigned int k;
-
-  if (P == 1UL)
-    return;
-
-  p = find_factor (P);
-  k = 1; pk = p; P /= p;
-  while (P % p == 0)
-    {
-      k++;
-      pk *= p;
-      P /= p; /* P*pk is invariant */
-    }
-
-  if (p % 4UL == 1UL)
-    {
-      maxS (S, P);
-      mpz_mul_ui (S, S, pk);
-      mpz_add_ui (S, S, P * ((pk + p) / 2UL - 2UL));
-      return;
-    }
-  if (p % 4UL == 3UL)
-    {
-      maxS (S, P);
-      mpz_mul_ui (S, S, pk);
-      mpz_add_ui (S, S, P * ((pk - 1UL) / 2UL));
-      return;
-    }
-
-  abort();
-}
-
-
 /* Test if for given P, nr, B2min and B2 we can choose an m_1 so that the 
    stage 2 interval [B2min, B2] is covered. The effective B2min and B2
    are stored in effB2min and effB2 */
@@ -390,7 +381,7 @@ test_P (const mpz_t B2min, const mpz_t B2, mpz_t m_1, const unsigned long P,
      Choose m_1 accordingly */
   
   mpz_init (m);
-  maxS (m, P);
+  sets_max (m, P);
   mpz_mul_2exp (m, m, 1UL); /* m = 2*max(S_1 + S_2) */
 
   mpz_sub (m_1, B2min, m);
@@ -1114,13 +1105,17 @@ list_mul_blocks (listz_t R, const listz_t A, int monicA, const listz_t B,
 }
 
 
-/* compute V_k(S), where V(x) is defined by V_k(X + 1/X) = X^k + 1/X^k */
+/* 
+  Computes V_k(S), where the Chebyshev polynomial V_k(X) is defined by 
+  V_k(X + 1/X) = X^k + 1/X^k
+*/
 
 static void
 V (mpres_t R, const mpres_t S, const long k, mpmod_t modulus)
 {
-  mpres_t Vi, Vi1;
-  unsigned long i, j, uk;
+  mpres_t V0, Vi, Vi1;
+  unsigned long j, uk;
+  int po2;
 
   if (k == 0L)
     {
@@ -1136,74 +1131,265 @@ V (mpres_t R, const mpres_t S, const long k, mpmod_t modulus)
       return;
     }
 
+  for (po2 = 0; uk % 2UL == 0UL; uk >>= 1, po2++);
+
+  mpres_init (V0, modulus);
+  mpres_set_ui (V0, 2UL, modulus); /* V0 = V_0(S) = 2 */
+
+  if (uk == 1UL)
+    {
+      mpres_set (R, S, modulus);
+      while (po2-- > 0)
+        {
+          mpres_mul (R, R, R, modulus);
+          mpres_sub (R, R, V0, modulus);
+        }
+      mpres_clear (V0, modulus);
+      return;
+    }
+
+  if (0)
+    {
+      mpz_t tz;
+      mpz_init (tz);
+      mpres_get_z (tz, S, modulus);
+      gmp_printf ("Chebyshev_V(%ld, Mod(%Zd,N)) == ", k, tz);
+      mpz_clear (tz);
+    }
+
+  for (j = 1UL; j <= uk / 2UL; j <<= 1);
+
   mpres_init (Vi, modulus);
   mpres_init (Vi1, modulus);
 
-  for (j = 1UL; j <= uk / 2UL; j <<= 1);
-  ASSERT ((uk & j) > 0UL);
-
-  j >>= 1;
-  i = 1UL;
+  /* i = 1. Vi = V_i(S), Vi1 = V_{i+1}(S) */
   mpres_set (Vi, S, modulus);
   mpres_mul (Vi1, S, S, modulus);
-  mpres_sub_ui (Vi1, Vi1, 2, modulus);
+  mpres_sub (Vi1, Vi1, V0, modulus);
+  j >>= 1;
 
-  while (j)
+  while (j > 1)
     {
       if ((uk & j) != 0UL)
 	{
 	  /* i' = 2i + 1.
 	     V_{i'} = V_{2i + 1} = V_{i+1 + i} = V_{i+1} * V_{i} - V_1
-	     V_{i'+1} = V_{2i + 2} = {V_{i+1}}^2 - 2. */
+	     V_{i'+1} = V_{2i + 2} = {V_{i+1}}^2 - V_0. */
 	  mpres_mul (Vi, Vi, Vi1, modulus);
 	  mpres_sub (Vi, Vi, S, modulus);
 	  mpres_mul (Vi1, Vi1, Vi1, modulus);
-	  mpres_sub_ui (Vi1, Vi1, 2, modulus);
-	  i = 2UL*i + 1UL;
+	  mpres_sub (Vi1, Vi1, V0, modulus);
 	}
       else
 	{
 	  /* i' = 2i. 
-	     V_{i'} = V_{2i} = {V_i}^2 - 2.
+	     V_{i'} = V_{2i} = {V_i}^2 - V0.
 	     V_{i'+1} = V_{2i + 1} = V_{i+1 + i} = V_{i+1} * V_{i} - V_1 */
 	  mpres_mul (Vi1, Vi, Vi1, modulus);
 	  mpres_sub (Vi1, Vi1, S, modulus);
+
 	  mpres_mul (Vi, Vi, Vi, modulus);
-	  mpres_sub_ui (Vi, Vi, 2, modulus);
-	  i = 2UL*i;
+	  mpres_sub (Vi, Vi, V0, modulus);
 	}
       j >>= 1;
     }
 
-  ASSERT (i == uk);
+  /* Least significant bit of uk is always 1 */
+  mpres_mul (Vi, Vi, Vi1, modulus);
+  mpres_sub (Vi, Vi, S, modulus);
+
+  while (po2-- > 0)
+    {
+      mpres_mul (Vi, Vi, Vi, modulus);
+      mpres_sub (Vi, Vi, V0, modulus);
+    }
+
   mpres_set (R, Vi, modulus);
 
   mpres_clear (Vi, modulus);
   mpres_clear (Vi1, modulus);
+  mpres_clear (V0, modulus);
+
+  if (0)
+    {
+      mpz_t tz;
+      mpz_init (tz);
+      mpres_get_z (tz, R, modulus);
+      gmp_printf ("%Zd\n", tz);
+      mpz_clear (tz);
+    }
 }
+
+/* 
+  Computes U_k(S), where the Chebyshev polynomial U_k(X) is defined by 
+  U_k(X + 1/X) = (X^k - 1/X^k) / (X - 1/X)
+  If R1 != NULL, stores U_{k+1}(S) there
+*/
+
+static void
+U (mpres_t R, mpres_t R1, const mpres_t S, const long k, mpmod_t modulus)
+{
+  mpres_t V0, Vi, Vi1, Ui, Ui1, t;
+  unsigned long j, uk;
+
+  if (k == 0L)
+    {
+      mpres_set_ui (R, 0UL, modulus); /* U_0 = 0 */
+      if (R1 != NULL)
+	mpres_set_ui (R1, 1UL, modulus); /* U_1 = 1 */
+      return;
+    }
+
+  uk = labs (k);
+
+  if (uk == 1UL)
+    {
+      mpres_set_ui (R, 1UL, modulus);
+      if (k == -1)
+	mpres_neg (R, R, modulus);
+      
+      if (R1 != NULL)
+	{
+	  if (k == -1)
+	    mpres_set_ui (R1, 0UL, modulus);
+	  else
+	    mpres_set (R1, S, modulus); /* U_2(S) = S */
+	}
+
+      return;
+    }
+
+  if (0)
+    {
+      mpz_t tz;
+      mpz_init (tz);
+      mpres_get_z (tz, S, modulus);
+      gmp_printf ("Chebyshev_U(%ld, Mod(%Zd,N)) == ", k, tz);
+      mpz_clear (tz);
+    }
+
+  mpres_init (V0, modulus);
+  mpres_init (Vi, modulus);
+  mpres_init (Vi1, modulus);
+  mpres_init (Ui, modulus);
+  mpres_init (Ui1, modulus);
+  mpres_init (t, modulus);
+
+  for (j = 1UL; j <= uk / 2UL; j <<= 1);
+
+  mpres_set_ui (Ui, 1UL, modulus);   /* Ui = U_1(S) = 1 */
+  mpres_set (Ui1, S, modulus);       /* Ui1 = U_2(S) = S */
+  mpres_add (V0, Ui, Ui, modulus);   /* V0 = V_0(S) = 2 */
+  mpres_set (Vi, S, modulus);        /* Vi = V_1(S) = S */
+  mpres_mul (Vi1, Vi, Vi, modulus);
+  mpres_sub (Vi1, Vi1, V0, modulus); /* Vi1 = V_2(S) = S^2 - 2 */
+  j >>= 1; /* i = 1 */
+
+  while (j != 0)
+    {
+      if ((uk & j) == 0UL)
+	{
+	  mpres_mul (Vi1, Vi1, Vi, modulus);
+	  mpres_sub (Vi1, Vi1, S, modulus); /* V_{2i+1} = V_{i+1} V_i - V_1 */
+	  /* U_{2i+1} = (U_{i+1} + U_i) (U_{i+1} - U_i) */
+	  mpres_sub (t, Ui1, Ui, modulus);
+	  mpres_add (Ui1, Ui1, Ui, modulus);
+	  mpres_mul (Ui1, Ui1, t, modulus); 
+	  mpres_mul (Ui, Ui, Vi, modulus); /* U_{2n} = U_n V_n */
+	  mpres_mul (Vi, Vi, Vi, modulus);
+	  mpres_sub (Vi, Vi, V0, modulus); /* V_{2n} = V_n^2 - 2 */
+	}
+      else
+	{
+	  /* U_{2i+1} = (U_{i+1} + U_i) (U_{i+1} - U_i) */
+	  mpres_sub (t, Ui1, Ui, modulus);
+	  mpres_add (Ui, Ui, Ui1, modulus);
+	  mpres_mul (Ui, Ui, t, modulus);
+	  mpres_mul (Ui1, Ui1, Vi1, modulus); /* U_{2n+2} = U_{n+1} V_{n+1} */
+	  mpres_mul (Vi, Vi, Vi1, modulus);
+	  mpres_sub (Vi, Vi, S, modulus); /* V_{2i+1} = V_{i+1} V_i - V_1 */
+	  mpres_mul (Vi1, Vi1, Vi1, modulus);
+	  mpres_sub (Vi1, Vi1, V0, modulus); /* V_{2n+2} = V_{n+1}^2 - 2 */
+	}
+      j >>= 1;
+    }
+
+  if (k > 0)
+    mpres_set (R, Ui, modulus);
+  else
+    mpres_neg (R, Ui, modulus);
+
+  if (R1 != NULL)
+    {
+      /* Here k != -1,0,1, so k+1 is negative iff k is */
+      if (k > 0)
+	mpres_set (R1, Ui1, modulus);
+      else
+	mpres_neg (R1, Ui1, modulus);
+    }
+
+  mpres_clear (V0, modulus);
+  mpres_clear (Vi, modulus);
+  mpres_clear (Vi1, modulus);
+  mpres_clear (Ui, modulus);
+  mpres_clear (Ui1, modulus);
+  mpres_clear (t, modulus);
+
+  if (0)
+    {
+      mpz_t tz;
+      mpz_init (tz);
+      mpres_get_z (tz, R, modulus);
+      gmp_printf ("%Zd\n", tz);
+      mpz_clear (tz);
+    }
+}
+
+
+/* Set R[i] = V_{i+k}(Q) * F[i] or U_{i+k}(Q) * F[i], for 0 <= i < len
+   We compute V_{i+k+1}(Q) by V_{i+k}(Q)*V_1(Q) - V_{i+k-1}(Q).
+   For U, we compute U_{i+k+1}(Q) by U_{i+k}(Q)*V_1(Q) - U_{i+k-1}(Q).
+   The values of V_1(Q), V_{k-1}(Q) and V_k(Q) and V_k(Q) are in 
+   V1, Vk_1 and Vk, resp. 
+   The values of Vk_1 and Vk are clobbered. */
+static void
+scale_by_chebyshev (listz_t R, const listz_t F, const unsigned long len,
+                    mpmod_t modulus, const mpres_t V1, mpres_t Vk_1, 
+                    mpres_t Vk)
+{
+  mpres_t Vt;
+  unsigned long i;
+
+  mpres_init (Vt, modulus);
+
+  for (i = 0; i < len; i++)
+    {
+      mpres_mul_z_to_z (R[i], Vk, F[i], modulus);
+      mpres_mul (Vt, Vk, V1, modulus);
+      mpres_sub (Vt, Vt, Vk_1, modulus);
+      mpres_set (Vk_1, Vk, modulus); /* Could be a swap */
+      mpres_set (Vk, Vt, modulus); /* Could be a swap */
+    }
+
+  mpres_clear (Vt, modulus);
+}
+
 
 /* For a given reciprocal polynomial 
    F(x) = f_0 + sum_{i=1}^{deg} f_i V_i(x+1/x),
    compute F(\gamma x)F(\gamma^{-1} x), with Q = \gamma + 1 / \gamma
-
-   Hence, the result is 
-   f_i * (gamma*x)^deg * f_i * (1/gamma*x)^deg + ... 
-   + f_i * (gamma*x)^-deg * f_i * (1/gamma*x)^-deg
-   = f_i * gamma^deg * x^deg * f_i * 1/gamma^deg * x^deg + ...
-     f_i * gamma^-deg * x^-deg * f_i * 1/gamma^-deg * x^-deg
-   = f_i * x^deg * f_i * x^deg + ... + f_i * x^-deg * f_i * x^-deg
-   = f_i^2 * x^(2*deg) + ... + f_i^2 * x^(-2*deg)
 
    If NTT is used, needs 4 * deg + 3 entries in tmp.
    If no NTT is used, needs 4 * deg + 2 + (memory use of list_sqr_reciprocal)
 */
 
 static void
-list_scale_V (listz_t R, listz_t F, mpres_t Q, unsigned long deg,
-	      mpmod_t modulus, listz_t tmp, const unsigned long tmplen,
+list_scale_V (listz_t R, const listz_t F, const mpres_t Q, 
+              const unsigned long deg, mpmod_t modulus, listz_t tmp, 
+              const unsigned long tmplen, 
 	      mpzspv_t dct, const mpzspm_t ntt_context)
 {
-  mpres_t Vi_1, Vi, Vt;
+  mpres_t Vt;
   unsigned long i;
   const listz_t G = tmp, H = tmp + 2 * deg + 1, newtmp = tmp + 4 * deg + 2;
   const unsigned long newtmplen = tmplen - 4 * deg - 2;
@@ -1234,27 +1420,42 @@ list_scale_V (listz_t R, listz_t F, mpres_t Q, unsigned long deg,
   list_output_poly (F, deg + 1, 0, 1, "/* list_scale_V */ F(x) = ", "\n", 
 		    OUTPUT_TRACE);
 
-  mpres_init (Vi_1, modulus);
-  mpres_init (Vi, modulus);
-  mpres_init (Vt, modulus);
-  mpres_set_ui (Vi_1, 1UL, modulus); /* Vi_1 = V_0(Q) / 2 = 1*/
-  mpres_div_2exp (Vi, Q, 1, modulus); /* Vi = V_1(Q) = Q/2 */
+  /* Compute G[i] = V_i(Q)/2 * F[i] for i = 0, ..., deg.
+     For i=0, V_0(Q) = 2, so G[0] = F[0], 
+     which leaves deg entries to process */
 
-  mpz_mod (G[0], F[0], modulus->orig_modulus); /* G_0 = S_0 * V_0(Q)/2 = S_0 * 1 */
-  outputf (OUTPUT_TRACE, "list_scale_V: G_%lu = %Zd\n", 0, G[0]);
-  for (i = 1; i <= deg; i++)
-    {
-      /* Here, Vi = V_i(Q)/2, Vi_1 = V_{i-1}(Q)/2. */
-      mpres_mul_z_to_z (G[i], Vi, F[i], modulus); /* G[i] = S_i * V_i(Q)/2 */
-      outputf (OUTPUT_TRACE, 
-	       "list_scale_V: G_%lu = F_%lu * V_%lu(Q)/2 = %Zd * %Zd = %Zd\n", 
-	       i, i, i, F[i], Vi, G[i]);
-      
-      mpres_mul (Vt, Vi, Q, modulus);
-      mpres_sub (Vt, Vt, Vi_1, modulus);
-      mpres_set (Vi_1, Vi, modulus); /* Could be a swap */
-      mpres_set (Vi, Vt, modulus); /* Could be a swap */
-    }
+  mpz_set (G[0], F[0]);
+
+#if defined(_OPENMP)
+#pragma omp parallel if (deg > 1000)
+#endif
+  {
+    const int nr_chunks = omp_get_num_threads();
+    const int thread_nr = omp_get_thread_num();
+    mpmod_t modulus_local;
+    unsigned long l, start_i;
+    mpres_t Vi, Vi_1;
+    
+    l = (deg - 1) / nr_chunks + 1; /* l = ceil (deg / nr_chunks) */
+    start_i = thread_nr * l + 1;
+    l = MIN(l, deg + 1 - start_i);
+
+    mpmod_copy (modulus_local, modulus);
+    mpres_init (Vi_1, modulus_local);
+    mpres_init (Vi, modulus_local);
+    
+    V (Vi, Q, start_i, modulus_local);
+    mpres_div_2exp (Vi, Vi, 1, modulus_local);
+    V (Vi_1, Q, start_i - 1UL, modulus_local);
+    mpres_div_2exp (Vi_1, Vi_1, 1, modulus_local);
+    scale_by_chebyshev (G + start_i, F + start_i, l, modulus_local, 
+                        Q, Vi_1, Vi);
+    
+    mpres_clear (Vi_1, modulus_local);
+    mpres_clear (Vi, modulus_local);
+    mpmod_clear (modulus_local);
+  }
+
 
   list_output_poly (G, deg + 1, 0, 1, "/* list_scale_V */ G(x) = ", "\n", 
 		    OUTPUT_TRACE);
@@ -1285,42 +1486,48 @@ list_scale_V (listz_t R, listz_t F, mpres_t Q, unsigned long deg,
   list_output_poly (G, 2 * deg + 1, 0, 1, "/* list_scale_V */ G(x)^2 == ", 
 		    "\n", OUTPUT_TRACE);
 
-  /* Generate U_1(Q)/2 ... U_deg(Q)/2, multpliy by S_i to form H. Convert H 
-     to standard basis. Square the symmetic H polynomial. Multiply H^2 by
-     (X + 1/X)^2 = X^2 + 2 + 1/X^2. Multiply that by (Q^2 - 4). */
+  /* Compute H[i-1] = U_i(Q)/2 * F[i] for i = 1, ..., deg */
 
-  /* We'll reuse the Vi and Vi_1 variables here, but now they hold the 
-     U_i(Q)/2 and U_{i-1}(Q)/2 values, respectively. */
-  mpres_set_ui (Vi_1, 0UL, modulus); /* Vi_1 = U_0(Q) / 2 = 0 */
-  mpres_set_ui (Vi, 1UL, modulus);
-  mpres_div_2exp (Vi, Vi, 1, modulus); /* V_i = U_1(Q) / 2 = 1/2 */
+#if defined(_OPENMP)
+#pragma omp parallel if (deg > 1000)
+#endif
+  {
+    const int nr_chunks = omp_get_num_threads();
+    const int thread_nr = omp_get_thread_num();
+    mpmod_t modulus_local;
+    unsigned long l, start_i;
+    mpres_t Ui, Ui_1;
+    
+    l = (deg - 1) / nr_chunks + 1; /* l = ceil(deg / nr_chunks) */
+    start_i = thread_nr * l + 1UL;
+    l = MIN(l, deg + 1 - start_i);
+    
+    mpmod_copy (modulus_local, modulus);
+    mpres_init (Ui_1, modulus_local);
+    mpres_init (Ui, modulus_local);
+    
+    U (Ui_1, Ui, Q, start_i - 1, modulus_local);
+    mpres_div_2exp (Ui, Ui, 1, modulus_local);
+    mpres_div_2exp (Ui_1, Ui_1, 1, modulus_local);
+    
+    scale_by_chebyshev (H - 1 + start_i, F + start_i, l, modulus_local, 
+                        Q, Ui_1, Ui);
+    
+    mpres_clear (Ui_1, modulus_local);
+    mpres_clear (Ui, modulus_local);
+    mpmod_clear (modulus_local);
+  }
 
-  /* We later want to convert H in U_i basis to monomial basis. To do so,
-     we'll need one list element below H_U[0], so H_U gets stored shifted
-     up by one index */
-
-  /* H[i-1] = h_i =  F[i] * U_i(Q) / 2, for 1 <= i <= deg. h_0 is undefined
-     and has no storage allocated */
-  for (i = 1; i <= deg; i++)
-    {
-      /* Here, Vi = U_i(Q) / 2, Vi_1 = U_{i-1}(Q) / 2. */
-      /* h_i = S_i * U_i(Q)/2 */
-      mpres_mul_z_to_z (H[i - 1], Vi, F[i], modulus);
-      outputf (OUTPUT_TRACE, 
-	       "list_scale_V: H_%lu (in U_i basis) = F_%lu * U_%lu(Q)/2 = %Zd * %Zd = %Zd\n", 
-	       i, i, i, F[i], Vi, H[i - 1]);
-      
-      mpres_mul (Vt, Vi, Q, modulus);
-      mpres_sub (Vt, Vt, Vi_1, modulus);
-      mpres_set (Vi_1, Vi, modulus); /* Could be a swap */
-      mpres_set (Vi, Vt, modulus); /* Could be a swap */
-    }
-
+  
   /* Convert H to standard basis */
   /* We can do it in-place with H - 1 = H_U. */
 
   for (i = deg; i >= 3; i--)
-    mpz_add (H[i - 3], H[i - 3], H[i - 1]);
+    {
+      mpz_add (H[i - 3], H[i - 3], H[i - 1]);
+      if (mpz_cmp (H[i - 3], modulus->orig_modulus) >= 0)
+        mpz_sub (H[i - 3], H[i - 3], modulus->orig_modulus);
+    }
   
   /* U_2(X+1/X) = (X^2 - 1/X^2)/(X-1/X) = X+1/X = V_1(X+1/X),
      so no addition occures here */
@@ -1365,14 +1572,33 @@ list_scale_V (listz_t R, listz_t F, mpres_t Q, unsigned long deg,
 		    OUTPUT_TRACE);
 
   /* Multiply by Q^2-4 */
+  mpres_init (Vt, modulus);
   mpres_mul (Vt, Q, Q, modulus);
   mpres_sub_ui (Vt, Vt, 4, modulus);
-  for (i = 0; i <= 2 * deg - 2; i++)
+
+#if defined(_OPENMP)
+#pragma omp parallel if (deg > 1000)
+  {
+    mpmod_t modulus_local;
+    long i; /* OpenMP insists on signed loop iteration var :( */
+    
+    mpmod_copy (modulus_local, modulus);
+    
+#pragma omp for
+    for (i = 0; (unsigned long) i <= 2 * deg - 2; i++)
+      mpres_mul_z_to_z (H[i], Vt, H[i], modulus_local);
+    mpmod_clear (modulus_local);
+  }
+#else
+  for (i = 0; (unsigned long) i <= 2 * deg - 2; i++)
     mpres_mul_z_to_z (H[i], Vt, H[i], modulus);
+#endif
+
   list_output_poly (H, 2 * deg - 1, 0, 1, "/* list_scale_V */ "
 		    "H(x)^2*(Q^2-4) == ", "\n", OUTPUT_TRACE);
 
-  /* Multiply by (X - 1/X)^2 = X^2 - 2 + 1/X^2 and subtract from G*/
+
+  /* Multiply by (X - 1/X)^2 = X^2 - 2 + 1/X^2 and subtract from G */
   ASSERT (newtmplen > 0UL);
   if (deg == 1)
     {
@@ -1455,8 +1681,6 @@ list_scale_V (listz_t R, listz_t F, mpres_t Q, unsigned long deg,
 #endif
 
   mpres_clear (Vt, modulus);
-  mpres_clear (Vi, modulus);
-  mpres_clear (Vi_1, modulus);
 }
 
 
@@ -1580,9 +1804,8 @@ poly_from_sets_V (listz_t F, const mpres_t Q, sets_long_t *sets,
   
   outputf (OUTPUT_DEVVERBOSE, " (processing set of size 2");
 
-  V (Qt, Q, set->elem[0], modulus); /* First set in sets is {-k, k}, 
-                                        Qt = V_2k(Q) */
-  V (Qt, Qt, 2UL, modulus);
+  V (Qt, Q, set->elem[0], modulus); /* First set in sets is {-k, k} */ 
+  V (Qt, Qt, 2UL, modulus);         /* Qt = V_2k(Q) */
   
   mpres_neg (Qt, Qt, modulus);
   mpres_get_z (F[0], Qt, modulus);
@@ -1617,18 +1840,19 @@ poly_from_sets_V (listz_t F, const mpres_t Q, sets_long_t *sets,
 	  list_scale_V (F, F, Qt, deg, modulus, tmp, tmplen, dct, 
 	                ntt_context);
 	  deg *= 2UL;
-	  ASSERT (mpz_cmp_ui (F[deg], 1UL) == 0); /* Check it's monic */
+	  ASSERT_ALWAYS (mpz_cmp_ui (F[deg], 1UL) == 0); /* Check it's monic */
 	}
       else
 	{
 	  ASSERT_ALWAYS (c % 2UL == 1UL);
+	  ASSERT_ALWAYS (set->elem[(c - 1UL) / 2UL] == 0UL);
 	  /* Generate the F(Q^{2k_i} * X)*F(Q^{-2k_i} * X) polynomials.
 	     Each is symmetric of degree 2*deg, so each has deg+1 coeffients
 	     in standard basis. */
 	  for (i = 0UL; i < (c - 1UL) / 2UL; i++)
 	    {
               /* Check it's symmetric */
-	      ASSERT (set->elem[i] == -set->elem[c - 1L - i]);
+	      ASSERT_ALWAYS (set->elem[i] == -set->elem[c - 1L - i]);
 	      V (Qt, Q, set->elem[i], modulus);
 	      V (Qt, Qt, 2UL, modulus);
 	      ASSERT (mpz_cmp_ui (F[deg], 1UL) == 0); /* Check it's monic */
@@ -1696,7 +1920,11 @@ build_F_ntt (listz_t F, const mpres_t P_1, sets_long_t *S_1,
   F_ntt_context = mpzspm_init (3UL << ceil_log2 (params->s_1 / 2 + 1), 
 			       modulus->orig_modulus);
   if (F_ntt_context == NULL)
-    return ECM_ERROR;
+    {
+      outputf (OUTPUT_ERROR, "Could not initialise F_ntt_context, "
+               "presumably out of memory\n");
+      return ECM_ERROR;
+    }
   
   print_CRT_primes (OUTPUT_DEVVERBOSE, "CRT modulus for building F = ",
 		    F_ntt_context);
@@ -2056,7 +2284,7 @@ make_S_1_S_2 (sets_long_t **S_1, set_long_t **S_2,
     mpz_init (t1);
     mpz_init (t2);
     sets_sumset_minmax (t1, *S_1, 1);
-    maxS (t2, params->P);
+    sets_max (t2, params->P);
     ASSERT_ALWAYS (mpz_cmp (t1, t2) == 0);
     mpz_clear (t1);
     mpz_clear (t2);
@@ -2297,47 +2525,20 @@ ntt_spv_to_dct (mpzspv_t dct, const mpzspv_t spv, const spv_size_t spvlen,
 }
 
 
-/* Multiply the NTT coefficients in dft, assumed to be a scrambled DFT,
-   by the coefficients in dct, assumed to be in for layout produced by 
-   ntt_dft_to_dct(); */
-
-static void
-ntt_dft_mul_dct (mpzspv_t dft, const mpzspv_t dct, const unsigned long len, 
-		 const mpzspm_t ntt_context)
-{
-  unsigned long i, j, m;
-  
-  for (j = 0; j < ntt_context->sp_num; j++)
-  {
-      const sp_t sp = ntt_context->spm[j]->sp; 
-      const sp_t mul_c = ntt_context->spm[j]->mul_c;
-      m = 5UL;
-      
-      dft[j][0] = sp_mul (dft[j][0], dct[j][0], sp, mul_c);
-      
-      for (i = 2UL; i < len; i += 2UL)
-      {
-	  /* This works, but why? */
-	  if (i + i / 2UL > m)
-	      m = 2UL * m + 1UL;
-	  
-	  dft[j][i] = sp_mul (dft[j][i], dct[j][i / 2UL], sp, mul_c);
-	  dft[j][m - i] = sp_mul (dft[j][m - i], dct[j][i / 2UL], sp, mul_c);
-      }
-      dft[j][1] = sp_mul (dft[j][1], dct[j][len / 2UL], sp, mul_c);
-  }
-}
-
-
 /* Multiply the polynomial in "dft" by the RLP in "dct", where "dft" 
    contains the polynomial coefficients (not FFT'd yet) and "dct" 
    contains the DCT-I coefficients of the RLP. The latter are 
    assumed to be in the layout produced by ntt_dft_to_dct().
-   Output are the coefficients of the product polynomial, stored in dft. */
+   Output are the coefficients of the product polynomial, stored in dft. 
+   The "which" parameter controls which steps are computed:
+   bit 0: do forward transform
+   bit 1: do point-wise product
+   bit 2: do inverse transform 
+*/
 
 static void
 ntt_mul_by_dct (mpzspv_t dft, const mpzspv_t dct, const unsigned long len, 
-		const mpzspm_t ntt_context)
+		const mpzspm_t ntt_context, const int which)
 {
   int j;
   spv_size_t log2_len = ceil_log_2 (len);
@@ -2358,36 +2559,44 @@ ntt_mul_by_dct (mpzspv_t dft, const mpzspv_t dct, const unsigned long len,
 	unsigned long i, m;
 	
 	/* Forward DFT of dft[j] */
-	spv_ntt_gfp_dif (spv, log2_len, spm);
-	
-	m = 5UL;
+	if (which & 1)
+	  spv_ntt_gfp_dif (spv, log2_len, spm);
 	
 	/* Point-wise product */
-	spv[0] = sp_mul (spv[0], dct[j][0], spm->sp, spm->mul_c);
-	spv[1] = sp_mul (spv[1], dct[j][len / 2UL], spm->sp, spm->mul_c);
-	
-	for (i = 2UL; i < len; i += 2UL)
+	if (which & 2)
 	  {
-	    /* This works, but why? */
-	    if (i + i / 2UL > m)
-	      m = 2UL * m + 1;
+	    m = 5UL;
 	    
-	    spv[i] = sp_mul (spv[i], dct[j][i / 2UL], spm->sp, spm->mul_c);
-	    spv[m - i] = sp_mul (spv[m - i], dct[j][i / 2UL], spm->sp, 
-				 spm->mul_c);
+	    spv[0] = sp_mul (spv[0], dct[j][0], spm->sp, spm->mul_c);
+	    spv[1] = sp_mul (spv[1], dct[j][len / 2UL], spm->sp, spm->mul_c);
+	    
+	    for (i = 2UL; i < len; i += 2UL)
+	      {
+		/* This works, but why? */
+		if (i + i / 2UL > m)
+		  m = 2UL * m + 1;
+		
+		spv[i] = sp_mul (spv[i], dct[j][i / 2UL], spm->sp, spm->mul_c);
+		spv[m - i] = sp_mul (spv[m - i], dct[j][i / 2UL], spm->sp, 
+				     spm->mul_c);
+	      }
 	  }
 	
 	/* Inverse transform of dft[j] */
-	spv_ntt_gfp_dit (spv, log2_len, spm);
-	
-	/* Divide by transform length. FIXME: scale the DCT of h instead */
-	spv_mul_sp (spv, spv, spm->sp - (spm->sp - 1) / len, len, spm->sp, 
-		    spm->mul_c);
+	if (which & 4)
+	  {
+	    spv_ntt_gfp_dit (spv, log2_len, spm);
+	    
+	    /* Divide by transform length. FIXME: scale the DCT of h instead */
+	    spv_mul_sp (spv, spv, spm->sp - (spm->sp - 1) / len, len, 
+			spm->sp, spm->mul_c);
+	  }
       }
 #ifdef _OPENMP
   }
 #endif
 }
+
 
 ATTRIBUTE_UNUSED
 static void
@@ -2407,7 +2616,7 @@ ntt_print_vec (const char *msg, const spv_t spv, const spv_size_t l)
    R[i] will contain the 2n-1 coefficients r_i, 0 <= i <= 2*n-2, where 
    R(x) = S(x)^2 = r_0 + \sum_{i=1}^{2n-2} r_i (x^i + x^{-1}).
    dft must have power of 2 length len >= 2n.
-   The NTT primes must be == 1 (mod 4*len).
+   The NTT primes must be == 1 (mod 3*len).
 */
 
 #undef TRACE_ntt_sqr_reciprocal
@@ -2724,7 +2933,7 @@ ntt_gcd (mpz_t f, mpz_t *product, mpzspv_t ntt, const unsigned long ntt_offset,
 
     MEMORY_TAG;
     R = init_list2 (Rlen, (mpz_size (modulus->orig_modulus) + 2) * 
-                           mp_bits_per_limb);
+                           GMP_NUMB_BITS);
     MEMORY_UNTAG;
     mpres_init (tmpres, modulus);
     mpres_init (tmpprod, modulus);
@@ -2821,6 +3030,11 @@ pm1fs2 (mpz_t f, const mpres_t X, mpmod_t modulus,
 				     the leading 1 monomial for each factor */
   F = init_list2 (lenF, (unsigned int) abs (modulus->bits));
   h = malloc ((params->s_1 + 1) * sizeof (mpz_t));
+  if (h == NULL)
+    {
+      fprintf (stderr, "Cannot allocate memory in pm1fs2\n");
+      exit (1);
+    }
   lenG = params->l;
   g = init_list2 (lenG, (unsigned int) abs (modulus->bits));
   lenR = nr;
@@ -2897,6 +3111,8 @@ pm1fs2 (mpz_t f, const mpres_t X, mpmod_t modulus,
   for (l = 0; l < params->s_2; l++)
     {
       const unsigned long M = params->l - 1L - params->s_1 / 2L;
+      outputf (OUTPUT_VERBOSE, "Multi-point evaluation %lu of %lu:\n", 
+               l + 1, params->s_2);
       pm1_sequence_g (g, NULL, X, params->P, M, params->l, 
 		      params->m_1, S_2->elem[l], modulus, NULL);
 
@@ -3014,16 +3230,13 @@ pm1fs2 (mpz_t f, const mpres_t X, mpmod_t modulus,
   mpz_clear (mt);
   mpres_clear (mr, modulus);
 
-  if (youpi == ECM_NO_FACTOR_FOUND)
-    {
-      outputf (OUTPUT_NORMAL, "Step 2");
-      /* In normal output mode, print only cpu time as we always have.
-	 In verbose mode, print real time as well if we used multi-threading */
-      if (test_verbose (OUTPUT_VERBOSE))
-	print_elapsed_time (OUTPUT_NORMAL, timetotalstart, realtotalstart);
-      else
-	print_elapsed_time (OUTPUT_NORMAL, timetotalstart, 0L);
-    }
+  outputf (OUTPUT_NORMAL, "Step 2");
+  /* In normal output mode, print only cpu time as we always have.
+     In verbose mode, print real time as well if we used multi-threading */
+  if (test_verbose (OUTPUT_VERBOSE))
+    print_elapsed_time (OUTPUT_NORMAL, timetotalstart, realtotalstart);
+  else
+    print_elapsed_time (OUTPUT_NORMAL, timetotalstart, 0L);
   
   return youpi;
 }
@@ -3067,7 +3280,11 @@ pm1fs2_ntt (mpz_t f, const mpres_t X, mpmod_t modulus,
 
   ntt_context = mpzspm_init (params->l, modulus->orig_modulus);
   if (ntt_context == NULL)
-    return ECM_ERROR;
+    {
+      outputf (OUTPUT_ERROR, "Could not initialise ntt_context, "
+               "presumably out of memory\n");
+      return ECM_ERROR;
+    }
 
   print_CRT_primes (OUTPUT_DEVVERBOSE, "CRT modulus for evaluation = ", 
 		    ntt_context);
@@ -3161,6 +3378,8 @@ pm1fs2_ntt (mpz_t f, const mpres_t X, mpmod_t modulus,
     {
       const unsigned long M = params->l - 1L - params->s_1 / 2L;
 
+      outputf (OUTPUT_VERBOSE, "Multi-point evaluation %lu of %lu:\n", 
+               l + 1, params->s_2);
       /* Compute the coefficients of the polynomial g(x) */
       pm1_sequence_g (NULL, g_ntt, X, params->P, M, params->l, 
 		      params->m_1, S_2->elem[l], modulus, ntt_context);
@@ -3169,7 +3388,7 @@ pm1fs2_ntt (mpz_t f, const mpres_t X, mpmod_t modulus,
       outputf (OUTPUT_VERBOSE, "Computing g*h");
       timestart = cputime ();
       realstart = realtime ();
-      ntt_mul_by_dct (g_ntt, h_ntt, params->l, ntt_context);
+      ntt_mul_by_dct (g_ntt, h_ntt, params->l, ntt_context, 7);
       print_elapsed_time (OUTPUT_VERBOSE, timestart, realstart);
       
       /* Compute GCD of N and coefficients of product polynomial */
@@ -3200,16 +3419,13 @@ pm1fs2_ntt (mpz_t f, const mpres_t X, mpmod_t modulus,
   mpz_clear (mt);
   free (S_2);
 
-  if (youpi == ECM_NO_FACTOR_FOUND)
-    {
-      outputf (OUTPUT_NORMAL, "Step 2");
-      /* In normal output mode, print only cpu time as we always have.
-	 In verbose mode, print real time as well if we used multi-threading */
-      if (test_verbose (OUTPUT_VERBOSE))
-	print_elapsed_time (OUTPUT_NORMAL, timetotalstart, realtotalstart);
-      else
-	print_elapsed_time (OUTPUT_NORMAL, timetotalstart, 0L);
-    }
+  outputf (OUTPUT_NORMAL, "Step 2");
+  /* In normal output mode, print only cpu time as we always have.
+     In verbose mode, print real time as well if we used multi-threading */
+  if (test_verbose (OUTPUT_VERBOSE))
+    print_elapsed_time (OUTPUT_NORMAL, timetotalstart, realtotalstart);
+  else
+    print_elapsed_time (OUTPUT_NORMAL, timetotalstart, 0L);
   
   return youpi;
 }
@@ -4184,6 +4400,11 @@ pp1fs2 (mpz_t f, const mpres_t X, mpmod_t modulus,
   fh_y = init_list2 (lenF, (unsigned int) abs (modulus->bits));
   h_x = malloc (lenH * sizeof (mpz_t));
   h_y = malloc (lenH * sizeof (mpz_t));
+  if (h_x == NULL || h_y == NULL)
+    {
+      fprintf (stderr, "Cannot allocate memory in pp1fs2\n");
+      exit (1);
+    }
   g_x = init_list2 (lenG, (unsigned int) abs (modulus->bits));
   g_y = init_list2 (lenG, (unsigned int) abs (modulus->bits));
   R_x = init_list2 (lenR, (unsigned int) abs (modulus->bits));
@@ -4272,6 +4493,8 @@ pp1fs2 (mpz_t f, const mpres_t X, mpmod_t modulus,
   for (l = 0; l < params->s_2; l++)
     {
       const long M = params->l - 1 - params->s_1 / 2;
+      outputf (OUTPUT_VERBOSE, "Multi-point evaluation %lu of %lu:\n", 
+               l + 1, params->s_2);
       pp1_sequence_g (g_x, g_y, NULL, NULL, b1_x, b1_y, params->P, 
 		      Delta, M, params->l, params->m_1, S_2->elem[l], 
 		      modulus, NULL);
@@ -4350,16 +4573,13 @@ pp1fs2 (mpz_t f, const mpres_t X, mpmod_t modulus,
   clear_list (tmp, tmplen);
   free (S_2);
  
-  if (youpi == ECM_NO_FACTOR_FOUND)
-    {
-      outputf (OUTPUT_NORMAL, "Step 2");
-      /* In normal output mode, print only cpu time as we always have.
-	 In verbose mode, print real time as well if we used multi-threading */
-      if (test_verbose (OUTPUT_VERBOSE))
-	print_elapsed_time (OUTPUT_NORMAL, timetotalstart, realtotalstart);
-      else
-	print_elapsed_time (OUTPUT_NORMAL, timetotalstart, 0L);
-    }
+  outputf (OUTPUT_NORMAL, "Step 2");
+  /* In normal output mode, print only cpu time as we always have.
+     In verbose mode, print real time as well if we used multi-threading */
+  if (test_verbose (OUTPUT_VERBOSE))
+    print_elapsed_time (OUTPUT_NORMAL, timetotalstart, realtotalstart);
+  else
+    print_elapsed_time (OUTPUT_NORMAL, timetotalstart, 0L);
 
   return youpi;
 }
@@ -4418,6 +4638,8 @@ pp1fs2_ntt (mpz_t f, const mpres_t X, mpmod_t modulus,
 
   if (ntt_context == NULL)
     {
+      outputf (OUTPUT_ERROR, "Could not initialise ntt_context, "
+               "presumably out of memory\n");
       mpz_clear (mt);
       free (S_1);
       S_1 = NULL;
@@ -4433,7 +4655,7 @@ pp1fs2_ntt (mpz_t f, const mpres_t X, mpmod_t modulus,
   lenF = params->s_1 / 2 + 1 + 1; /* Another +1 because poly_from_sets_V stores
 				     the leading 1 monomial for each factor */
   MEMORY_TAG;
-  F = init_list2 (lenF, (unsigned int) abs (modulus->bits) + mp_bits_per_limb);
+  F = init_list2 (lenF, (unsigned int) abs (modulus->bits) + GMP_NUMB_BITS);
   MEMORY_UNTAG;
   
   /* Build F */
@@ -4488,7 +4710,7 @@ pp1fs2_ntt (mpz_t f, const mpres_t X, mpmod_t modulus,
       g_y_ntt = g_x_ntt;
       MEMORY_TAG;
       R = init_list2 (nr, (mpz_size (modulus->orig_modulus) + 2) *  
-                          mp_bits_per_limb);
+                          GMP_NUMB_BITS);
       MEMORY_UNTAG;
     }
   else
@@ -4519,8 +4741,12 @@ pp1fs2_ntt (mpz_t f, const mpres_t X, mpmod_t modulus,
     {
       const long M = params->l - 1 - params->s_1 / 2;
 
+      outputf (OUTPUT_VERBOSE, "Multi-point evaluation %lu of %lu:\n", 
+               l + 1, params->s_2);
       if (twopass)
 	{
+	  /* Two-pass variant. Two separate convolutions, 
+	     then addition in Z/NZ */
 	  pp1_sequence_g (NULL, NULL, g_x_ntt, NULL, b1_x, b1_y, params->P, 
 			  Delta, M, params->l, params->m_1, S_2->elem[l], 
 			  modulus, ntt_context);
@@ -4529,7 +4755,7 @@ pp1fs2_ntt (mpz_t f, const mpres_t X, mpmod_t modulus,
 	  outputf (OUTPUT_VERBOSE, "Computing g_x*h_x");
 	  timestart = cputime ();
 	  realstart = realtime ();
-	  ntt_mul_by_dct (g_x_ntt, h_x_ntt, params->l, ntt_context);
+	  ntt_mul_by_dct (g_x_ntt, h_x_ntt, params->l, ntt_context, 7);
 	  /* Store the product coefficients we want in R */
 	  mpzspv_to_mpzv (g_x_ntt, params->s_1 / 2, R, nr, ntt_context);
 	  print_elapsed_time (OUTPUT_VERBOSE, timestart, realstart);
@@ -4543,7 +4769,7 @@ pp1fs2_ntt (mpz_t f, const mpres_t X, mpmod_t modulus,
 	  outputf (OUTPUT_VERBOSE, "Computing g_y*h_y");
 	  timestart = cputime ();
 	  realstart = realtime ();
-	  ntt_mul_by_dct (g_y_ntt, h_y_ntt, params->l, ntt_context);
+	  ntt_mul_by_dct (g_y_ntt, h_y_ntt, params->l, ntt_context, 7);
 	  print_elapsed_time (OUTPUT_VERBOSE, timestart, realstart);
 	  
 	  /* Compute product of sum of coefficients and gcd with N */
@@ -4552,6 +4778,8 @@ pp1fs2_ntt (mpz_t f, const mpres_t X, mpmod_t modulus,
 	}
       else
 	{
+	  /* One-pass variant. Two forward transforms and point-wise products,
+	     then addition and single inverse transform */
 	  pp1_sequence_g (NULL, NULL, g_x_ntt, g_y_ntt, b1_x, b1_y, params->P, 
 			  Delta, M, params->l, params->m_1, S_2->elem[l], 
 			  modulus, ntt_context);
@@ -4559,27 +4787,13 @@ pp1fs2_ntt (mpz_t f, const mpres_t X, mpmod_t modulus,
 	  outputf (OUTPUT_VERBOSE, "Computing forward NTT of g_x");
 	  timestart = cputime ();
 	  realstart = realtime ();
-	  mpzspv_to_ntt (g_x_ntt, (spv_size_t) 0, (spv_size_t) params->l, 
-	                 (spv_size_t) params->l, 0, ntt_context);
-	  print_elapsed_time (OUTPUT_VERBOSE, timestart, realstart);
-	  
-	  outputf (OUTPUT_VERBOSE, "Computing point-wise product of g_x and h_x");
-	  timestart = cputime ();
-	  realstart = realtime ();
-	  ntt_dft_mul_dct (g_x_ntt, h_x_ntt, params->l, ntt_context);
+	  ntt_mul_by_dct (g_x_ntt, h_x_ntt, params->l, ntt_context, 3);
 	  print_elapsed_time (OUTPUT_VERBOSE, timestart, realstart);
 	  
 	  outputf (OUTPUT_VERBOSE, "Computing forward NTT of g_y");
 	  timestart = cputime ();
 	  realstart = realtime ();
-	  mpzspv_to_ntt (g_y_ntt, (spv_size_t) 0, (spv_size_t) params->l, 
-	                 (spv_size_t) params->l, 0, ntt_context);
-	  print_elapsed_time (OUTPUT_VERBOSE, timestart, realstart);
-	  
-	  outputf (OUTPUT_VERBOSE, "Computing point-wise product of g_y and h_y");
-	  timestart = cputime ();
-	  realstart = realtime ();
-	  ntt_dft_mul_dct (g_y_ntt, h_y_ntt, params->l, ntt_context);
+	  ntt_mul_by_dct (g_y_ntt, h_y_ntt, params->l, ntt_context, 3);
 	  print_elapsed_time (OUTPUT_VERBOSE, timestart, realstart);
 	  
 	  outputf (OUTPUT_VERBOSE, "Adding and computing inverse NTT of sum");
@@ -4587,8 +4801,7 @@ pp1fs2_ntt (mpz_t f, const mpres_t X, mpmod_t modulus,
 	  realstart = realtime ();
 	  mpzspv_add (g_x_ntt, (spv_size_t) 0, g_x_ntt, (spv_size_t) 0, 
 	              g_y_ntt, (spv_size_t) 0, params->l, ntt_context);
-	  mpzspv_from_ntt (g_x_ntt, (spv_size_t) 0, params->l, (spv_size_t) 0,
-	                   ntt_context);
+	  ntt_mul_by_dct (g_x_ntt, NULL, params->l, ntt_context, 4);
 	  print_elapsed_time (OUTPUT_VERBOSE, timestart, realstart);
 	  
 	  ntt_gcd (mt, product_ptr, g_x_ntt, params->s_1 / 2, NULL, nr, 
@@ -4625,16 +4838,13 @@ pp1fs2_ntt (mpz_t f, const mpres_t X, mpmod_t modulus,
   mpres_clear (Delta, modulus);
   free (S_2);
  
-  if (youpi == ECM_NO_FACTOR_FOUND)
-    {
-      outputf (OUTPUT_NORMAL, "Step 2");
-      /* In normal output mode, print only cpu time as we always have.
-	 In verbose mode, print real time as well if we used multi-threading */
-      if (test_verbose (OUTPUT_VERBOSE))
-	print_elapsed_time (OUTPUT_NORMAL, timetotalstart, realtotalstart);
-      else
-	print_elapsed_time (OUTPUT_NORMAL, timetotalstart, 0L);
-    }
+  outputf (OUTPUT_NORMAL, "Step 2");
+  /* In normal output mode, print only cpu time as we always have.
+     In verbose mode, print real time as well if we used multi-threading */
+  if (test_verbose (OUTPUT_VERBOSE))
+    print_elapsed_time (OUTPUT_NORMAL, timetotalstart, realtotalstart);
+  else
+    print_elapsed_time (OUTPUT_NORMAL, timetotalstart, 0L);
 
   return youpi;
 }

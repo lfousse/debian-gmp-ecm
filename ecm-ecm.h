@@ -87,8 +87,10 @@ void set_verbose (int);
 int  inc_verbose ();
 
 /* Return codes */
-/* Bit coded values: 1: error, 2: proper factor found, 4: factor is prime, 
+/* Bit coded values: 1: error (for example out of memory)
+   2: proper factor found, 4: factor is prime, 
    8: cofactor is prime or 1 */
+#define ECM_EXIT_ERROR 1
 #define ECM_COMP_FAC_COMP_COFAC 2
 #define ECM_PRIME_FAC_COMP_COFAC (2+4)
 #define ECM_INPUT_NUMBER_FOUND 8
@@ -124,10 +126,8 @@ int trial_factor (mpcandi_t *n, double maxfact, int deep);
 /* resume.c */
 int  read_resumefile_line (int *, mpz_t, mpcandi_t *, mpz_t, mpz_t, mpz_t, double *,
                            char *, char *, char *, char *, FILE *);
-void write_resumefile_line (FILE *, int, double, mpz_t, mpz_t, mpz_t, mpcandi_t *, 
-                            mpz_t, const char *);
-void write_temp_resumefile (int method, double B1, mpz_t sigma, mpz_t A, mpz_t x, mpz_t n, mpz_t orig_X0, int);
-void kill_temp_resume_file (void);
+int write_resumefile_line (char *, int, double, mpz_t, mpz_t, mpz_t, mpcandi_t *, 
+                           mpz_t, const char *);
 
 /* main.c */
 int read_number (mpcandi_t *n, FILE *, int primetest);

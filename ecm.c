@@ -1,6 +1,7 @@
 /* Elliptic Curve Method: toplevel and stage 1 routines.
 
-  Copyright 2001, 2002, 2003, 2004, 2005 Paul Zimmermann and Alexander Kruppa.
+  Copyright 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008
+  Paul Zimmermann and Alexander Kruppa.
 
   This file is part of the ECM Library.
 
@@ -36,6 +37,11 @@
 *                            Elliptic Curve Method                            *
 *                                                                             *
 ******************************************************************************/
+
+void duplicate (mpres_t, mpres_t, mpres_t, mpres_t, mpmod_t, mpres_t, 
+                mpres_t, mpres_t, mpres_t) ATTRIBUTE_HOT;
+void add3 (mpres_t, mpres_t, mpres_t, mpres_t, mpres_t, mpres_t, mpres_t, 
+           mpres_t, mpmod_t, mpres_t, mpres_t, mpres_t) ATTRIBUTE_HOT;
 
 #define mpz_mulmod5(r,s1,s2,m,t) { mpz_mul(t,s1,s2); mpz_mod(r, t, m); }
 
@@ -721,20 +727,27 @@ choose_S (mpz_t B2len)
     return -30; /* Dickson(30) */
 }
 
+#define DIGITS_START 35
+#define DIGITS_INCR   5
+#define DIGITS_END   80
+
 static void
-print_expcurves (mpz_t B2min, mpz_t effB2, unsigned long dF, unsigned long k, 
+print_expcurves (double B1, const mpz_t B2, unsigned long dF, unsigned long k, 
                  int S)
 {
   double prob;
-  int i;
-  char sep;
+  int i, j;
+  char sep, outs[128];
 
+  for (i = DIGITS_START, j = 0; i <= DIGITS_END; i += DIGITS_INCR, j += 3)
+    sprintf (outs + j, "%2u%c", i, (i < DIGITS_END) ? '\t' : '\n');
+  outs[j] = '\0';
   outputf (OUTPUT_VERBOSE, "Expected number of curves to find a factor "
-           "of n digits:\n20\t25\t30\t35\t40\t45\t50\t55\t60\t65\n");
-  for (i = 20; i <= 65; i += 5)
+           "of n digits:\n%s", outs);
+  for (i = DIGITS_START; i <= DIGITS_END; i += DIGITS_INCR)
     {
-      sep = (i < 65) ? '\t' : '\n';
-      prob = ecmprob (mpz_get_d (B2min), mpz_get_d (effB2),
+      sep = (i < DIGITS_END) ? '\t' : '\n';
+      prob = ecmprob (B1, mpz_get_d (B2),
                       pow (10., i - .5), (double) dF * dF * k, S);
       if (prob > 1. / 10000000)
         outputf (OUTPUT_VERBOSE, "%.0f%c", floor (1. / prob + .5), sep);
@@ -746,19 +759,22 @@ print_expcurves (mpz_t B2min, mpz_t effB2, unsigned long dF, unsigned long k,
 }
 
 static void
-print_exptime (mpz_t B2min, mpz_t effB2, unsigned long dF, unsigned long k, 
+print_exptime (double B1, const mpz_t B2, unsigned long dF, unsigned long k, 
                int S, double tottime)
 {
   double prob, exptime;
-  int i;
-  char sep;
+  int i, j;
+  char sep, outs[128];
   
-  outputf (OUTPUT_VERBOSE, "Expected time to find a factor of n digits:\n"
-    "20\t25\t30\t35\t40\t45\t50\t55\t60\t65\n");
-  for (i = 20; i <= 65; i += 5)
+  for (i = DIGITS_START, j = 0; i <= DIGITS_END; i += DIGITS_INCR, j += 3)
+    sprintf (outs + j, "%2u%c", i, (i < DIGITS_END) ? '\t' : '\n');
+  outs[j] = '\0';
+  outputf (OUTPUT_VERBOSE, "Expected time to find a factor of n digits:\n%s",
+           outs);
+  for (i = DIGITS_START; i <= DIGITS_END; i += DIGITS_INCR)
     {
-      sep = (i < 65) ? '\t' : '\n';
-      prob = ecmprob (mpz_get_d (B2min), mpz_get_d (effB2), 
+      sep = (i < DIGITS_END) ? '\t' : '\n';
+      prob = ecmprob (B1, mpz_get_d (B2), 
                       pow (10., i - .5), (double) dF * dF * k, S);
       exptime = (prob > 0.) ? tottime / prob : HUGE_VAL;
       outputf (OUTPUT_TRACE, "Digits: %d, Total time: %.0f, probability: "
@@ -784,11 +800,16 @@ print_exptime (mpz_t B2min, mpz_t effB2, unsigned long dF, unsigned long k,
     }
 }
 
+/* go should be NULL for P+1, and P-1, it contains the y coordinate for the
+   Weierstrass form for ECM (when sigma_is_A = -1). */
 void
 print_B1_B2_poly (int verbosity, int method, double B1, double B1done, 
 		  mpz_t B2min_param, mpz_t B2min, mpz_t B2, int S, mpz_t x0,
-		  int sigma_is_A)
+		  int sigma_is_A, mpz_t go)
 {
+  ASSERT ((method == ECM_ECM) || (go == NULL));
+  ASSERT ((-1 <= sigma_is_A) && (sigma_is_A <= 1));
+
   if (test_verbose (verbosity))
   {
       outputf (verbosity, "Using ");
@@ -809,10 +830,12 @@ print_B1_B2_poly (int verbosity, int method, double B1, double B1done,
       /* don't print in resume case, since x0 is saved in resume file */
       if (method == ECM_ECM)
         {
-	  if (sigma_is_A)
+	  if (sigma_is_A == 1)
 	    outputf (verbosity, ", A=%Zd", x0);
-	  else
+	  else if (sigma_is_A == 0)
 	    outputf (verbosity, ", sigma=%Zd", x0);
+	  else /* sigma_is_A = -1: curve was given in Weierstrass form */
+	    outputf (verbosity, ", Weierstrass(A=%Zd,y=Zd)", x0, go);
         }
       else if (ECM_IS_DEFAULT_B1_DONE(B1done))
 	  outputf (verbosity, ", x0=%Zd", x0);
@@ -842,7 +865,7 @@ print_B1_B2_poly (int verbosity, int method, double B1, double B1done,
 int
 ecm (mpz_t f, mpz_t x, mpz_t sigma, mpz_t n, mpz_t go, double *B1done,
      double B1, mpz_t B2min_parm, mpz_t B2_parm, double B2scale, 
-     unsigned long k, const int S, int verbose, int repr, int use_ntt,
+     unsigned long k, const int S, int verbose, int repr, int nobase2step2, int use_ntt,
      int sigma_is_A, FILE *os, FILE* es, char *chkfilename,
      char *TreeFilename, double maxmem, double stage1time, 
      gmp_randstate_t rng, int (*stop_asap)(void))
@@ -857,6 +880,12 @@ ecm (mpz_t f, mpz_t x, mpz_t sigma, mpz_t n, mpz_t go, double *B1done,
   mpz_t B2min, B2; /* Local B2, B2min to avoid changing caller's values */
   unsigned long dF;
   root_params_t root_params;
+
+  /*  1: sigma contains A from Montgomery form By^2 = x^3 + Ax^2 + x
+      0: sigma contains 'sigma' from Suyama's parametrization
+     -1: sigma contains A from Weierstrass form y^2 = x^3 + Ax + B,
+         and go contains B */
+  ASSERT((-1 <= sigma_is_A) && (sigma_is_A <= 1));
 
   set_verbose (verbose);
   ECM_STDOUT = (os == NULL) ? stdout : os;
@@ -881,11 +910,15 @@ ecm (mpz_t f, mpz_t x, mpz_t sigma, mpz_t n, mpz_t go, double *B1done,
 
   st = cputime ();
 
-  /* See what kind of number we have as that may influence optimal parameter 
-     selection. Test for base 2 number */
+  if (mpmod_init (modulus, n, repr) != 0)
+    return ECM_ERROR;
 
-  if (repr != ECM_MOD_NOBASE2)
-    base2 = (abs (repr) >= 16) ? repr : isbase2 (n, BASE2_THRESHOLD);
+  /* See what kind of number we have as that may influence optimal parameter 
+     selection. Test for base 2 number. Note: this was already done by
+     mpmod_init. */
+
+  if (modulus->repr == ECM_MOD_BASE2)
+    base2 = modulus->bits;
 
   /* For a Fermat number (base2 a positive power of 2) */
   for (Fermat = base2; Fermat > 0 && (Fermat & 1) == 0; Fermat >>= 1);
@@ -896,9 +929,6 @@ ecm (mpz_t f, mpz_t x, mpz_t sigma, mpz_t n, mpz_t go, double *B1done,
     }
   else
       Fermat = 0;
-
-  if (mpmod_init (modulus, n, repr) != 0)
-    return ECM_ERROR;
 
   MEMORY_TAG;
   mpres_init (P.x, modulus);
@@ -991,12 +1021,11 @@ ecm (mpz_t f, mpz_t x, mpz_t sigma, mpz_t n, mpz_t go, double *B1done,
         }
 
       /* sigma contains sigma value, A and x values must be computed */
-      /* If x is specified by user, keep that value */
       youpi = get_curve_from_sigma (f, P.A, P.x, sigma, modulus);
       if (youpi != ECM_NO_FACTOR_FOUND)
 	  goto end_of_ecm;
     }
-  else
+  else if (sigma_is_A == 1)
     {
       /* sigma contains the A value */
       mpres_set_z (P.A, sigma, modulus);
@@ -1013,13 +1042,14 @@ ecm (mpz_t f, mpz_t x, mpz_t sigma, mpz_t n, mpz_t go, double *B1done,
         }
     }
 
-  /* If a nonzero value is given in x, then we use it as the starting point */
+  /* If a nonzero value is given in x, then we use it as the starting point,
+     overwriting the one computing from sigma for sigma_is_A=0. */
   if (mpz_sgn (x) != 0)
       mpres_set_z (P.x, x, modulus);
 
   /* Print B1, B2, polynomial and sigma */
   print_B1_B2_poly (OUTPUT_NORMAL, ECM_ECM, B1, *B1done, B2min_parm, B2min, 
-		    B2, root_params.S, sigma, sigma_is_A);
+		    B2, root_params.S, sigma, sigma_is_A, go);
 
 #if 0
   outputf (OUTPUT_VERBOSE, "b2=%1.0f, dF=%lu, k=%lu, d=%lu, d2=%lu, i0=%Zd\n", 
@@ -1028,6 +1058,21 @@ ecm (mpz_t f, mpz_t x, mpz_t sigma, mpz_t n, mpz_t go, double *B1done,
   outputf (OUTPUT_VERBOSE, "dF=%lu, k=%lu, d=%lu, d2=%lu, i0=%Zd\n", 
            dF, k, root_params.d1, root_params.d2, root_params.i0);
 #endif
+
+  if (sigma_is_A == -1) /* Weierstrass form: we perform only Stage 2,
+			   since all curves in Weierstrass form do not
+			   admit a Montgomery form. */
+    {
+      mpres_set_z (P.A, sigma, modulus); /* sigma contains A */
+      mpres_set_z (P.y, go,    modulus); /* go contains y */
+      if (mpz_sgn (x) == 0 || mpz_sgn (go) == 0)
+        {
+          outputf (OUTPUT_ERROR, "Error, sigma_is_A=-1 requires x and y.\n");
+	  youpi = ECM_ERROR;
+	  goto end_of_ecm;
+        }
+      goto hecm;
+    }
 
   if (test_verbose (OUTPUT_RESVERBOSE))
     {
@@ -1048,8 +1093,16 @@ ecm (mpz_t f, mpz_t x, mpz_t sigma, mpz_t n, mpz_t go, double *B1done,
 
   if (test_verbose (OUTPUT_VERBOSE))
     {
-      rhoinit (256, 10);
-      print_expcurves (B2min, B2, dF, k, root_params.S);
+      if (mpz_cmp_d (B2min, B1) != 0)
+        {
+          outputf (OUTPUT_VERBOSE, 
+            "Can't compute success probabilities for B1 <> B2min\n");
+        }
+      else
+        {
+          rhoinit (256, 10);
+          print_expcurves (B1, B2, dF, k, root_params.S);
+        }
     }
 
 #ifdef HAVE_GWNUM
@@ -1062,7 +1115,7 @@ ecm (mpz_t f, mpz_t x, mpz_t sigma, mpz_t n, mpz_t go, double *B1done,
      is available */
 
   if (youpi != ECM_NO_FACTOR_FOUND)
-    goto end_of_ecm;
+    goto end_of_ecm_rhotable;
 #endif
 
   if (B1 > *B1done)
@@ -1086,7 +1139,7 @@ ecm (mpz_t f, mpz_t x, mpz_t sigma, mpz_t n, mpz_t go, double *B1done,
   mpres_get_z (x, P.x, modulus);
 
   if (youpi != ECM_NO_FACTOR_FOUND)
-    goto end_of_ecm;
+    goto end_of_ecm_rhotable;
 
   if (test_verbose (OUTPUT_RESVERBOSE)) 
     {
@@ -1103,9 +1156,46 @@ ecm (mpz_t f, mpz_t x, mpz_t sigma, mpz_t n, mpz_t go, double *B1done,
   /* In case of a signal, we'll exit after the residue is printed. If no save
      file is specified, the user may still resume from the residue */
   if (stop_asap != NULL && (*stop_asap) ())
-    goto end_of_ecm;
+    goto end_of_ecm_rhotable;
+
+  /* If using 2^k +/-1 modulus and 'nobase2step2' flag is set,
+     set default (-nobase2) modular method and remap P.x, P.y, and P.A */
+  if (modulus->repr == ECM_MOD_BASE2 && nobase2step2)
+    {
+      mpz_t x_t, y_t, A_t;
+
+      MEMORY_TAG;
+      mpz_init (x_t);
+      MEMORY_UNTAG;
+      MEMORY_TAG;
+      mpz_init (y_t);
+      MEMORY_UNTAG;
+      MEMORY_TAG;
+      mpz_init (A_t);
+      MEMORY_UNTAG;
+
+      mpz_mod (x_t, P.x, modulus->orig_modulus);
+      mpz_mod (y_t, P.y, modulus->orig_modulus);
+      mpz_mod (A_t, P.A, modulus->orig_modulus);
+
+      mpmod_clear (modulus);
+
+      repr = ECM_MOD_NOBASE2;
+      if (mpmod_init (modulus, n, repr) != 0) /* reset modulus for nobase2 */
+        return ECM_ERROR;
+
+      /* remap x, y, and A for new modular method */
+      mpres_set_z (P.x, x_t, modulus);
+      mpres_set_z (P.y, y_t, modulus);
+      mpres_set_z (P.A, A_t, modulus);
+
+      mpz_clear (x_t);
+      mpz_clear (y_t);
+      mpz_clear (A_t);
+    }
 
   youpi = montgomery_to_weierstrass (f, P.x, P.y, P.A, modulus);
+ hecm:
   
   if (test_verbose (OUTPUT_RESVERBOSE) && youpi == ECM_NO_FACTOR_FOUND && 
       mpz_cmp (B2, B2min) >= 0)
@@ -1129,14 +1219,18 @@ ecm (mpz_t f, mpz_t x, mpz_t sigma, mpz_t n, mpz_t go, double *B1done,
     youpi = stage2 (f, &P, modulus, dF, k, &root_params, ECM_ECM, 
                     use_ntt, TreeFilename, stop_asap);
   
+end_of_ecm_rhotable:
   if (test_verbose (OUTPUT_VERBOSE))
     {
-      if (youpi == ECM_NO_FACTOR_FOUND && 
-          (stop_asap == NULL || !(*stop_asap)()))
-        print_exptime (B2min, B2, dF, k, root_params.S, 
-                       (long) (stage1time * 1000.) + 
-                       elltime (st, cputime ()));
-      rhoinit (1, 0); /* Free memory of rhotable */
+      if (mpz_cmp_d (B2min, B1) == 0)
+        {
+          if (youpi == ECM_NO_FACTOR_FOUND && 
+              (stop_asap == NULL || !(*stop_asap)()))
+            print_exptime (B1, B2, dF, k, root_params.S, 
+                           (long) (stage1time * 1000.) + 
+                           elltime (st, cputime ()));
+          rhoinit (1, 0); /* Free memory of rhotable */
+        }
     }
 
 end_of_ecm:

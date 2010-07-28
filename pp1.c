@@ -1,6 +1,7 @@
 /* The 'P+1' algorithm.
 
-  Copyright 2002, 2003, 2004, 2005 Paul Zimmermann and Alexander Kruppa.
+  Copyright 2002, 2003, 2004, 2005, 2006, 2007, 2008
+  Paul Zimmermann and Alexander Kruppa.
 
   This file is part of the ECM Library.
 
@@ -330,7 +331,7 @@ pp1_mul2 (mpres_t a, mpres_t b, mpres_t P, mpz_t e, mpmod_t n)
       /* square: (ax+b)^2 = (a^2P+2ab) x + (b^2-a^2) */
       mpres_mul (t, a, a, n); /* a^2 */
       mpres_mul (a, a, b, n);
-      mpres_mul_ui (a, a, 2, n); /* 2ab */
+      mpres_add (a, a, a, n); /* 2ab */
       mpres_mul (b, b, b, n); /* b^2 */
       mpres_sub (b, b, t, n); /* b^2-a^2 */
       mpres_mul (t, t, P, n); /* a^2P */
@@ -538,8 +539,8 @@ pp1_rootsF (listz_t F, root_params_t *root_params, unsigned long dF,
                   */
 		  mpres_mul (u, state.fd[params->next * (params->S + 1)].x, x[0],
 			     modulus);
-		  mpres_mul_ui (v, state.fd[params->next * (params->S + 1)].y,
-				2, modulus);
+		  mpres_add (v, state.fd[params->next * (params->S + 1)].y,
+                             state.fd[params->next * (params->S + 1)].y, modulus);
 		  mpres_add (u, u, v, modulus);
 		  mpres_get_z (F[i++], u, modulus);
 		}
@@ -746,8 +747,8 @@ pp1_rootsG (listz_t G, unsigned long dF, pp1_roots_state_t *state,
             {
               mpres_mul (u, state->fd[params->next * (params->S + 1)].x, x[0],
                          modulus);
-              mpres_mul_ui (v, state->fd[params->next * (params->S + 1)].y,
-                            2, modulus);
+              mpres_add (v, state->fd[params->next * (params->S + 1)].y,
+                         state->fd[params->next * (params->S + 1)].y, modulus);
               mpres_add (u, u, v, modulus);
               mpres_get_z (G[i++], u, modulus);
             }
@@ -823,7 +824,13 @@ pp1 (mpz_t f, mpz_t p, mpz_t n, mpz_t go, double *B1done, double B1,
 
   /* Set default B2. See ecm.c for comments */
   if (ECM_IS_DEFAULT_B2(B2))
-    mpz_set_d (B2, B2scale * pow (B1 * PP1_COST, DEFAULT_B2_EXPONENT));
+    {
+      if (stage2_variant == 0)
+        mpz_set_d (B2, B2scale * pow (B1 * PP1_COST, DEFAULT_B2_EXPONENT));
+      else
+        mpz_set_d (B2, B2scale * pow (B1 * PP1FS2_COST, 
+                   PM1FS2_DEFAULT_B2_EXPONENT));
+    }
 
   /* set B2min */
   if (mpz_sgn (B2min) < 0)
@@ -841,6 +848,7 @@ pp1 (mpz_t f, mpz_t p, mpz_t n, mpz_t go, double *B1done, double B1,
       unsigned long lmax_NTT, lmax_noNTT;
       
       mpz_init (faststage2_params.m_1);
+      faststage2_params.l = 0;
       
       /* Find out what the longest transform length is we can do at all.
 	 If no maxmem is given, the non-NTT can theoretically do any length. */
@@ -943,7 +951,7 @@ pp1 (mpz_t f, mpz_t p, mpz_t n, mpz_t go, double *B1done, double B1,
 
   /* Print B1, B2, polynomial and x0 */
   print_B1_B2_poly (OUTPUT_NORMAL, ECM_PP1, B1, *B1done, B2min_parm, B2min, 
-		    B2, (stage2_variant == 0) ? root_params.S : 1, p, 0);
+		    B2, (stage2_variant == 0) ? root_params.S : 1, p, 0, NULL);
 
   /* If we do a stage 2, print its parameters */
   if (mpz_cmp (B2, B2min) >= 0)

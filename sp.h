@@ -1,8 +1,8 @@
 /* sp.h - header file for the sp library
 
-  Copyright 2005, 2008 Dave Newman and Jason Papadopoulos.
+  Copyright 2005, 2008 Dave Newman, Jason Papadopoulos and Paul Zimmermann.
   Copyright 1991, 1993, 1994, 1995, 1996, 1997, 1999, 2000, 2001, 2002, 2003,
-  2004, 2005 Free Software Foundation, Inc. (for parts from gmp-impl.h).
+  2004, 2005, 2010 Free Software Foundation, Inc. (for parts from gmp-impl.h).
 
   This file is part of the SP library.
   
@@ -35,8 +35,8 @@
 #ifndef TUNE
 #include "ecm-params.h"
 #else
-extern size_t SPV_NTT_GFP_DIF_RECURSIVE_THRESHOLD;
-extern size_t SPV_NTT_GFP_DIT_RECURSIVE_THRESHOLD;
+extern size_t NTT_GFP_TWIDDLE_DIF_BREAKOVER;
+extern size_t NTT_GFP_TWIDDLE_DIT_BREAKOVER;
 extern size_t MUL_NTT_THRESHOLD;
 extern size_t PREREVERTDIVISION_NTT_THRESHOLD;
 extern size_t POLYINVERT_NTT_THRESHOLD;
@@ -61,21 +61,24 @@ extern size_t MPZSPV_NORMALISE_STRIDE;
  * note that a small prime must be the size of a GMP limb */
 typedef mp_limb_t UWtype;
 typedef unsigned int UHWtype;
+#if (defined(_PA_RISC1_1) && defined(__GNUC__))
+/* this seems to be needed, otherwise umul_ppmm() does not work properly */
+typedef mp_limb_t USItype __attribute__ ((mode (SI)));
+typedef mp_limb_t UDItype __attribute__ ((mode (DI)));
+#else
 typedef mp_limb_t USItype;
 typedef mp_limb_t UDItype;
-
-#ifndef BITS_PER_MP_LIMB
-#define BITS_PER_MP_LIMB __GMP_BITS_PER_MP_LIMB
 #endif
 
 #ifndef W_TYPE_SIZE
-#define W_TYPE_SIZE BITS_PER_MP_LIMB
+#define W_TYPE_SIZE GMP_LIMB_BITS
 #endif
 
 #ifndef ULONG_MAX
 #define ULONG_MAX __GMP_ULONG_MAX
 #endif
 
+#define LONGLONG_STANDALONE
 #include "longlong.h"
 
 /*********
@@ -117,10 +120,7 @@ typedef struct
 
 typedef __sp_nttdata sp_nttdata_t[1];
 
-#define NTT_GFP_TWIDDLE_BREAKOVER 11
-
-#define LOG2_NTT_TWIDDLE_BLOCK_SIZE 7
-#define NTT_TWIDDLE_BLOCK_SIZE (1 << LOG2_NTT_TWIDDLE_BLOCK_SIZE)
+#define MAX_NTT_BLOCK_SIZE 128
 
 /* SPM */
 

@@ -35,9 +35,8 @@
       but tests have shown this doesn't give any significant speed increase,
       even for large degree polynomials.
     - this code requires that all coefficients A[] and B[] are nonnegative.
-    Return non-zero if an error occurred.
 */    
-int
+void
 kronecker_schonhage (listz_t R, listz_t A, listz_t B, unsigned int l,
                      listz_t T)
 {
@@ -49,7 +48,7 @@ kronecker_schonhage (listz_t R, listz_t A, listz_t B, unsigned int l,
   if ((double) l * (double) s < KS_MUL_THRESHOLD)
     {
       toomcook4 (R, A, B, l, T);
-      return 0;
+      return;
     }
 
   for (i = 0; i < l; i++)
@@ -78,7 +77,10 @@ kronecker_schonhage (listz_t R, listz_t A, listz_t B, unsigned int l,
   /* allocate one double-buffer to save malloc/MPN_ZERO/free calls */
   t0_ptr = (mp_ptr) malloc (2 * size_t0 * sizeof (mp_limb_t));
   if (t0_ptr == NULL)
-    return 1;
+    {
+      outputf (OUTPUT_ERROR, "Out of memory in kronecker_schonhage()\n");
+      exit (1);
+    }
   t1_ptr = t0_ptr + size_t0;
     
   MPN_ZERO (t0_ptr, 2 * size_t0);
@@ -97,7 +99,8 @@ kronecker_schonhage (listz_t R, listz_t A, listz_t B, unsigned int l,
   if (t2_ptr == NULL)
     {
       free (t0_ptr);
-      return 1;
+      outputf (OUTPUT_ERROR, "Out of memory in kronecker_schonhage()\n");
+      exit (1);
     }
   
   /* mpn_mul_fft_full () allocates auxiliary memory of about 8n limbs,
@@ -118,8 +121,6 @@ kronecker_schonhage (listz_t R, listz_t A, listz_t B, unsigned int l,
 
   free (t0_ptr);
   free (t2_ptr);
-
-  return 0;
 }
 
 /* Given a[0..m] and c[0..l], puts in b[0..n] the coefficients
@@ -407,7 +408,7 @@ ks_wrapmul (listz_t R, unsigned int m0,
       /* no need to check return value of mpn_add_1: if 1, then {tp, s}
          is now identically 0, and should remain so */
       MPN_NORMALIZE(tp, size_tmp);
-      if ((size_tmp == s) && (tp[s - 1] >> (mp_bits_per_limb - 1)))
+      if ((size_tmp == s) && (tp[s - 1] >> (GMP_NUMB_BITS - 1)))
 	{
 	  negative = 1;
 	  mpn_com_n (tp, tp, s);
