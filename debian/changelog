@@ -1,3 +1,12 @@
+gmp-ecm (6.3-1) unstable; urgency=low
+
+  * New upstream version.
+  * Switch to dpkg-source 3.0 (quilt) format.
+  * DH_COMPAT upgraded to 7.
+  * Link libecm0 against libgmp.
+
+ -- Laurent Fousse <laurent@komite.net>  Wed, 28 Jul 2010 09:44:05 +0200
+
 gmp-ecm (6.2-1) unstable; urgency=low
 
   * New Upstream Version
