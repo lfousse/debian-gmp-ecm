@@ -4,8 +4,11 @@ gmp-ecm (6.3-1) unstable; urgency=low
   * Switch to dpkg-source 3.0 (quilt) format.
   * DH_COMPAT upgraded to 7.
   * Link libecm0 against libgmp.
+  * Upgraded Standards-Version to 3.9.1:
+    + support parallel build
+  * Conflict with ecm (closes: #580398).
 
- -- Laurent Fousse <laurent@komite.net>  Wed, 28 Jul 2010 09:44:05 +0200
+ -- Laurent Fousse <laurent@komite.net>  Fri, 13 Aug 2010 17:15:20 +0200
 
 gmp-ecm (6.2-1) unstable; urgency=low
 
