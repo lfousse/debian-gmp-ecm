@@ -4,7 +4,7 @@ Priority: optional
 Homepage: http://ecm.gforge.inria.fr/
 Maintainer: Laurent Fousse <laurent@komite.net>
 Build-Depends: debhelper (>= 7.0.0) , libgmp3-dev
-Standards-Version: 3.7.3
+Standards-Version: 3.9.1
 
 Package: gmp-ecm
 Architecture: any
