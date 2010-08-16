@@ -1,3 +1,9 @@
+gmp-ecm (6.3-3) unstable; urgency=low
+
+  * Add build depends on m4 for {kfreebsd-,}amd64 (closes: #593021).
+
+ -- Laurent Fousse <laurent@komite.net>  Mon, 16 Aug 2010 11:02:54 +0200
+
 gmp-ecm (6.3-2) unstable; urgency=low
 
   * Disable assembly on mips.
