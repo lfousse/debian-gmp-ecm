@@ -1,3 +1,10 @@
+gmp-ecm (6.3-4) unstable; urgency=low
+
+  * Use gcc-4.3 on sparc as 4.4 causes build failure (closes: #593193).
+  * Explicitly disable assert (default=yes was upstream's mistake).
+
+ -- Laurent Fousse <laurent@komite.net>  Wed, 01 Sep 2010 11:21:25 +0200
+
 gmp-ecm (6.3-3) unstable; urgency=low
 
   * Add build depends on m4 for {kfreebsd-,}amd64 (closes: #593021).
