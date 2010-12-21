@@ -1,3 +1,9 @@
+gmp-ecm (6.3-5) unstable; urgency=low
+
+  * Disable SSE2 on i386, patch by Matthias Klose (closes: #607686).
+
+ -- Laurent Fousse <laurent@komite.net>  Tue, 21 Dec 2010 11:27:40 +0100
+
 gmp-ecm (6.3-4) unstable; urgency=low
 
   * Use gcc-4.3 on sparc as 4.4 causes build failure (closes: #593193).
