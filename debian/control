@@ -2,8 +2,8 @@ Source: gmp-ecm
 Section: math
 Priority: optional
 Homepage: http://ecm.gforge.inria.fr/
-Maintainer: Laurent Fousse <laurent@komite.net>
-Build-Depends: debhelper (>= 7.0.0) , libgmp3-dev, m4 [amd64 kfreebsd-amd64], gcc-4.3 [sparc]
+Maintainer: Laurent Fousse <lfousse@debian.org>
+Build-Depends: debhelper (>= 7.0.0) , libgmp-dev, m4 [amd64 kfreebsd-amd64], gcc-4.3 [sparc]
 Standards-Version: 3.9.1
 
 Package: gmp-ecm
@@ -53,7 +53,7 @@ Description: Factor integers using the Elliptic Curve Method (library)
 Package: libecm-dev
 Architecture: any
 Section: libdevel
-Depends: libgmp3-dev (>= 4.2.dfsg-1), libecm0 (= ${binary:Version}), ${misc:Depends}
+Depends: libgmp-dev (>= 4.2.dfsg-1), libecm0 (= ${binary:Version}), ${misc:Depends}
 Description: Factor integers using the Elliptic Curve Method (library)
  gmp-ecm is a free implementation of the Elliptic Curve Method (ECM)
  for integer factorization.
