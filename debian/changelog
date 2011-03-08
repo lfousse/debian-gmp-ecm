@@ -1,3 +1,9 @@
+gmp-ecm (6.3-7) unstable; urgency=low
+
+  * Fix dependencies on libgmp-dev (closes: #617207).
+
+ -- Laurent Fousse <lfousse@debian.org>  Tue, 08 Mar 2011 16:16:45 +0100
+
 gmp-ecm (6.3-6) unstable; urgency=low
 
   * Update build-depends to libgmp-dev (closes: #617207).
