@@ -1,0 +1,3 @@
+0001-Link-libecm.so-against-libgmp.patch
+0002-Disable-assembly-on-mips.patch
+0003-Rerun-autoreconf.patch

@@ -1,0 +1,24 @@
+From: Laurent Fousse <laurent@komite.net>
+Date: Mon, 26 Sep 2011 23:00:49 +0200
+Subject: Disable assembly on mips.
+
+---
+ sp.h |    4 ++++
+ 1 files changed, 4 insertions(+), 0 deletions(-)
+
+diff --git a/sp.h b/sp.h
+index 941b339..265f060 100644
+--- a/sp.h
++++ b/sp.h
+@@ -78,6 +78,10 @@ typedef mp_limb_t UDItype;
+ #define ULONG_MAX __GMP_ULONG_MAX
+ #endif
+ 
++#if defined (__s390__) || defined (__hppa__) || defined (__mips__)
++#define NO_ASM
++#endif
++
+ #define LONGLONG_STANDALONE
+ #include "longlong.h"
+ 
+-- 
