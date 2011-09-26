@@ -78,10 +78,6 @@ typedef mp_limb_t UDItype;
 #define ULONG_MAX __GMP_ULONG_MAX
 #endif
 
-#if defined (__s390__) || defined (__hppa__) || defined (__mips__)
-#define NO_ASM
-#endif
-
 #define LONGLONG_STANDALONE
 #include "longlong.h"
 

@@ -312,7 +312,6 @@ PACKAGE_BUGREPORT = @PACKAGE_BUGREPORT@
 PACKAGE_NAME = @PACKAGE_NAME@
 PACKAGE_STRING = @PACKAGE_STRING@
 PACKAGE_TARNAME = @PACKAGE_TARNAME@
-PACKAGE_URL = @PACKAGE_URL@
 PACKAGE_VERSION = @PACKAGE_VERSION@
 PATH_SEPARATOR = @PATH_SEPARATOR@
 POW_LIB = @POW_LIB@
@@ -402,7 +401,7 @@ libecm_la_SOURCES = ecm.c ecm2.c pm1.c pp1.c getprime.c listz.c \
 # Link the asm redc code (if we use it) into libecm.la
 libecm_la_CPPFLAGS = $(MULREDCINCPATH)
 libecm_la_CFLAGS = $(OPENMP_CFLAGS)
-libecm_la_LDFLAGS = '-version-info 0:0:0' $(MULREDCLIBPATH) $(GMPLIB)
+libecm_la_LDFLAGS = '-version-info 0:0:0' $(MULREDCLIBPATH)
 libecm_la_LIBADD = $(MULREDCLIBRARY)
 # Most binaries want to link libecm.la, and the ones which don't will
 # have their own _LDADD which overrides the default LDADD here
