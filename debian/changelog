@@ -1,3 +1,9 @@
+gmp-ecm (6.3-9) unstable; urgency=low
+
+  * Don't build-depend on non-existent packages.
+
+ -- Laurent Fousse <lfousse@debian.org>  Tue, 27 Sep 2011 20:22:38 +0200
+
 gmp-ecm (6.3-8) unstable; urgency=low
 
   * Properly convert to quilt format (closes: #643134).
