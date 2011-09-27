@@ -3,7 +3,7 @@ Section: math
 Priority: optional
 Homepage: http://ecm.gforge.inria.fr/
 Maintainer: Laurent Fousse <lfousse@debian.org>
-Build-Depends: debhelper (>= 7.0.50) , libgmp10-dev, m4 [amd64 kfreebsd-amd64], gcc-4.3 [sparc]
+Build-Depends: debhelper (>= 7.0.50) , libgmp10-dev, m4 [amd64 kfreebsd-amd64]
 Standards-Version: 3.9.1
 
 Package: gmp-ecm
