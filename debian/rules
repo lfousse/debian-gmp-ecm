@@ -2,11 +2,5 @@
 %:
 	dh $@
 
-MYCC=""
-
-ifneq (,$(findstring sparc,$(DEB_BUILD_GNU_TYPE)))
-    MYCC="CC=gcc-4.3"
-endif
-
 override_dh_auto_configure:
-	dh_auto_configure -a -- --enable-shared $(MYCC)
+	dh_auto_configure -a -- --enable-shared
