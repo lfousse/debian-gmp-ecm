@@ -1,3 +1,9 @@
+gmp-ecm (6.3-10) unstable; urgency=low
+
+  * Use the same compiler on all archs.
+
+ -- Laurent Fousse <lfousse@debian.org>  Wed, 28 Sep 2011 08:35:34 +0200
+
 gmp-ecm (6.3-9) unstable; urgency=low
 
   * Don't build-depend on non-existent packages.
