@@ -7,10 +7,10 @@ Subject: Disable assembly on mips.
  1 files changed, 4 insertions(+), 0 deletions(-)
 
 diff --git a/sp.h b/sp.h
-index 941b339..265f060 100644
+index e587046..ab61eba 100644
 --- a/sp.h
 +++ b/sp.h
-@@ -78,6 +78,10 @@ typedef mp_limb_t UDItype;
+@@ -79,6 +79,10 @@ typedef mp_limb_t UDItype;
  #define ULONG_MAX __GMP_ULONG_MAX
  #endif
  
