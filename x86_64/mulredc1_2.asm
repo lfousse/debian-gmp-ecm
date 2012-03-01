@@ -97,7 +97,9 @@ ifdef(`WANT_ASSERT', `
         pushf
 	testq	T0, T0
 	jz	assert1
-	call	abort
+	lea     _GLOBAL_OFFSET_TABLE_(%rip), %rbx # if we do PIC code, we 
+		# need to set rbx; if not, it doesnt hurt
+	call	GSYM_PREFIX`'abort@plt
 assert1:
 	popf
 ')

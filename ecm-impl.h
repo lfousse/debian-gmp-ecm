@@ -28,6 +28,29 @@
 #include <sys/types.h> /* needed for size_t */
 #endif
 
+#if HAVE_STDINT_H
+#include <stdint.h>
+/* needed for int64_t and uint64_t */
+/* or configure will define these for us if possible */
+#endif
+
+#if defined UINT64_MAX || defined uint64_t
+typedef int64_t ecm_int;
+typedef uint64_t ecm_uint;
+#define ECM_INT_MAX INT64_MAX
+#define ECM_UINT_MAX UINT64_MAX
+#elif defined HAVE_LONG_LONG_INT
+typedef long long ecm_int;
+typedef unsigned long long ecm_uint;
+#define ECM_INT_MAX LLONG_MAX
+#define ECM_UINT_MAX ULLONG_MAX
+#else
+typedef long ecm_int;
+typedef unsigned long ecm_uint;
+#define ECM_INT_MAX LONG_MAX
+#define ECM_UINT_MAX ULONG_MAX
+#endif
+
 #ifndef TUNE
 #include "ecm-params.h"
 #else
@@ -78,6 +101,22 @@ extern FILE *ECM_STDOUT, *ECM_STDERR;
 #define ATTRIBUTE_CONST
 #endif
 
+#ifndef LIKELY
+#if defined(__GNUC__)
+#define LIKELY(x) __builtin_expect ((x) != 0, 1)
+#else
+#define LIKELY(x) x
+#endif
+#endif
+
+#ifndef UNLIKELY
+#if defined(__GNUC__)
+#define UNLIKELY(x) __builtin_expect ((x) != 0, 0)
+#else
+#define UNLIKELY(x) x
+#endif
+#endif
+
 /* Whether we build the polynomials in stage 2 as described in the literature 
    as products of (x - x_i) (NEGATED_ROOTS 0), or as 
    (x + x_i) (NEGATED_ROOTS 1) */
@@ -92,9 +131,6 @@ extern FILE *ECM_STDOUT, *ECM_STDERR;
 #define PM1FS2_DEFAULT_B2_EXPONENT 1.7
 #define PM1FS2_COST 1.0 / 4.0
 #define PP1FS2_COST 1.0 / 4.0
-
-/* residues are fully reduced (i.e. in canonical mpz form) */
-#define FULL_REDUCTION
 
 /* if POLYEVALTELLEGEN is defined, use polyeval_tellegen(),
    otherwise use polyeval() */
@@ -286,7 +322,7 @@ typedef struct
   int Fermat;         /* If repr = 1 (base 2 number): If modulus is 2^(2^m)+1, 
                          i.e. bits = 2^m, then Fermat = 2^m, 0 otherwise.
                          If repr != 1, undefined */
-  mp_limb_t Nprim;    /* For MODMULN */
+  mp_limb_t Nprim[2]; /* For MODMULN */
   mpz_t orig_modulus; /* The original modulus */
   mpz_t aux_modulus;  /* Used only for MPZ and REDC:
 			 - the auxiliary modulus value (i.e. normalized 
@@ -369,7 +405,6 @@ void ecm_mul (mpres_t, mpres_t, mpz_t, mpmod_t, mpres_t);
 #define print_B1_B2_poly __ECM(print_B1_B2_poly)
 void print_B1_B2_poly (int, int, double, double, mpz_t, mpz_t, mpz_t, int S,  
                        mpz_t, int, mpz_t);
-      
 
 /* ecm2.c */
 #define ecm_rootsF __ECM(ecm_rootsF)
@@ -389,7 +424,7 @@ int     ecm_findmatch (unsigned long *, const unsigned long, root_params_t *,
 
 /* lucas.c */
 #define pp1_mul_prac __ECM(pp1_mul_prac)
-void  pp1_mul_prac     (mpres_t, unsigned long, mpmod_t, mpres_t, mpres_t,
+void  pp1_mul_prac     (mpres_t, ecm_uint, mpmod_t, mpres_t, mpres_t,
                         mpres_t, mpres_t, mpres_t);
 
 /* pp1.c */
@@ -557,6 +592,8 @@ void mpres_pow (mpres_t, const mpres_t, const mpz_t, mpmod_t);
 void mpres_ui_pow (mpres_t, const unsigned long, const mpres_t, mpmod_t);
 #define mpres_mul __ECM(mpres_mul)
 void mpres_mul (mpres_t, const mpres_t, const mpres_t, mpmod_t) ATTRIBUTE_HOT;
+#define mpres_sqr __ECM(mpres_sqr)
+void mpres_sqr (mpres_t, const mpres_t, mpmod_t) ATTRIBUTE_HOT;
 #define mpres_mul_z_to_z __ECM(mpres_mul_z_to_z)
 void mpres_mul_z_to_z (mpz_t, const mpres_t, const mpz_t, mpmod_t);
 #define mpres_set_z_for_gcd __ECM(mpres_set_z_for_gcd)
@@ -589,6 +626,8 @@ void mpres_clear (mpres_t, const mpmod_t);
 void mpres_realloc (mpres_t, const mpmod_t);
 #define mpres_mul_ui __ECM(mpres_mul_ui)
 void mpres_mul_ui (mpres_t, const mpres_t, const unsigned long, mpmod_t);
+#define mpres_mul_2exp __ECM(mpres_mul_2exp)
+void mpres_mul_2exp (mpres_t, const mpres_t, const unsigned long, mpmod_t);
 #define mpres_muldivbysomething_si __ECM(mpres_muldivbysomething_si)
 void mpres_muldivbysomething_si (mpres_t, const mpres_t, const long, mpmod_t);
 #define mpres_neg __ECM(mpres_neg)
@@ -690,7 +729,8 @@ unsigned int get_random_ui (void);
 
 /* Fgw.c */
 #ifdef HAVE_GWNUM
-int  gw_ecm_stage1 (mpz_t, curve *, mpmod_t, double, double *, mpz_t);
+int  gw_ecm_stage1 (mpz_t, curve *, mpmod_t, double, double *, mpz_t,
+                    double, unsigned long, unsigned long, signed long);
 #endif
 
 /* mul_fft.h */
@@ -705,6 +745,8 @@ int  mpn_fft_best_k (mp_size_t, int);
 #define mpn_fft_next_size __ECM(mpn_fft_next_size)
 mp_size_t mpn_fft_next_size (mp_size_t, int);
 
+/* batch.c */
+int ecm_stage1_batch (mpz_t, mpres_t, mpres_t, mpmod_t, double, double *, mpz_t);
 
 /* sets_long.c */
 /* A set of long ints */

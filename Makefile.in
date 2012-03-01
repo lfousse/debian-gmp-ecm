@@ -36,7 +36,7 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
-EXTRA_PROGRAMS = rho$(EXEEXT) $(am__EXEEXT_1)
+EXTRA_PROGRAMS = rho$(EXEEXT) batch$(EXEEXT) $(am__EXEEXT_1)
 @ENABLE_ASM_REDC_TRUE@am__append_1 = bench_mulredc test_mulredc
 bin_PROGRAMS = ecm$(EXEEXT)
 noinst_PROGRAMS = tune$(EXEEXT) ecmfactor$(EXEEXT) ecmfactor2$(EXEEXT)
@@ -89,13 +89,13 @@ am__installdirs = "$(DESTDIR)$(libdir)" "$(DESTDIR)$(bindir)" \
 	"$(DESTDIR)$(man1dir)" "$(DESTDIR)$(includedir)"
 LTLIBRARIES = $(lib_LTLIBRARIES)
 am__DEPENDENCIES_1 =
-libecm_la_DEPENDENCIES = $(am__DEPENDENCIES_1)
+libecm_la_DEPENDENCIES = $(MULREDCLIBRARY) $(am__DEPENDENCIES_1)
 am__libecm_la_SOURCES_DIST = ecm.c ecm2.c pm1.c pp1.c getprime.c \
 	listz.c lucas.c stage2.c toomcook.c mpmod.c mul_lo.c \
 	polyeval.c median.c schoen_strass.c ks-multiply.c rho.c \
 	bestd.c auxlib.c random.c factor.c sp.c spv.c spm.c mpzspm.c \
 	mpzspv.c ntt_gfp.c ecm_ntt.c pm1fs2.c mul_fft.c sets_long.c \
-	auxarith.c memory.c Fgw.c
+	auxarith.c batch.c memory.c Fgw.c
 @MEMORY_DEBUG_TRUE@am__objects_1 = libecm_la-memory.lo
 @WITH_GWNUM_TRUE@am__objects_2 = libecm_la-Fgw.lo
 am_libecm_la_OBJECTS = libecm_la-ecm.lo libecm_la-ecm2.lo \
@@ -109,8 +109,8 @@ am_libecm_la_OBJECTS = libecm_la-ecm.lo libecm_la-ecm2.lo \
 	libecm_la-spv.lo libecm_la-spm.lo libecm_la-mpzspm.lo \
 	libecm_la-mpzspv.lo libecm_la-ntt_gfp.lo libecm_la-ecm_ntt.lo \
 	libecm_la-pm1fs2.lo libecm_la-mul_fft.lo \
-	libecm_la-sets_long.lo libecm_la-auxarith.lo $(am__objects_1) \
-	$(am__objects_2)
+	libecm_la-sets_long.lo libecm_la-auxarith.lo \
+	libecm_la-batch.lo $(am__objects_1) $(am__objects_2)
 libecm_la_OBJECTS = $(am_libecm_la_OBJECTS)
 libecm_la_LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) \
 	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(libecm_la_CFLAGS) \
@@ -118,14 +118,13 @@ libecm_la_LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) \
 @ENABLE_ASM_REDC_TRUE@am__EXEEXT_1 = bench_mulredc$(EXEEXT) \
 @ENABLE_ASM_REDC_TRUE@	test_mulredc$(EXEEXT)
 PROGRAMS = $(bin_PROGRAMS) $(noinst_PROGRAMS)
+am_batch_OBJECTS = batch.$(OBJEXT)
+batch_OBJECTS = $(am_batch_OBJECTS)
+batch_DEPENDENCIES = $(am__DEPENDENCIES_1)
 bench_mulredc_SOURCES = bench_mulredc.c
 bench_mulredc_OBJECTS = bench_mulredc-bench_mulredc.$(OBJEXT)
-@ENABLE_ASM_REDC_TRUE@bench_mulredc_DEPENDENCIES =  \
-@ENABLE_ASM_REDC_TRUE@	$(am__DEPENDENCIES_1) \
+@ENABLE_ASM_REDC_TRUE@bench_mulredc_DEPENDENCIES = $(MULREDCLIBRARY) \
 @ENABLE_ASM_REDC_TRUE@	$(am__DEPENDENCIES_1)
-bench_mulredc_LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) \
-	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
-	$(bench_mulredc_LDFLAGS) $(LDFLAGS) -o $@
 am_ecm_OBJECTS = ecm-auxi.$(OBJEXT) ecm-b1_ainc.$(OBJEXT) \
 	ecm-candi.$(OBJEXT) ecm-eval.$(OBJEXT) ecm-random.$(OBJEXT) \
 	ecm-main.$(OBJEXT) ecm-trial.$(OBJEXT) ecm-resume.$(OBJEXT) \
@@ -154,12 +153,8 @@ rho_OBJECTS = $(am_rho_OBJECTS)
 rho_DEPENDENCIES = $(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
 test_mulredc_SOURCES = test_mulredc.c
 test_mulredc_OBJECTS = test_mulredc-test_mulredc.$(OBJEXT)
-@ENABLE_ASM_REDC_TRUE@test_mulredc_DEPENDENCIES =  \
-@ENABLE_ASM_REDC_TRUE@	$(am__DEPENDENCIES_1) \
+@ENABLE_ASM_REDC_TRUE@test_mulredc_DEPENDENCIES = $(MULREDCLIBRARY) \
 @ENABLE_ASM_REDC_TRUE@	$(am__DEPENDENCIES_1)
-test_mulredc_LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) \
-	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
-	$(test_mulredc_LDFLAGS) $(LDFLAGS) -o $@
 am__tune_SOURCES_DIST = mpmod.c tune.c mul_lo.c listz.c auxlib.c \
 	ks-multiply.c toomcook.c schoen_strass.c polyeval.c median.c \
 	ecm_ntt.c ntt_gfp.c mpzspv.c mpzspm.c sp.c spv.c spm.c \
@@ -176,10 +171,7 @@ am_tune_OBJECTS = tune-mpmod.$(OBJEXT) tune-tune.$(OBJEXT) \
 	tune-mul_fft.$(OBJEXT) tune-auxarith.$(OBJEXT) \
 	$(am__objects_3)
 tune_OBJECTS = $(am_tune_OBJECTS)
-tune_DEPENDENCIES = $(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
-tune_LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) \
-	--mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(tune_LDFLAGS) \
-	$(LDFLAGS) -o $@
+tune_DEPENDENCIES = $(MULREDCLIBRARY) $(am__DEPENDENCIES_1)
 DEFAULT_INCLUDES = -I.@am__isrc@
 depcomp = $(SHELL) $(top_srcdir)/depcomp
 am__depfiles_maybe = depfiles
@@ -193,12 +185,12 @@ CCLD = $(CC)
 LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) \
 	--mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) \
 	$(LDFLAGS) -o $@
-SOURCES = $(libecm_la_SOURCES) bench_mulredc.c $(ecm_SOURCES) \
-	ecmfactor.c ecmfactor2.c $(rho_SOURCES) test_mulredc.c \
-	$(tune_SOURCES)
-DIST_SOURCES = $(am__libecm_la_SOURCES_DIST) bench_mulredc.c \
+SOURCES = $(libecm_la_SOURCES) $(batch_SOURCES) bench_mulredc.c \
 	$(ecm_SOURCES) ecmfactor.c ecmfactor2.c $(rho_SOURCES) \
-	test_mulredc.c $(am__tune_SOURCES_DIST)
+	test_mulredc.c $(tune_SOURCES)
+DIST_SOURCES = $(am__libecm_la_SOURCES_DIST) $(batch_SOURCES) \
+	bench_mulredc.c $(ecm_SOURCES) ecmfactor.c ecmfactor2.c \
+	$(rho_SOURCES) test_mulredc.c $(am__tune_SOURCES_DIST)
 RECURSIVE_TARGETS = all-recursive check-recursive dvi-recursive \
 	html-recursive info-recursive install-data-recursive \
 	install-dvi-recursive install-exec-recursive \
@@ -273,6 +265,7 @@ CPPFLAGS = @CPPFLAGS@
 CYGPATH_W = @CYGPATH_W@
 DEFS = @DEFS@
 DEPDIR = @DEPDIR@
+DLLTOOL = @DLLTOOL@
 DSYMUTIL = @DSYMUTIL@
 DUMPBIN = @DUMPBIN@
 ECHO_C = @ECHO_C@
@@ -299,6 +292,7 @@ LN_S = @LN_S@
 LTLIBOBJS = @LTLIBOBJS@
 M4 = @M4@
 MAKEINFO = @MAKEINFO@
+MANIFEST_TOOL = @MANIFEST_TOOL@
 MKDIR_P = @MKDIR_P@
 NM = @NM@
 NMEDIT = @NMEDIT@
@@ -312,6 +306,7 @@ PACKAGE_BUGREPORT = @PACKAGE_BUGREPORT@
 PACKAGE_NAME = @PACKAGE_NAME@
 PACKAGE_STRING = @PACKAGE_STRING@
 PACKAGE_TARNAME = @PACKAGE_TARNAME@
+PACKAGE_URL = @PACKAGE_URL@
 PACKAGE_VERSION = @PACKAGE_VERSION@
 PATH_SEPARATOR = @PATH_SEPARATOR@
 POW_LIB = @POW_LIB@
@@ -328,6 +323,7 @@ abs_builddir = @abs_builddir@
 abs_srcdir = @abs_srcdir@
 abs_top_builddir = @abs_top_builddir@
 abs_top_srcdir = @abs_top_srcdir@
+ac_ct_AR = @ac_ct_AR@
 ac_ct_CC = @ac_ct_CC@
 ac_ct_DUMPBIN = @ac_ct_DUMPBIN@
 am__include = @am__include@
@@ -360,7 +356,6 @@ libdir = @libdir@
 libexecdir = @libexecdir@
 localedir = @localedir@
 localstatedir = @localstatedir@
-lt_ECHO = @lt_ECHO@
 mandir = @mandir@
 mkdir_p = @mkdir_p@
 oldincludedir = @oldincludedir@
@@ -377,57 +372,59 @@ top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 ACLOCAL_AMFLAGS = -I m4
+
+# to not install libecm.la, we could write noinst_LTLIBRARIES instead of
+# lib_LTLIBRARIES below, however then libecm.a is not installed either
+# (see http://www.gnu.org/software/automake/manual/html_node/Libtool-Convenience-Libraries.html)
 lib_LTLIBRARIES = libecm.la
 
 # If we want assembly mulredc code, recurse into the right subdirectory
 # and set up variables to include the mulredc library from that subdir
 @ENABLE_ASM_REDC_TRUE@SUBDIRS = $(ASMPATH)
 @ENABLE_ASM_REDC_TRUE@MULREDCINCPATH = -I$(srcdir)/$(ASMPATH)
-@ENABLE_ASM_REDC_TRUE@MULREDCLIBPATH = -L$(builddir)/$(ASMPATH)
-@ENABLE_ASM_REDC_TRUE@MULREDCLIBRARY = -lmulredc
+@ENABLE_ASM_REDC_TRUE@MULREDCLIBRARY = $(builddir)/$(ASMPATH)/libmulredc.la
 @ENABLE_ASM_REDC_TRUE@CLEANFILES = bench_mulredc test_mulredc
 @ENABLE_ASM_REDC_TRUE@bench_mulredc_CPPFLAGS = $(MULREDCINCPATH)
-@ENABLE_ASM_REDC_TRUE@bench_mulredc_LDFLAGS = $(MULREDCLIBPATH)
 @ENABLE_ASM_REDC_TRUE@bench_mulredc_LDADD = $(MULREDCLIBRARY) $(GMPLIB)
 @ENABLE_ASM_REDC_TRUE@test_mulredc_CPPFLAGS = $(MULREDCINCPATH)
 @ENABLE_ASM_REDC_TRUE@test_mulredc_LDADD = $(MULREDCLIBRARY) $(GMPLIB)
-@ENABLE_ASM_REDC_TRUE@test_mulredc_LDFLAGS = $(MULREDCLIBPATH)
 libecm_la_SOURCES = ecm.c ecm2.c pm1.c pp1.c getprime.c listz.c \
 	lucas.c stage2.c toomcook.c mpmod.c mul_lo.c polyeval.c \
 	median.c schoen_strass.c ks-multiply.c rho.c bestd.c auxlib.c \
 	random.c factor.c sp.c spv.c spm.c mpzspm.c mpzspv.c ntt_gfp.c \
-	ecm_ntt.c pm1fs2.c mul_fft.c sets_long.c auxarith.c \
+	ecm_ntt.c pm1fs2.c mul_fft.c sets_long.c auxarith.c batch.c \
 	$(am__append_2) $(am__append_4)
 # Link the asm redc code (if we use it) into libecm.la
 libecm_la_CPPFLAGS = $(MULREDCINCPATH)
 libecm_la_CFLAGS = $(OPENMP_CFLAGS)
-libecm_la_LDFLAGS = '-version-info 0:0:0' $(MULREDCLIBPATH)
-libecm_la_LIBADD = $(MULREDCLIBRARY)
+libecm_la_LDFLAGS = '-version-info 0:0:0'
+libecm_la_LIBADD = $(MULREDCLIBRARY) $(GMPLIB)
 # Most binaries want to link libecm.la, and the ones which don't will
 # have their own _LDADD which overrides the default LDADD here
 LDADD = libecm.la $(GMPLIB)
 ecm_CPPFLAGS = -DOUTSIDE_LIBECM
 ecm_CFLAGS = $(OPENMP_CFLAGS)
 ecm_SOURCES = auxi.c b1_ainc.c candi.c eval.c random.c main.c trial.c \
-              resume.c getprime.c
+              resume.c getprime.c champions.h
 
 tune_SOURCES = mpmod.c tune.c mul_lo.c listz.c auxlib.c ks-multiply.c \
 	toomcook.c schoen_strass.c polyeval.c median.c ecm_ntt.c \
 	ntt_gfp.c mpzspv.c mpzspm.c sp.c spv.c spm.c random.c \
 	mul_fft.c auxarith.c $(am__append_3)
 tune_CPPFLAGS = -DTUNE $(MULREDCINCPATH)
-tune_LDFLAGS = $(MULREDCLIBPATH)
 tune_LDADD = $(MULREDCLIBRARY) $(GMPLIB)
 ecmfactor_CFLAGS = $(OPENMP_CFLAGS)
 ecmfactor2_CFLAGS = $(OPENMP_CFLAGS)
 rho_SOURCES = rho.c
 rho_CPPFLAGS = -DTESTDRIVE
 rho_LDADD = -lprimegen $(GMPLIB) $(GSL_LD_FLAGS)
-@WITH_GWNUM_TRUE@ecm_DEPENDENCIES = $(LDADD) gwdata.ld
+batch_SOURCES = batch.c
+batch_LDADD = $(GMPLIB)
+@WITH_GWNUM_TRUE@ecm_DEPENDENCIES = gwdata.ld
 @WITH_GWNUM_TRUE@ecm_LDFLAGS = $(AM_LDFLAGS) -Wl,gwdata.ld
 include_HEADERS = ecm.h
 noinst_HEADERS = ecm-impl.h ecm-gmp.h ecm-ecm.h sp.h longlong.h ecm-params.h
-EXTRA_DIST = test.pm1 test.pp1 test.ecm README.lib ecm.xml \
+EXTRA_DIST = test.pm1 test.pp1 test.ecm README.lib INSTALL-ecm ecm.xml \
              ecm-params.h.alpha-ev5 ecm-params.h.athlon64 \
              ecm-params.h.default ecm-params.h.alpha-ev6 \
              ecm-params.h.athlon ecm-params.h.powerpc7450 \
@@ -584,9 +581,12 @@ clean-noinstPROGRAMS:
 	list=`for p in $$list; do echo "$$p"; done | sed 's/$(EXEEXT)$$//'`; \
 	echo " rm -f" $$list; \
 	rm -f $$list
+batch$(EXEEXT): $(batch_OBJECTS) $(batch_DEPENDENCIES) 
+	@rm -f batch$(EXEEXT)
+	$(LINK) $(batch_OBJECTS) $(batch_LDADD) $(LIBS)
 bench_mulredc$(EXEEXT): $(bench_mulredc_OBJECTS) $(bench_mulredc_DEPENDENCIES) 
 	@rm -f bench_mulredc$(EXEEXT)
-	$(bench_mulredc_LINK) $(bench_mulredc_OBJECTS) $(bench_mulredc_LDADD) $(LIBS)
+	$(LINK) $(bench_mulredc_OBJECTS) $(bench_mulredc_LDADD) $(LIBS)
 ecm$(EXEEXT): $(ecm_OBJECTS) $(ecm_DEPENDENCIES) 
 	@rm -f ecm$(EXEEXT)
 	$(ecm_LINK) $(ecm_OBJECTS) $(ecm_LDADD) $(LIBS)
@@ -601,10 +601,10 @@ rho$(EXEEXT): $(rho_OBJECTS) $(rho_DEPENDENCIES)
 	$(LINK) $(rho_OBJECTS) $(rho_LDADD) $(LIBS)
 test_mulredc$(EXEEXT): $(test_mulredc_OBJECTS) $(test_mulredc_DEPENDENCIES) 
 	@rm -f test_mulredc$(EXEEXT)
-	$(test_mulredc_LINK) $(test_mulredc_OBJECTS) $(test_mulredc_LDADD) $(LIBS)
+	$(LINK) $(test_mulredc_OBJECTS) $(test_mulredc_LDADD) $(LIBS)
 tune$(EXEEXT): $(tune_OBJECTS) $(tune_DEPENDENCIES) 
 	@rm -f tune$(EXEEXT)
-	$(tune_LINK) $(tune_OBJECTS) $(tune_LDADD) $(LIBS)
+	$(LINK) $(tune_OBJECTS) $(tune_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -612,6 +612,7 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/batch.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bench_mulredc-bench_mulredc.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ecm-auxi.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ecm-b1_ainc.Po@am__quote@
@@ -627,6 +628,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libecm_la-Fgw.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libecm_la-auxarith.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libecm_la-auxlib.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libecm_la-batch.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libecm_la-bestd.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libecm_la-ecm.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libecm_la-ecm2.Plo@am__quote@
@@ -918,6 +920,13 @@ libecm_la-auxarith.lo: auxarith.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='auxarith.c' object='libecm_la-auxarith.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libecm_la_CPPFLAGS) $(CPPFLAGS) $(libecm_la_CFLAGS) $(CFLAGS) -c -o libecm_la-auxarith.lo `test -f 'auxarith.c' || echo '$(srcdir)/'`auxarith.c
+
+libecm_la-batch.lo: batch.c
+@am__fastdepCC_TRUE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libecm_la_CPPFLAGS) $(CPPFLAGS) $(libecm_la_CFLAGS) $(CFLAGS) -MT libecm_la-batch.lo -MD -MP -MF $(DEPDIR)/libecm_la-batch.Tpo -c -o libecm_la-batch.lo `test -f 'batch.c' || echo '$(srcdir)/'`batch.c
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/libecm_la-batch.Tpo $(DEPDIR)/libecm_la-batch.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='batch.c' object='libecm_la-batch.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libecm_la_CPPFLAGS) $(CPPFLAGS) $(libecm_la_CFLAGS) $(CFLAGS) -c -o libecm_la-batch.lo `test -f 'batch.c' || echo '$(srcdir)/'`batch.c
 
 libecm_la-memory.lo: memory.c
 @am__fastdepCC_TRUE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libecm_la_CPPFLAGS) $(CPPFLAGS) $(libecm_la_CFLAGS) $(CFLAGS) -MT libecm_la-memory.lo -MD -MP -MF $(DEPDIR)/libecm_la-memory.Tpo -c -o libecm_la-memory.lo `test -f 'memory.c' || echo '$(srcdir)/'`memory.c

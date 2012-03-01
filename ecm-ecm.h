@@ -70,11 +70,20 @@ typedef struct
 unsigned int nb_digits  (const mpz_t);
 unsigned int get_random_ui (void);
 
+/* Various logging levels */
+/* OUTPUT_ALWAYS means print always, regardless of verbose value */
 #define OUTPUT_ALWAYS 0
+/* OUTPUT_NORMAL means print during normal program execution */
 #define OUTPUT_NORMAL 1
+/* OUTPUT_VERBOSE means print if the user requested more verbosity */
 #define OUTPUT_VERBOSE 2
-#define OUTPUT_DEVVERBOSE 3
-#define OUTPUT_TRACE 4
+/* OUTPUT_RESVERBOSE is for printing residues (after stage 1 etc) */
+#define OUTPUT_RESVERBOSE 3
+/* OUTPUT_DEVVERBOSE is for printing internal parameters (for developers) */
+#define OUTPUT_DEVVERBOSE 4
+/* OUTPUT_TRACE is for printing trace data, produces lots of output */
+#define OUTPUT_TRACE 5
+/* OUTPUT_ERROR is for printing error messages */
 #define OUTPUT_ERROR -1
 
 #define MAX_NUMBER_PRINT_LEN 1000
@@ -97,7 +106,7 @@ int  inc_verbose ();
 #define ECM_COMP_FAC_PRIME_COFAC (2+8)
 #define ECM_PRIME_FAC_PRIME_COFAC (2+4+8)
 
-/* getprime2.c */
+/* getprime.c */
 double getprime ();
 void getprime_clear ();
 void getprime_seek (double);
@@ -132,6 +141,13 @@ int write_resumefile_line (char *, int, double, mpz_t, mpz_t, mpz_t, mpcandi_t *
 /* main.c */
 int read_number (mpcandi_t *n, FILE *, int primetest);
 int probab_prime_p (mpz_t, int);
+int kbnc_z (double *k, unsigned long *b, unsigned long *n, signed long *c,
+            mpz_t z);
+int kbnc_str (double *k, unsigned long *b, unsigned long *n, signed long *c,
+              char *z, mpz_t num);
+
+/* batch.c */
+void compute_s (mpz_t, unsigned long);
 
 /* eval.c */
 int eval (mpcandi_t *n, FILE *fd, int bPrp);
@@ -158,8 +174,8 @@ void pm1_random_seed  (mpz_t, mpz_t, gmp_randstate_t);
 /* default number of probable prime tests */
 #define PROBAB_PRIME_TESTS 1
 
-/* maximal stage 1 bound = 2^53 + 4, the next prime being 2^53 + 5 */
-#define MAX_B1 9007199254740996.0
+/* maximal stage 1 bound = 2^53 - 1, the next prime being 2^53 + 5 */
+#define MAX_B1 9007199254740991.0
 
 /* The checksum for savefile is the product of all mandatory fields, modulo
    the greatest prime below 2^32 */

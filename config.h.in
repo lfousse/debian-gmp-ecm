@@ -90,6 +90,9 @@
 /* Define to 1 if you have the <limits.h> header file. */
 #undef HAVE_LIMITS_H
 
+/* Define to 1 if the system has the type `long long int'. */
+#undef HAVE_LONG_LONG_INT
+
 /* Define to 1 if you have the <malloc.h> header file. */
 #undef HAVE_MALLOC_H
 
@@ -186,8 +189,14 @@
 /* Define to 1 if you have the `__gmpn_mod_34lsub1' function. */
 #undef HAVE___GMPN_MOD_34LSUB1
 
+/* Define to 1 if you have the `__gmpn_mullo_n' function. */
+#undef HAVE___GMPN_MULLO_N
+
 /* Define to 1 if you have the `__gmpn_redc_1' function. */
 #undef HAVE___GMPN_REDC_1
+
+/* Define to 1 if you have the `__gmpn_redc_2' function. */
+#undef HAVE___GMPN_REDC_2
 
 /* Define to the sub-directory in which libtool stores uninstalled libraries.
    */
@@ -195,9 +204,6 @@
 
 /* Define to 1 if you want memory debugging */
 #undef MEMORY_DEBUG
-
-/* Define to 1 to use asm redc */
-#undef NATIVE_REDC
 
 /* Define to 1 if your C compiler doesn't accept -c and -o together. */
 #undef NO_MINUS_C_MINUS_O
@@ -217,6 +223,9 @@
 /* Define to the one symbol short name of this package. */
 #undef PACKAGE_TARNAME
 
+/* Define to the home page for this package. */
+#undef PACKAGE_URL
+
 /* Define to the version of this package. */
 #undef PACKAGE_VERSION
 
@@ -234,6 +243,9 @@
 /* Define to 1 if you can safely include both <sys/time.h> and <time.h>. */
 #undef TIME_WITH_SYS_TIME
 
+/* Define to 1 to use asm redc */
+#undef USE_ASM_REDC
+
 /* Version number of package */
 #undef VERSION
 
@@ -247,6 +259,11 @@
    with Windows ABI */
 #undef WINDOWS64_ABI
 
+/* Define for Solaris 2.5.1 so the uint64_t typedef from <sys/synch.h>,
+   <pthread.h>, or <semaphore.h> is not used. If the typedef were allowed, the
+   #define below would cause a syntax error. */
+#undef _UINT64_T
+
 /* Define to empty if `const' does not conform to ANSI C. */
 #undef const
 
@@ -256,5 +273,13 @@
 #undef inline
 #endif
 
+/* Define to the type of a signed integer type of width exactly 64 bits if
+   such a type exists and the standard includes do not define it. */
+#undef int64_t
+
 /* Define to `unsigned int' if <sys/types.h> does not define. */
 #undef size_t
+
+/* Define to the type of an unsigned integer type of width exactly 64 bits if
+   such a type exists and the standard includes do not define it. */
+#undef uint64_t

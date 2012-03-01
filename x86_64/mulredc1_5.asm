@@ -97,7 +97,9 @@ ifdef(`WANT_ASSERT', `
         pushf
 	testq	T0, T0
 	jz	assert1
-	call	abort
+	lea     _GLOBAL_OFFSET_TABLE_(%rip), %rbx # if we do PIC code, we 
+		# need to set rbx; if not, it doesnt hurt
+	call	GSYM_PREFIX`'abort@plt
 assert1:
 	popf
 ')
@@ -126,7 +128,9 @@ undefine(`TT')dnl
 	# T1:T0 <= 2^128 - 2*2^64 + 1 + 2*2^64 - 2 <= 2^128 - 1, no carry!
 ifdef(`WANT_ASSERT', `
 	jnc	1f
-	call	abort
+	lea     _GLOBAL_OFFSET_TABLE_(%rip), %rbx # if we do PIC code, we 
+		# need to set rbx; if not, it doesnt hurt
+	call	GSYM_PREFIX`'abort@plt
 1:
 ',`')
 	
@@ -165,7 +169,9 @@ undefine(`TT')dnl
 	# T1:T0 <= 2^128 - 2*2^64 + 1 + 2*2^64 - 2 <= 2^128 - 1, no carry!
 ifdef(`WANT_ASSERT', `
 	jnc	1f
-	call	abort
+	lea     _GLOBAL_OFFSET_TABLE_(%rip), %rbx # if we do PIC code, we 
+		# need to set rbx; if not, it doesnt hurt
+	call	GSYM_PREFIX`'abort@plt
 1:
 ',`')
 	
@@ -204,7 +210,9 @@ undefine(`TT')dnl
 	# T1:T0 <= 2^128 - 2*2^64 + 1 + 2*2^64 - 2 <= 2^128 - 1, no carry!
 ifdef(`WANT_ASSERT', `
 	jnc	1f
-	call	abort
+	lea     _GLOBAL_OFFSET_TABLE_(%rip), %rbx # if we do PIC code, we 
+		# need to set rbx; if not, it doesnt hurt
+	call	GSYM_PREFIX`'abort@plt
 1:
 ',`')
 	
