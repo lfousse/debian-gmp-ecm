@@ -1,203 +1,365 @@
-Instructions to install GMP-ECM:
+Installation Instructions
+*************************
 
-0) you first need to install the GNU MP (GMP) library.
-   GNU MP is available from <http://gmplib.org/>.
+Copyright (C) 1994, 1995, 1996, 1999, 2000, 2001, 2002, 2004, 2005,
+2006, 2007, 2008, 2009 Free Software Foundation, Inc.
 
-   Remark: GNU MP is already installed in most Linux distributions.
-   However it is often an old version, moreover without processor-specific
-   optimizations. If you care about efficiency, be sure to install the
-   latest version of GNU MP (5.0.1 as of February 2010), and to compile it
-   for your particular processor.
-   Warning: make sure you have only one version of GMP installed on your
-   system at a given time. Frequently, after compiling GMP from source
-   and installing it without removing the distribution's GMP package,
-   later attempts to build software that uses GMP find the GMP header 
-   file from the distribution's GMP package and the library from the 
-   newly compiled GMP (or vice versa). GMP-ECM tries to detect this by
-   comparing the version number from header and library; if this test 
-   fails, you should remove the obsolete GMP installation.
+   Copying and distribution of this file, with or without modification,
+are permitted in any medium without royalty provided the copyright
+notice and this notice are preserved.  This file is offered as-is,
+without warranty of any kind.
 
-1) check your configuration with:
+Basic Installation
+==================
 
-   $ ./configure
+   Briefly, the shell commands `./configure; make; make install' should
+configure, build, and install this package.  The following
+more-detailed instructions are generic; see the `README' file for
+instructions specific to this package.  Some packages provide this
+`INSTALL' file but do not implement all of the features documented
+below.  The lack of an optional feature in a given package is not
+necessarily a bug.  More recommendations for GNU packages can be found
+in *note Makefile Conventions: (standards)Makefile Conventions.
 
-   The configure script accepts several options (see ./configure --help).
-   In particular you can specify the GMP installation directory with:
+   The `configure' shell script attempts to guess correct values for
+various system-dependent variables used during compilation.  It uses
+those values to create a `Makefile' in each directory of the package.
+It may also create one or more `.h' files containing system-dependent
+definitions.  Finally, it creates a shell script `config.status' that
+you can run in the future to recreate the current configuration, and a
+file `config.log' containing compiler output (useful mainly for
+debugging `configure').
 
-   $ ./configure --with-gmp=<gmpdir>
+   It can also use an optional file (typically called `config.cache'
+and enabled with `--cache-file=config.cache' or simply `-C') that saves
+the results of its tests to speed up reconfiguring.  Caching is
+disabled by default to prevent problems with accidental use of stale
+cache files.
 
-   where <gmpdir>/include contains the header file gmp.h, and <gmpdir>/lib
-   contains the static or dynamic libraries (libgmp.a, libgmp.so, libgmp.lib).
- 
-   Note: the configure script will first search for a static GMP library, which
-   makes GMP-ECM more efficient. When only a dynamic library is available, make
-   sure to correctly set your dynamic libraries search path (LD_LIBRARY_PATH
-   on Unix systems), otherwise the configure script may fail.
+   If you need to do unusual things to compile the package, please try
+to figure out how `configure' could check whether to do them, and mail
+diffs or instructions to the address given in the `README' so they can
+be considered for the next release.  If you are using the cache, and at
+some point `config.cache' contains results you don't want to keep, you
+may remove or edit it.
 
-   Warning: it is recommended to use the same compiler and options as those
-   used to compile GMP, otherwise the compilation may fail, or you may get
-   poor performance. In the GMP build directory, simply type:
+   The file `configure.ac' (or `configure.in') is used to create
+`configure' by a program called `autoconf'.  You need `configure.ac' if
+you want to change it or regenerate `configure' using a newer version
+of `autoconf'.
 
-   $ egrep -w '(CC|CFLAGS)' config.log
+   The simplest way to compile this package is:
 
-   to see which compiler and options were used to build GMP. For example
-   on a Sparc v9 you may have to type:
-   
-   $ ./configure CC=cc CFLAGS="-fast -fns=no -fsimple=1 -xarch=v9" 
-   
-   Note 2: On x86, x86-64, and 64 bit PowerPC systems, using GMP-ECM's 
-   own modular multiplication code usually gives better performance than 
-   the GMP-based functions. On these systems, configure enables it by 
-   default. If the system is not identified correctly, you can enable 
-   it by adding the command line parameter "--enable-asm-redc" to 
-   configure. To disable it, add "--disable-asm-redc".
-   On 32-bit x86 systems that have SSE2 (e.g., Pentium 4, some Celeron, 
-   some Sempron, Via C7), use of SSE2 instructions in stage 2 of P-1, P+1, 
-   and ECM is enabled by default. You can enable it manually by adding the
-   command line parameter "--enable-sse2" and disable it by adding 
-   "--disable-sse2" to ./configure. The SSE2 code is not used in 64-bit
-   builds, regardless of these parameters.
+  1. `cd' to the directory containing the package's source code and type
+     `./configure' to configure the package for your system.
 
-   Note 3: If you want to use George Woltman's GWNUM library for speeding up
-   factoring base 2 numbers, obtain the file "gwnum_gpl_linux.tgz" from
-   ftp://mersenne.org/gimps/ (or gwnum_gpl.zip or gwnum_gpl_mingw.tgz
-   accordingly) and follow the instructions therein to compile
-   the library. Possibly the archive contains a readily compiled library
-   "gwnum.a" or "gwnum.lib". Then use
+     Running `configure' might take a while.  While running, it prints
+     some messages telling which features it is checking for.
 
-   $ ./configure --with-gwnum=<gwnum directory>
+  2. Type `make' to compile the package.
 
-   The directory must include the gwnum.a or gwnum.lib file as well as 
-   gwnum.h and related header files. The source file of the gwnum library
-   is available at <http://www.mersenne.org/source.htm>.
+  3. Optionally, type `make check' to run any self-tests that come with
+     the package, generally using the just-built uninstalled binaries.
 
-   To compile the GMP-ECM library as a shared library, use the
-   --enable-shared parameter for ./configure. Building a shared library is
-   disabled by default.
+  4. Type `make install' to install the programs and any data files and
+     documentation.  When installing into a prefix owned by root, it is
+     recommended that the package be configured and built as a regular
+     user, and only the `make install' phase executed with root
+     privileges.
 
-2) compile the program with:
+  5. Optionally, type `make installcheck' to repeat any self-tests, but
+     this time using the binaries in their final installed location.
+     This target does not install anything.  Running this target as a
+     regular user, particularly if the prior `make install' required
+     root privileges, verifies that the installation completed
+     correctly.
 
-   $ make
+  6. You can remove the program binaries and object files from the
+     source code directory by typing `make clean'.  To also remove the
+     files that `configure' created (so you can compile the package for
+     a different kind of computer), type `make distclean'.  There is
+     also a `make maintainer-clean' target, but that is intended mainly
+     for the package's developers.  If you use it, you may have to get
+     all sorts of other programs in order to regenerate files that came
+     with the distribution.
 
-   This will create the 'libecm.a' library, the 'libecm.so' shared
-   library if --enable-shared was used, the 'ecm' binary file,
-   the 'ecmfactor' binary file (sample use of libecm.a), and 'tune',
-   a tuning program.
+  7. Often, you can also type `make uninstall' to remove the installed
+     files again.  In practice, not all packages have tested that
+     uninstallation works correctly, even though it is required by the
+     GNU Coding Standards.
 
-3) to check that the program works correctly, type:
+  8. Some packages, particularly those that use Automake, provide `make
+     distcheck', which can by used by developers to test that all other
+     targets like `make install' and `make uninstall' work correctly.
+     This target is generally not run by end users.
 
-   $ make check
+Compilers and Options
+=====================
 
-   This will run several tests for P+1, P-1, ECM. These tests take a few
-   minutes. It should normally end with "All ECM tests are ok."
+   Some systems require unusual options for compilation or linking that
+the `configure' script does not know about.  Run `./configure --help'
+for details on some of the pertinent environment variables.
 
-4) (optional) to tune GMP-ECM, simply type:
+   You can give `configure' initial values for configuration parameters
+by setting variables in the command line or in the environment.  Here
+is an example:
 
-   $ make ecm-params; make
+     ./configure CC=c99 CFLAGS=-g LIBS=-lposix
 
-   See also README ("How to get the best of GMP-ECM?"). Note: if your machine
-   has not enough memory for the tune program, you can run it manually with
-   ./tune -max_log2_len 16 for example (the default is 18).
+   *Note Defining Variables::, for more details.
 
-5) (optional) you can then install the ecm binary and its man page:
+Compiling For Multiple Architectures
+====================================
 
-   $ make install
+   You can compile the package for more than one kind of computer at the
+same time, by placing the object files for each architecture in their
+own directory.  To do this, you can use GNU `make'.  `cd' to the
+directory where you want the object files and executables to go and run
+the `configure' script.  `configure' automatically checks for the
+source code in the directory that `configure' is in and in `..'.  This
+is known as a "VPATH" build.
 
-   By default, installation will be done in /usr/local.
-   You can change with the --prefix option of configure at step 1:
-   
-   $ ./configure --prefix=<my_installation_directory>
+   With a non-GNU `make', it is safer to compile the package for one
+architecture at a time in the source code directory.  After you have
+installed the package for one architecture, use `make distclean' before
+reconfiguring for another architecture.
 
-   The ecm binary will go in <my_installation_directory>/bin,
-   its man page in <my_installation_directory>/man/man1,
-   the ecm library in <my_installation_directory>/lib,
-   and the corresponding header file in <my_installation_directory>/include.
+   On MacOS X 10.5 and later systems, you can create libraries and
+executables that work on multiple system types--known as "fat" or
+"universal" binaries--by specifying multiple `-arch' options to the
+compiler but only a single `-arch' option to the preprocessor.  Like
+this:
 
-   You can also do "make uninstall" to remove those files.
+     ./configure CC="gcc -arch i386 -arch x86_64 -arch ppc -arch ppc64" \
+                 CXX="g++ -arch i386 -arch x86_64 -arch ppc -arch ppc64" \
+                 CPP="gcc -E" CXXCPP="g++ -E"
 
-6) If you like GMP-ECM, please help us factoring Cunningham numbers. First
-   download "cunningham.in" on <http://www.loria.fr/~zimmerma/ecmnet/>, then
-   perform one ecm test with B1=110e6 on each number of this file:
+   This is not guaranteed to produce working output in all cases, you
+may have to build one architecture at a time and combine the results
+using the `lipo' tool if you have problems.
 
-   $ ./ecm 110e6 < cunningham.in > cunningham.out &
+Installation Names
+==================
 
-   If you find any factor (grep found cunningham.out), please submit it
-   using the report form on <http://www.loria.fr/~zimmerma/ecmnet/>.
+   By default, `make install' installs the package's commands under
+`/usr/local/bin', include files under `/usr/local/include', etc.  You
+can specify an installation prefix other than `/usr/local' by giving
+`configure' the option `--prefix=PREFIX', where PREFIX must be an
+absolute file name.
 
-============================================================================
+   You can specify separate installation prefixes for
+architecture-specific files and architecture-independent files.  If you
+pass the option `--exec-prefix=PREFIX' to `configure', the package uses
+PREFIX as the prefix for installing programs and libraries.
+Documentation and other data files still use the regular prefix.
 
-For Windows users:
+   In addition, if you use an unusual directory layout you can give
+options like `--bindir=DIR' to specify different values for particular
+kinds of files.  Run `configure --help' for a list of the directories
+you can set and what kinds of files go in them.  In general, the
+default for these options is expressed in terms of `${prefix}', so that
+specifying just `--prefix' will affect all of the other directory
+specifications that were not explicitly provided.
 
-Windows users have two options for building GMP-ECM: (a) the use of a
-number of Unix on Windows environments, or (b) the use of Microsoft
-Visual Studio C/C++ 2008.  The former is described here while the latter
-is described in the readme.txt file within the build.vc9 subdirectory.
+   The most portable way to affect installation locations is to pass the
+correct locations to `configure'; however, many packages provide one or
+both of the following shortcuts of passing variable assignments to the
+`make install' command line to change installation locations without
+having to reconfigure or recompile.
 
-(a) For Windows users with a Unix-like environment:
+   The first method involves providing an override variable for each
+affected directory.  For example, `make install
+prefix=/alternate/directory' will choose an alternate location for all
+directory configuration variables that were expressed in terms of
+`${prefix}'.  Any directories that were specified during `configure',
+but not in terms of `${prefix}', must each be overridden at install
+time for the entire installation to be relocated.  The approach of
+makefile variable overrides for each directory variable is required by
+the GNU Coding Standards, and ideally causes no recompilation.
+However, some platforms have known limitations with the semantics of
+shared libraries that end up requiring recompilation when using this
+method, particularly noticeable in packages that use GNU Libtool.
 
-Before you can compile GMP-ECM, you will need a compiler. Several suitable
-compilers are freely available, for example as part of MinGW, CygWin and 
-Microsoft's Services for Unix (SFU). We recommend MinGW as it is a smaller 
-download than the others and generates binaries that run on any Windows 
-system, even if they don't have MinGW installed themselves.
+   The second method involves providing the `DESTDIR' variable.  For
+example, `make install DESTDIR=/alternate/directory' will prepend
+`/alternate/directory' before all installation names.  The approach of
+`DESTDIR' overrides is not required by the GNU Coding Standards, and
+does not work on platforms that have drive letters.  On the other hand,
+it does better at avoiding recompilation issues, and works well even
+when some directory options were not specified in terms of `${prefix}'
+at `configure' time.
 
-Step-by-step instructions, courtesy of Jes Hansen:
+Optional Features
+=================
 
-1) Download the current MinGW from
-   http://prdownloads.sf.net/mingw/MinGW-3.1.0-1.exe?download
-   and MSYS from http://prdownloads.sf.net/mingw/MSYS-1.0.10.exe?download
+   If the package supports it, you can cause programs to be installed
+with an extra prefix or suffix on their names by giving `configure' the
+option `--program-prefix=PREFIX' or `--program-suffix=SUFFIX'.
 
-2) Create a folder, for example C:\GNU, and install MinGW (execute the 
-   MinGW-3.1.0-1.exe file) into C:\GNU\MinGW
+   Some packages pay attention to `--enable-FEATURE' options to
+`configure', where FEATURE indicates an optional part of the package.
+They may also pay attention to `--with-PACKAGE' options, where PACKAGE
+is something like `gnu-as' or `x' (for the X Window System).  The
+`README' should mention any `--enable-' and `--with-' options that the
+package recognizes.
 
-3) Install MSYS (execute the MSYS-1.0.10.exe file) into C:\GNU\msys
-   Now you get an icon on the desktop where you can start the MinSys. Do
-   this, because is creates your home folder. Then exit it again.
+   For packages that use the X Window System, `configure' can usually
+find the X include and library files automatically, but if it doesn't,
+you can use the `configure' options `--x-includes=DIR' and
+`--x-libraries=DIR' to specify their locations.
 
-4) Download the latest version of GMP (in February 2010 the latest
-   version is 5.0.1, this will be assumed for the rest of this document) 
-   in .tar.gz format from http://gmplib.org/ and place it in your 
-   newly created home folder. The home folder is in C:\GNU\msys\home and 
-   has the same name as your Windows login name.
+   Some packages offer the ability to configure how verbose the
+execution of `make' will be.  For these packages, running `./configure
+--enable-silent-rules' sets the default to minimal output, which can be
+overridden with `make V=1'; while running `./configure
+--disable-silent-rules' sets the default to verbose, which can be
+overridden with `make V=0'.
 
-5) Download GMP-ECM (if you do not have it already) from
-   http://www.loria.fr/~zimmerma/records/ecmnet.html (check the News section
-   for the latest release, at the time of writing 6.3) and place it in your
-   home folder as well. You won't need an internet connection from now on, 
-   feel free to disconnect.
+Particular systems
+==================
 
-6) Start the MinSys up again from the desktop and type 
-   tar -xvzf gmp-5.0.1.tar.gz
-   cd gmp-5.0.1
-   ./configure
-   make install
-   cd ~
+   On HP-UX, the default C compiler is not ANSI C compatible.  If GNU
+CC is not installed, it is recommended to use the following options in
+order to use an ANSI C compiler:
 
-7) You are back in your home directory. Now type
-  tar -xvzf ecm-6.3.tar.gz
-  cd ecm-6.3
-  ./configure --with-gmp=/usr/local
-  make
+     ./configure CC="cc -Ae -D_XOPEN_SOURCE=500"
 
-8) Four executables should have appeared. The main application is ecm.exe,
-   which can be run from the Windows command line.
+and if that doesn't work, install pre-built binaries of GCC for HP-UX.
 
-============================================================================
+   On OSF/1 a.k.a. Tru64, some versions of the default C compiler cannot
+parse its `<wchar.h>' header file.  The option `-nodtk' can be used as
+a workaround.  If GNU CC is not installed, it is therefore recommended
+to try
 
-In case of a problem, report it to us, with:
+     ./configure CC="cc"
 
-- the output of the config.log file
+and if that doesn't work, try
 
-- the versions of GMP-ECM and GMP used (first output line), for example:
-  
-  GMP-ECM 6.3 [powered by GMP 5.0.1] [P+1]
+     ./configure CC="cc -nodtk"
 
-- the detailed input enabling us to reproduce the problem, for example:
+   On Solaris, don't put `/usr/ucb' early in your `PATH'.  This
+directory contains several dysfunctional programs; working variants of
+these programs are available in `/usr/bin'.  So, if you need `/usr/ucb'
+in your `PATH', put it _after_ `/usr/bin'.
 
-  $ echo 328006342451 | ./ecm -pp1 -x0 5 120 7043
+   On Haiku, software installed for all users goes in `/boot/common',
+not `/usr/local'.  It is recommended to use the following options:
 
-- the output you get.
+     ./configure --prefix=/boot/common
 
-Then send your bug report at <ecm-discuss@lists.gforge.inria.fr>.
-This is a public list, with archives available at
-<http://lists.gforge.inria.fr/pipermail/ecm-discuss/>.
+Specifying the System Type
+==========================
+
+   There may be some features `configure' cannot figure out
+automatically, but needs to determine by the type of machine the package
+will run on.  Usually, assuming the package is built to be run on the
+_same_ architectures, `configure' can figure that out, but if it prints
+a message saying it cannot guess the machine type, give it the
+`--build=TYPE' option.  TYPE can either be a short name for the system
+type, such as `sun4', or a canonical name which has the form:
+
+     CPU-COMPANY-SYSTEM
+
+where SYSTEM can have one of these forms:
+
+     OS
+     KERNEL-OS
+
+   See the file `config.sub' for the possible values of each field.  If
+`config.sub' isn't included in this package, then this package doesn't
+need to know the machine type.
+
+   If you are _building_ compiler tools for cross-compiling, you should
+use the option `--target=TYPE' to select the type of system they will
+produce code for.
+
+   If you want to _use_ a cross compiler, that generates code for a
+platform different from the build platform, you should specify the
+"host" platform (i.e., that on which the generated programs will
+eventually be run) with `--host=TYPE'.
+
+Sharing Defaults
+================
+
+   If you want to set default values for `configure' scripts to share,
+you can create a site shell script called `config.site' that gives
+default values for variables like `CC', `cache_file', and `prefix'.
+`configure' looks for `PREFIX/share/config.site' if it exists, then
+`PREFIX/etc/config.site' if it exists.  Or, you can set the
+`CONFIG_SITE' environment variable to the location of the site script.
+A warning: not all `configure' scripts look for a site script.
+
+Defining Variables
+==================
+
+   Variables not defined in a site shell script can be set in the
+environment passed to `configure'.  However, some packages may run
+configure again during the build, and the customized values of these
+variables may be lost.  In order to avoid this problem, you should set
+them in the `configure' command line, using `VAR=value'.  For example:
+
+     ./configure CC=/usr/local2/bin/gcc
+
+causes the specified `gcc' to be used as the C compiler (unless it is
+overridden in the site shell script).
+
+Unfortunately, this technique does not work for `CONFIG_SHELL' due to
+an Autoconf bug.  Until the bug is fixed you can use this workaround:
+
+     CONFIG_SHELL=/bin/bash /bin/bash ./configure CONFIG_SHELL=/bin/bash
+
+`configure' Invocation
+======================
+
+   `configure' recognizes the following options to control how it
+operates.
+
+`--help'
+`-h'
+     Print a summary of all of the options to `configure', and exit.
+
+`--help=short'
+`--help=recursive'
+     Print a summary of the options unique to this package's
+     `configure', and exit.  The `short' variant lists options used
+     only in the top level, while the `recursive' variant lists options
+     also present in any nested packages.
+
+`--version'
+`-V'
+     Print the version of Autoconf used to generate the `configure'
+     script, and exit.
+
+`--cache-file=FILE'
+     Enable the cache: use and save the results of the tests in FILE,
+     traditionally `config.cache'.  FILE defaults to `/dev/null' to
+     disable caching.
+
+`--config-cache'
+`-C'
+     Alias for `--cache-file=config.cache'.
+
+`--quiet'
+`--silent'
+`-q'
+     Do not print messages saying which checks are being made.  To
+     suppress all normal output, redirect it to `/dev/null' (any error
+     messages will still be shown).
+
+`--srcdir=DIR'
+     Look for the package's source code in directory DIR.  Usually
+     `configure' can determine that directory automatically.
+
+`--prefix=DIR'
+     Use DIR as the installation prefix.  *note Installation Names::
+     for more details, including other options available for fine-tuning
+     the installation locations.
+
+`--no-create'
+`-n'
+     Run the configure checks, but stop before creating any output
+     files.
+
+`configure' also accepts some other, not widely useful, options.  Run
+`configure --help' for more details.
+

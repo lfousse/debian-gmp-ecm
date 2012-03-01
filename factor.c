@@ -1,6 +1,6 @@
 /* factor.c - public interface for libecm.
 
-  Copyright 2005 Paul Zimmermann and Alexander Kruppa.
+  Copyright 2005, 2006, 2007, 2009, 2011 Paul Zimmermann and Alexander Kruppa.
 
   This file is part of the ECM Library.
 
@@ -54,6 +54,13 @@ ecm_init (ecm_params q)
   MEMORY_UNTAG;
   q->use_ntt = 1;
   q->stop_asap = NULL;
+  q->batch = 0; /* no batch mode by default in library mode */
+  q->batch_B1 = 1.0;
+  mpz_init_set_ui(q->batch_s, 1);
+  q->gw_k = 0.0;
+  q->gw_b = 0;
+  q->gw_n = 0;
+  q->gw_c = 0;
 }
 
 void
@@ -65,6 +72,7 @@ ecm_clear (ecm_params q)
   mpz_clear (q->B2min);
   mpz_clear (q->B2);
   gmp_randclear (q->rng);
+  mpz_clear (q->batch_s);
 }
 
 /* returns ECM_FACTOR_FOUND, ECM_NO_FACTOR_FOUND, or ECM_ERROR */
@@ -92,8 +100,9 @@ ecm_factor (mpz_t f, mpz_t n, double B1, ecm_params p)
   if (p->method == ECM_ECM)
     res = ecm (f, p->x, p->sigma, n, p->go, &(p->B1done), B1, p->B2min, p->B2, 
                B2scale, p->k, p->S, p->verbose, p->repr, p->nobase2step2, p->use_ntt, p->sigma_is_A,
-	       p->os, p->es, p->chkfilename, p->TreeFilename, p->maxmem, 
-	       p->stage1time, p->rng, p->stop_asap);
+               p->os, p->es, p->chkfilename, p->TreeFilename, p->maxmem, 
+               p->stage1time, p->rng, p->stop_asap, p->batch, p->batch_s, 
+               p->gw_k, p->gw_b, p->gw_n, p->gw_c);
   else if (p->method == ECM_PM1)
     res = pm1 (f, p->x, n, p->go, &(p->B1done), B1, p->B2min, p->B2, B2scale,
                p->k, p->S, p->verbose, p->repr, p->use_ntt, p->os, p->es,

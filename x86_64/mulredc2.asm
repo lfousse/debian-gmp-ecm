@@ -145,7 +145,9 @@ ifdef(`WANT_ASSERT',
 `	pushf
 	testq	%T0, %T0
 	jz	2f
-	call	GSYM_PREFIX`'abort
+	lea     _GLOBAL_OFFSET_TABLE_(%rip), %rbx # if we do PIC code, we 
+		# need to set rbx; if not, it doesnt hurt
+	call	GSYM_PREFIX`'abort@plt
 LABEL_SUFFIX(2)
 	popf')
 define(`TT', defn(`T0'))dnl
@@ -215,7 +217,9 @@ ifdef(`WANT_ASSERT',
 `	pushf
 	testq	%T0, %T0
 	jz	4f
-	call	GSYM_PREFIX`'abort
+	lea     _GLOBAL_OFFSET_TABLE_(%rip), %rbx # if we do PIC code, we 
+		# need to set rbx; if not, it doesnt hurt
+	call	GSYM_PREFIX`'abort@plt
 LABEL_SUFFIX(4)
 	popf')
 define(`TT', defn(`T0'))dnl

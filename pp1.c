@@ -215,7 +215,7 @@ pp1_stage1 (mpz_t f, mpres_t P0, mpmod_t n, double B1, double *B1done,
   /* then all primes > sqrt(B1) and taken with exponent 1 */
   for (; p <= B1; p = getprime ())
     {
-      pp1_mul_prac (P0, (unsigned long) p, n, P, Q, R, S, T);
+      pp1_mul_prac (P0, (ecm_uint) p, n, P, Q, R, S, T);
   
       if (stop_asap != NULL && (*stop_asap) ())
         {
@@ -242,9 +242,6 @@ pp1_stage1 (mpz_t f, mpres_t P0, mpmod_t n, double B1, double *B1done,
     *B1done = p;
   
   mpres_sub_ui (P, P0, 2, n);
-#ifndef FULL_REDUCTION
-  mpres_normalize (P); /* needed for gcd */
-#endif
   mpres_gcd (f, P, n);
   youpi = mpz_cmp_ui (f, 1);
 
@@ -893,6 +890,9 @@ pp1 (mpz_t f, mpz_t p, mpz_t n, mpz_t go, double *B1done, double B1,
 		    &faststage2_params, B2min, B2, use_ntt, ECM_PP1);
       if (P == ECM_ERROR)
 	{
+          outputf (OUTPUT_ERROR, 
+                   "Error: cannot choose suitable P value for your stage 2 "
+                   "parameters.\nTry a shorter B2min,B2 interval.\n");
 	  mpz_clear (faststage2_params.m_1);
 	  return ECM_ERROR;
 	}
@@ -970,12 +970,12 @@ pp1 (mpz_t f, mpz_t p, mpz_t n, mpz_t go, double *B1done, double B1,
   mpres_init (a, modulus);
   mpres_set_z (a, p, modulus);
 
-  /* since pp1_mul_prac takes an unsigned long, we have to check
-     that B1 <= MAX_ULONG */
-  if (B1 > (double) ULONG_MAX)
+  /* since pp1_mul_prac takes an ecm_uint, we have to check
+     that B1 <= ECM_UINT_MAX */
+  if (B1 > (double) ECM_UINT_MAX)
     {
       outputf (OUTPUT_ERROR, "Error, maximal step1 bound for P+1 is %lu\n", 
-               ULONG_MAX);
+               ECM_UINT_MAX);
       youpi = ECM_ERROR;
       goto clear_and_exit;
     }

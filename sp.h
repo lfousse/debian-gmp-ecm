@@ -1,6 +1,7 @@
 /* sp.h - header file for the sp library
 
-  Copyright 2005, 2008 Dave Newman, Jason Papadopoulos and Paul Zimmermann.
+  Copyright 2005, 2008, 2010 Dave Newman, Jason Papadopoulos and
+                             Paul Zimmermann.
   Copyright 1991, 1993, 1994, 1995, 1996, 1997, 1999, 2000, 2001, 2002, 2003,
   2004, 2005, 2010 Free Software Foundation, Inc. (for parts from gmp-impl.h).
 
@@ -81,6 +82,10 @@ typedef mp_limb_t UDItype;
 #define LONGLONG_STANDALONE
 #include "longlong.h"
 
+/* we use the remainder tree for products of 2^I0_THRESHOLD moduli or more,
+   and the naive method for fewer moduli. We must have I0_THRESHOLD >= 1. */
+#define I0_THRESHOLD 7
+
 /*********
  * TYPES *
  *********/
@@ -122,6 +127,13 @@ typedef __sp_nttdata sp_nttdata_t[1];
 
 #define MAX_NTT_BLOCK_SIZE 128
 
+/* Which steps to perform in convolution product funtions:
+   forward transform, pair-wise multiplication, inverse transform */
+#define NTT_MUL_STEP_FFT1 1
+#define NTT_MUL_STEP_FFT2 2
+#define NTT_MUL_STEP_MUL 4
+#define NTT_MUL_STEP_IFFT 8
+
 /* SPM */
 
 /* small prime modulus - this contains some precomputed constants to
@@ -157,6 +169,10 @@ typedef struct
     /* precomputed crt constants, see mpzspm.c */
     mpzv_t crt1, crt2;
     sp_t *crt3, **crt4, *crt5;
+
+    /* product tree to speed up conversion from mpz to sp */
+    mpzv_t *T;            /* product tree */
+    unsigned int d;       /* ceil(log(sp_num)/log(2)) */
   } __mpzspm_struct;
 
 typedef __mpzspm_struct * mpzspm_t;
@@ -509,6 +525,14 @@ void mpzspv_pwmul (mpzspv_t, spv_size_t, mpzspv_t, spv_size_t, mpzspv_t,
 void mpzspv_to_ntt (mpzspv_t, spv_size_t, spv_size_t, spv_size_t, int,
     mpzspm_t);
 void mpzspv_from_ntt (mpzspv_t, spv_size_t, spv_size_t, spv_size_t, mpzspm_t);
+void mpzspv_mul_ntt (mpzspv_t, spv_size_t, mpzspv_t, spv_size_t, spv_size_t, 
+    mpzspv_t, spv_size_t, spv_size_t, spv_size_t, int, spv_size_t, mpzspm_t, 
+    int);
 void mpzspv_random (mpzspv_t, spv_size_t, spv_size_t, mpzspm_t);
+void mpzspv_to_dct1 (mpzspv_t, mpzspv_t, spv_size_t, spv_size_t, mpzspv_t, 
+    mpzspm_t);
+void mpzspv_mul_by_dct (mpzspv_t, const mpzspv_t, spv_size_t, const mpzspm_t, 
+    int);
+void mpzspv_sqr_reciprocal (mpzspv_t, spv_size_t, const mpzspm_t);
 
 #endif /* _SP_H */
