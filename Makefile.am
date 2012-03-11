@@ -30,12 +30,12 @@ libecm_la_SOURCES = ecm.c ecm2.c pm1.c pp1.c getprime.c listz.c lucas.c \
 		   schoen_strass.c ks-multiply.c rho.c bestd.c auxlib.c \
 		   random.c factor.c sp.c spv.c spm.c mpzspm.c mpzspv.c \
 		   ntt_gfp.c ecm_ntt.c pm1fs2.c mul_fft.c sets_long.c \
-		   auxarith.c batch.c
+		   auxarith.c batch.c ellparam_batch.c
 # Link the asm redc code (if we use it) into libecm.la
 libecm_la_CPPFLAGS = $(MULREDCINCPATH)
 libecm_la_CFLAGS = $(OPENMP_CFLAGS)
 libecm_la_LDFLAGS = '-version-info 0:0:0'
-libecm_la_LIBADD = $(MULREDCLIBRARY) $(GMPLIB)
+libecm_la_LIBADD = $(MULREDCLIBRARY)
 
 bin_PROGRAMS = ecm
 noinst_PROGRAMS = tune ecmfactor ecmfactor2
@@ -83,7 +83,8 @@ if WITH_GWNUM
 endif
 
 include_HEADERS = ecm.h
-noinst_HEADERS = ecm-impl.h ecm-gmp.h ecm-ecm.h sp.h longlong.h ecm-params.h
+noinst_HEADERS = ecm-impl.h ecm-gmp.h ecm-ecm.h sp.h longlong.h ecm-params.h \
+                 mpmod.h
 
 EXTRA_DIST = test.pm1 test.pp1 test.ecm README.lib INSTALL-ecm ecm.xml \
              ecm-params.h.alpha-ev5 ecm-params.h.athlon64 \
@@ -94,11 +95,11 @@ EXTRA_DIST = test.pm1 test.pp1 test.ecm README.lib INSTALL-ecm ecm.xml \
              ecm-params.h.mips64el ecm-params.h.armv5tel \
              ecm-params.h.sparc64 ecm-params.h.ia64 \
              ecm-params.h.hppa2.0 ecm-params.h.alpha-ev56 \
-             ecm-params.h.core2 \
+             ecm-params.h.core2 ecm-params.h.corei5 \
              mul_fft-params.h.athlon64 mul_fft-params.h.pentium3 \
              mul_fft-params.h.default mul_fft-params.h.pentium4
 
-DIST_SUBDIRS = athlon pentium4 x86_64 powerpc64 build.vc9
+DIST_SUBDIRS = athlon pentium4 x86_64 powerpc64 build.vc10
 
 DISTCLEANFILES = config.m4
 

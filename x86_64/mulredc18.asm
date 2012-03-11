@@ -130,8 +130,10 @@ ifdef(`WINDOWS64_ABI',
 	movq 	%rax, %T0		# Move low word of product to T0
 	movq	%rdx, %T1		# Move high word of product to T1
 
-	imulq	%INVM, %rax		# %rax = ((x[i]*y[0]+tmp[0])*invm)%2^64
-	movq	%rax, %U		# this is the new u value
+ifdef(`MULREDC_SVOBODA',
+, `'
+`	imulq	%INVM, %rax		# %rax = ((x[i]*y[0]+tmp[0])*invm)%2^64'
+) 	movq	%rax, %U		# this is the new u value
 
 	mulq	(%MP)			# multipy u*m[0]
 	addq	%rax, %T0		# Now %T0 = 0, need not be stored
