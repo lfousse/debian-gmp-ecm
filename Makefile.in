@@ -88,14 +88,13 @@ am__base_list = \
 am__installdirs = "$(DESTDIR)$(libdir)" "$(DESTDIR)$(bindir)" \
 	"$(DESTDIR)$(man1dir)" "$(DESTDIR)$(includedir)"
 LTLIBRARIES = $(lib_LTLIBRARIES)
-am__DEPENDENCIES_1 =
-libecm_la_DEPENDENCIES = $(MULREDCLIBRARY) $(am__DEPENDENCIES_1)
+libecm_la_DEPENDENCIES = $(MULREDCLIBRARY)
 am__libecm_la_SOURCES_DIST = ecm.c ecm2.c pm1.c pp1.c getprime.c \
 	listz.c lucas.c stage2.c toomcook.c mpmod.c mul_lo.c \
 	polyeval.c median.c schoen_strass.c ks-multiply.c rho.c \
 	bestd.c auxlib.c random.c factor.c sp.c spv.c spm.c mpzspm.c \
 	mpzspv.c ntt_gfp.c ecm_ntt.c pm1fs2.c mul_fft.c sets_long.c \
-	auxarith.c batch.c memory.c Fgw.c
+	auxarith.c batch.c ellparam_batch.c memory.c Fgw.c
 @MEMORY_DEBUG_TRUE@am__objects_1 = libecm_la-memory.lo
 @WITH_GWNUM_TRUE@am__objects_2 = libecm_la-Fgw.lo
 am_libecm_la_OBJECTS = libecm_la-ecm.lo libecm_la-ecm2.lo \
@@ -110,7 +109,8 @@ am_libecm_la_OBJECTS = libecm_la-ecm.lo libecm_la-ecm2.lo \
 	libecm_la-mpzspv.lo libecm_la-ntt_gfp.lo libecm_la-ecm_ntt.lo \
 	libecm_la-pm1fs2.lo libecm_la-mul_fft.lo \
 	libecm_la-sets_long.lo libecm_la-auxarith.lo \
-	libecm_la-batch.lo $(am__objects_1) $(am__objects_2)
+	libecm_la-batch.lo libecm_la-ellparam_batch.lo \
+	$(am__objects_1) $(am__objects_2)
 libecm_la_OBJECTS = $(am_libecm_la_OBJECTS)
 libecm_la_LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) \
 	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(libecm_la_CFLAGS) \
@@ -120,6 +120,7 @@ libecm_la_LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) \
 PROGRAMS = $(bin_PROGRAMS) $(noinst_PROGRAMS)
 am_batch_OBJECTS = batch.$(OBJEXT)
 batch_OBJECTS = $(am_batch_OBJECTS)
+am__DEPENDENCIES_1 =
 batch_DEPENDENCIES = $(am__DEPENDENCIES_1)
 bench_mulredc_SOURCES = bench_mulredc.c
 bench_mulredc_OBJECTS = bench_mulredc-bench_mulredc.$(OBJEXT)
@@ -393,12 +394,12 @@ libecm_la_SOURCES = ecm.c ecm2.c pm1.c pp1.c getprime.c listz.c \
 	median.c schoen_strass.c ks-multiply.c rho.c bestd.c auxlib.c \
 	random.c factor.c sp.c spv.c spm.c mpzspm.c mpzspv.c ntt_gfp.c \
 	ecm_ntt.c pm1fs2.c mul_fft.c sets_long.c auxarith.c batch.c \
-	$(am__append_2) $(am__append_4)
+	ellparam_batch.c $(am__append_2) $(am__append_4)
 # Link the asm redc code (if we use it) into libecm.la
 libecm_la_CPPFLAGS = $(MULREDCINCPATH)
 libecm_la_CFLAGS = $(OPENMP_CFLAGS)
 libecm_la_LDFLAGS = '-version-info 0:0:0'
-libecm_la_LIBADD = $(MULREDCLIBRARY) $(GMPLIB)
+libecm_la_LIBADD = $(MULREDCLIBRARY)
 # Most binaries want to link libecm.la, and the ones which don't will
 # have their own _LDADD which overrides the default LDADD here
 LDADD = libecm.la $(GMPLIB)
@@ -423,7 +424,9 @@ batch_LDADD = $(GMPLIB)
 @WITH_GWNUM_TRUE@ecm_DEPENDENCIES = gwdata.ld
 @WITH_GWNUM_TRUE@ecm_LDFLAGS = $(AM_LDFLAGS) -Wl,gwdata.ld
 include_HEADERS = ecm.h
-noinst_HEADERS = ecm-impl.h ecm-gmp.h ecm-ecm.h sp.h longlong.h ecm-params.h
+noinst_HEADERS = ecm-impl.h ecm-gmp.h ecm-ecm.h sp.h longlong.h ecm-params.h \
+                 mpmod.h
+
 EXTRA_DIST = test.pm1 test.pp1 test.ecm README.lib INSTALL-ecm ecm.xml \
              ecm-params.h.alpha-ev5 ecm-params.h.athlon64 \
              ecm-params.h.default ecm-params.h.alpha-ev6 \
@@ -433,11 +436,11 @@ EXTRA_DIST = test.pm1 test.pp1 test.ecm README.lib INSTALL-ecm ecm.xml \
              ecm-params.h.mips64el ecm-params.h.armv5tel \
              ecm-params.h.sparc64 ecm-params.h.ia64 \
              ecm-params.h.hppa2.0 ecm-params.h.alpha-ev56 \
-             ecm-params.h.core2 \
+             ecm-params.h.core2 ecm-params.h.corei5 \
              mul_fft-params.h.athlon64 mul_fft-params.h.pentium3 \
              mul_fft-params.h.default mul_fft-params.h.pentium4
 
-DIST_SUBDIRS = athlon pentium4 x86_64 powerpc64 build.vc9
+DIST_SUBDIRS = athlon pentium4 x86_64 powerpc64 build.vc10
 DISTCLEANFILES = config.m4
 dist_man_MANS = ecm.1
 all: config.h
@@ -633,6 +636,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libecm_la-ecm.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libecm_la-ecm2.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libecm_la-ecm_ntt.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libecm_la-ellparam_batch.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libecm_la-factor.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libecm_la-getprime.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libecm_la-ks-multiply.Plo@am__quote@
@@ -927,6 +931,13 @@ libecm_la-batch.lo: batch.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='batch.c' object='libecm_la-batch.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libecm_la_CPPFLAGS) $(CPPFLAGS) $(libecm_la_CFLAGS) $(CFLAGS) -c -o libecm_la-batch.lo `test -f 'batch.c' || echo '$(srcdir)/'`batch.c
+
+libecm_la-ellparam_batch.lo: ellparam_batch.c
+@am__fastdepCC_TRUE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libecm_la_CPPFLAGS) $(CPPFLAGS) $(libecm_la_CFLAGS) $(CFLAGS) -MT libecm_la-ellparam_batch.lo -MD -MP -MF $(DEPDIR)/libecm_la-ellparam_batch.Tpo -c -o libecm_la-ellparam_batch.lo `test -f 'ellparam_batch.c' || echo '$(srcdir)/'`ellparam_batch.c
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/libecm_la-ellparam_batch.Tpo $(DEPDIR)/libecm_la-ellparam_batch.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='ellparam_batch.c' object='libecm_la-ellparam_batch.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libecm_la_CPPFLAGS) $(CPPFLAGS) $(libecm_la_CFLAGS) $(CFLAGS) -c -o libecm_la-ellparam_batch.lo `test -f 'ellparam_batch.c' || echo '$(srcdir)/'`ellparam_batch.c
 
 libecm_la-memory.lo: memory.c
 @am__fastdepCC_TRUE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libecm_la_CPPFLAGS) $(CPPFLAGS) $(libecm_la_CFLAGS) $(CFLAGS) -MT libecm_la-memory.lo -MD -MP -MF $(DEPDIR)/libecm_la-memory.Tpo -c -o libecm_la-memory.lo `test -f 'memory.c' || echo '$(srcdir)/'`memory.c

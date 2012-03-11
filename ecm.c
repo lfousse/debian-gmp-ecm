@@ -34,8 +34,17 @@
 
 /* the following factor takes into account the smaller expected smoothness
    for Montgomery's curves (batch mode) with respect to Suyama's curves */
-#define BATCH_EXTRA_SMOOTHNESS (1.0 / 3.0)
-
+#if GMP_NUMB_BITS >= 64
+/* For GMP_NUMB_BITS >= 64 we use A=4d-2 with d a square (see main.c). In that
+   case, Cyril Bouvier and Razvan Barbulescu have shown that the average
+   expected torsion is that of a generic Suyama curve multiplied by the
+   constant 2^(1/3)/(3*3^(1/128)) */
+#define BATCH1_EXTRA_SMOOTHNESS 0.416384512396064
+#else
+/* For A=4d-2 for d a random integer, the average expected torsion is that
+   of a generic Suyama curve multiplied by the constant 1/(3*3^(1/128)) */
+#define BATCH1_EXTRA_SMOOTHNESS 0.330484606500389
+#endif
 /******************************************************************************
 *                                                                             *
 *                            Elliptic Curve Method                            *
@@ -74,18 +83,18 @@ get_curve_from_sigma (mpz_t f, mpres_t A, mpres_t x, mpz_t sigma, mpmod_t n)
 
   mpres_set_z  (u, sigma, n);
   mpres_mul_ui (v, u, 4, n);   /* v = (4*sigma) mod n */
-  mpres_mul (t, u, u, n);
+  mpres_sqr (t, u, n);
   mpres_sub_ui (u, t, 5, n);       /* u = (sigma^2-5) mod n */
-  mpres_mul (t, u, u, n);
+  mpres_sqr (t, u, n);
   mpres_mul (x, t, u, n);          /* x = (u^3) mod n */
-  mpres_mul (t, v, v, n);
+  mpres_sqr (t, v, n);
   mpres_mul (z, t, v, n);          /* z = (v^3) mod n */
   mpres_mul (t, x, v, n);
   mpres_mul_ui (b, t, 4, n);       /* b = (4*x*v) mod n */
   mpres_mul_ui (t, u, 3, n);
   mpres_sub (u, v, u, n);          /* u' = v-u */
   mpres_add (v, t, v, n);          /* v' = (3*u+v) mod n */
-  mpres_mul (t, u, u, n);
+  mpres_sqr (t, u, n);
   mpres_mul (u, t, u, n);          /* u'' = ((v-u)^3) mod n */
   mpres_mul (A, u, v, n);          /* a = (u'' * v') mod n = 
                                       ((v-u)^3 * (3*u+v)) mod n */
@@ -155,7 +164,7 @@ montgomery_to_weierstrass (mpz_t f, mpres_t x, mpres_t y, mpres_t A, mpmod_t n)
   mpres_mul (x, x, y, n);    /* (3x+a)/(3g) */
 
   /* update A */
-  mpres_mul (A, A, A, n);    /* a^2 */
+  mpres_sqr (A, A, n);    /* a^2 */
   mpres_sub_ui (A, A, 3, n);
   mpres_neg (A, A, n);       /* 3-a^2 */
   mpres_mul (A, A, y, n);    /* (3-a^2)/(3g^2) */
@@ -195,8 +204,8 @@ add3 (mpres_t x3, mpres_t z3, mpres_t x2, mpres_t z2, mpres_t x1, mpres_t z1,
   mpres_add (w, u, v, n);        /* w = 2*(x1*x2-z1*z2) */
   mpres_sub (v, u, v, n);        /* v = 2*(x2*z1-x1*z2) */
 
-  mpres_mul (w, w, w, n);        /* w = 4*(x1*x2-z1*z2)^2 */
-  mpres_mul (v, v, v, n);        /* v = 4*(x2*z1-x1*z2)^2 */
+  mpres_sqr (w, w, n);           /* w = 4*(x1*x2-z1*z2)^2 */
+  mpres_sqr (v, v, n);           /* v = 4*(x2*z1-x1*z2)^2 */
 
   if (x == x3) /* same variable: in-place variant */
     {
@@ -227,9 +236,9 @@ duplicate (mpres_t x2, mpres_t z2, mpres_t x1, mpres_t z1, mpmod_t n,
            mpres_t b, mpres_t u, mpres_t v, mpres_t w)
 {
   mpres_add (u, x1, z1, n);
-  mpres_mul (u, u, u, n);   /* u = (x1+z1)^2 mod n */
+  mpres_sqr (u, u, n);      /* u = (x1+z1)^2 mod n */
   mpres_sub (v, x1, z1, n);
-  mpres_mul (v, v, v, n);   /* v = (x1-z1)^2 mod n */
+  mpres_sqr (v, v, n);      /* v = (x1-z1)^2 mod n */
   mpres_mul (x2, u, v, n);  /* x2 = u*v = (x1^2 - z1^2)^2 mod n */
   mpres_sub (w, u, v, n);   /* w = u-v = 4*x1*z1 */
   mpres_mul (u, w, b, n);   /* u = w*b = ((A+2)/4*(4*x1*z1)) mod n */
@@ -625,7 +634,7 @@ ecm_stage1 (mpz_t f, mpres_t x, mpres_t A, mpmod_t n, double B1,
   mpres_set_ui (z, 1, n);
 
   mpres_add_ui (b, A, 2, n);
-  mpres_div_2exp (b, b, 2, n); /* b == (A0+2)*B/4, where B=2^(k*GMP_NUMB_LIMB)
+  mpres_div_2exp (b, b, 2, n); /* b == (A0+2)*B/4, where B=2^(k*GMP_NUMB_BITS)
                                   for MODMULN or REDC, B=1 otherwise */
   /* preload group order */
   if (go != NULL)
@@ -752,7 +761,7 @@ print_expcurves (double B1, const mpz_t B2, unsigned long dF, unsigned long k,
       prob = ecmprob (B1, mpz_get_d (B2),
                       /* in batch mode, the extra smoothness is smaller */
                       pow (10., i - .5) /
-                      ((batch) ? BATCH_EXTRA_SMOOTHNESS : 1.0),
+                      ((batch == 1) ? BATCH1_EXTRA_SMOOTHNESS : 1.0),
                       (double) dF * dF * k, S);
       if (prob > 1. / 10000000)
         outputf (OUTPUT_VERBOSE, "%.0f%c", floor (1. / prob + .5), sep);
@@ -782,7 +791,7 @@ print_exptime (double B1, const mpz_t B2, unsigned long dF, unsigned long k,
       prob = ecmprob (B1, mpz_get_d (B2),
                       /* in batch mode, the extra smoothness is smaller */
                       pow (10., i - .5) /
-                      ((batch) ? BATCH_EXTRA_SMOOTHNESS : 1.0),
+                      ((batch == 1) ? BATCH1_EXTRA_SMOOTHNESS : 1.0),
                       (double) dF * dF * k, S);
       exptime = (prob > 0.) ? tottime / prob : HUGE_VAL;
       outputf (OUTPUT_TRACE, "Digits: %d, Total time: %.0f, probability: "
@@ -900,6 +909,20 @@ ecm (mpz_t f, mpz_t x, mpz_t sigma, mpz_t n, mpz_t go, double *B1done,
   set_verbose (verbose);
   ECM_STDOUT = (os == NULL) ? stdout : os;
   ECM_STDERR = (es == NULL) ? stdout : es;
+
+#ifdef MPRESN_NO_ADJUSTMENT
+  /* When no adjustment is made in mpresn_ functions, N should be smaller
+     than B^n/16 */
+  if (mpz_sizeinbase (n, 2) > mpz_size (n) * GMP_NUMB_BITS - 4)
+    {
+      outputf (OUTPUT_ERROR, "Error, N should be smaller than B^n/16\n");
+      return ECM_ERROR;
+    }
+#endif
+
+  /* In batch mode, we force MODMULN */
+  if (batch)
+    repr = ECM_MOD_MODMULN;
 
   /* if n is even, return 2 */
   if (mpz_divisible_2exp_p (n, 1))
@@ -1035,6 +1058,49 @@ ecm (mpz_t f, mpz_t x, mpz_t sigma, mpz_t n, mpz_t go, double *B1done,
       if (youpi != ECM_NO_FACTOR_FOUND)
 	  goto end_of_ecm;
     }
+  else if (sigma_is_A == 1 && batch == 1)
+    {
+      if (mpz_sgn (sigma) == 0)
+        {
+          int i;
+
+          /* We choose a positive integer d' smaller than B=2^GMP_NUMB_BITS
+             and consider d = d'/B and A = 4d-2 */
+          do
+            mpz_urandomb (sigma, rng, 32);  /* generates d' <> 0 */
+          while (mpz_sgn (sigma) == 0);
+          ASSERT((GMP_NUMB_BITS % 2) == 0);
+          if (GMP_NUMB_BITS >= 64)
+            mpz_mul (sigma, sigma, sigma);      /* ensures d' (and thus d) is
+                                                   a square, which increases
+                                                   the success probability */
+          /* divide d' by B to get d */
+          for (i = 0; i < GMP_NUMB_BITS; i++)
+            {
+              if (mpz_tstbit (sigma, 0) == 1)
+                mpz_add (sigma, sigma, n);
+              mpz_div_2exp (sigma, sigma, 1);
+            }
+          mpz_mul_2exp (sigma, sigma, 2);           /* 4d */
+          mpz_sub_ui (sigma, sigma, 2);             /* 4d-2 */
+        }
+      
+      mpres_set_z (P.A, sigma, modulus);
+    }
+  else if (sigma_is_A == 1 && batch == 2)
+    {
+      if (mpz_sgn (sigma) == 0)
+        {
+          mpz_urandomb (sigma, rng, 32);
+          mpz_add_ui (sigma, sigma, 2);
+          youpi = get_curve_from_ell_parametrization (f, P.A, sigma, modulus);
+          mpres_get_z (sigma, P.A, modulus);
+          if (youpi != ECM_NO_FACTOR_FOUND)
+	          goto end_of_ecm;
+        }
+      else    /* sigma contains the A value */
+          mpres_set_z (P.A, sigma, modulus);
+    }
   else if (sigma_is_A == 1)
     {
       /* sigma contains the A value */
@@ -1092,9 +1158,9 @@ ecm (mpz_t f, mpz_t x, mpz_t sigma, mpz_t n, mpz_t go, double *B1done,
       mpz_init (t);
       MEMORY_UNTAG;
       mpres_get_z (t, P.A, modulus);
-      outputf (OUTPUT_RESVERBOSE, "a=%Zd\n", t);
+      outputf (OUTPUT_RESVERBOSE, "A=%Zd\n", t);
       mpres_get_z (t, P.x, modulus);
-      outputf (OUTPUT_RESVERBOSE, "starting point: x=%Zd\n", t);
+      outputf (OUTPUT_RESVERBOSE, "starting point: x0=%Zd\n", t);
       mpz_clear (t);
     }
 
@@ -1118,7 +1184,7 @@ ecm (mpz_t f, mpz_t x, mpz_t sigma, mpz_t n, mpz_t go, double *B1done,
 #ifdef HAVE_GWNUM
   /* We will only use GWNUM for numbers of the form k*b^n+c */
 
-  if (gw_b != 0 && B1 >= *B1done && batch != 1)
+  if (gw_b != 0 && B1 >= *B1done && batch == 0)
       youpi = gw_ecm_stage1 (f, &P, modulus, B1, B1done, go, gw_k, gw_b, gw_n, gw_c);
 
   /* At this point B1 == *B1done unless interrupted, or no GWNUM ecm_stage1
@@ -1130,9 +1196,10 @@ ecm (mpz_t f, mpz_t x, mpz_t sigma, mpz_t n, mpz_t go, double *B1done,
 
   if (B1 > *B1done)
     {
-      if (batch == 1)
+      if (batch != 0)
         /* FIXME: go, stop_asap and chkfilename are ignored in batch mode */
-        youpi = ecm_stage1_batch (f, P.x, sigma, modulus, B1, B1done, batch_s);
+        youpi = ecm_stage1_batch (f, P.x, P.A, modulus, B1, B1done, batch, 
+                                                            batch_s);
       else
         youpi = ecm_stage1 (f, P.x, P.A, modulus, B1, B1done, go, stop_asap,
                             chkfilename);
