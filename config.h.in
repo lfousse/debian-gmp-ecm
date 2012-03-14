@@ -180,6 +180,9 @@
 /* Define to 1 if you have the `__gmpn_mullo_n' function. */
 #undef HAVE___GMPN_MULLO_N
 
+/* Define to 1 if you have the `__gmpn_preinv_mod_1' function. */
+#undef HAVE___GMPN_PREINV_MOD_1
+
 /* Define to 1 if you have the `__gmpn_redc_1' function. */
 #undef HAVE___GMPN_REDC_1
 
