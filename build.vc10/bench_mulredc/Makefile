@@ -61,11 +61,11 @@ AWK = gawk
 CC = gcc -std=gnu99
 CCAS = gcc -std=gnu99
 CCASDEPMODE = depmode=gcc3
-CCASFLAGS = -O2 -pedantic -m64 -mtune=amdfam10 -march=amdfam10
+CCASFLAGS = -O2 -m64 -march=k8 -mtune=k8
 CCDEPMODE = depmode=gcc3
-CFLAGS = -W -Wall -Wundef -O2 -pedantic -m64 -mtune=amdfam10 -march=amdfam10
+CFLAGS = -W -Wall -Wundef -pedantic -O2 -m64 -march=k8 -mtune=k8
 CPP = gcc -std=gnu99 -E
-CPPFLAGS = -I/users/caramel/logiciels/gmp-5.0.4/x86_64/include -I/users/caramel/logiciels/gmp-5.0.4/x86_64/include
+CPPFLAGS = -I/users/caramel/logiciels/mpir-2.5.1/x86_64/include -I/users/caramel/logiciels/mpir-2.5.1/x86_64/include
 CYGPATH_W = echo
 DEFS = -DHAVE_CONFIG_H
 DEPDIR = .deps
@@ -78,7 +78,7 @@ ECHO_T =
 EGREP = /bin/grep -E
 EXEEXT = 
 FGREP = /bin/grep -F
-GMPLIB = /users/caramel/logiciels/gmp-5.0.4/x86_64/lib/libgmp.a
+GMPLIB = /users/caramel/logiciels/mpir-2.5.1/x86_64/lib/libgmp.a
 GREP = /bin/grep
 GSL_LD_FLAGS = 
 INSTALL = /usr/bin/install -c
