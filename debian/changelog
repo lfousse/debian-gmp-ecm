@@ -1,3 +1,9 @@
+gmp-ecm (6.4.1~rc3-1) experimental; urgency=low
+
+  * New upstream release candidate.
+
+ -- Laurent Fousse <lfousse@debian.org>  Wed, 14 Mar 2012 19:06:43 -0700
+
 gmp-ecm (6.4.1~rc2e-1) experimental; urgency=low
 
   * New upstream release candidate.
