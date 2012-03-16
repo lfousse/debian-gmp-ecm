@@ -41,7 +41,8 @@ EXTRA_PROGRAMS = rho$(EXEEXT) batch$(EXEEXT) $(am__EXEEXT_1) \
 @ENABLE_ASM_REDC_TRUE@am__append_1 = bench_mulredc test_mulredc
 @ENABLE_ASM_REDC_FALSE@am__append_2 = bench_mulredc
 bin_PROGRAMS = ecm$(EXEEXT)
-noinst_PROGRAMS = tune$(EXEEXT) ecmfactor$(EXEEXT) ecmfactor2$(EXEEXT)
+noinst_PROGRAMS = tune$(EXEEXT) ecmfactor$(EXEEXT) ecmfactor2$(EXEEXT) \
+	bench_mulredc$(EXEEXT)
 @MEMORY_DEBUG_TRUE@am__append_3 = memory.c
 @MEMORY_DEBUG_TRUE@am__append_4 = memory.c
 @WITH_GWNUM_TRUE@am__append_5 = Fgw.c
