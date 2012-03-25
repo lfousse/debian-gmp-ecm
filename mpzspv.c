@@ -1,24 +1,23 @@
 /* mpzspv.c - "mpz small prime polynomial" functions for arithmetic on mpzv's
    reduced modulo a mpzspm
 
-  Copyright 2005, 2008, 2010 Dave Newman, Jason Papadopoulos, Alexander Kruppa
-                             and Paul Zimmermann.
+Copyright 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012 Dave Newman,
+Jason Papadopoulos, Alexander Kruppa, Paul Zimmermann.
 
-  The SP Library is free software; you can redistribute it and/or modify
-  it under the terms of the GNU Lesser General Public License as published by
-  the Free Software Foundation; either version 2.1 of the License, or (at your
-  option) any later version.
+The SP Library is free software; you can redistribute it and/or modify
+it under the terms of the GNU Lesser General Public License as published by
+the Free Software Foundation; either version 3 of the License, or (at your
+option) any later version.
 
-  The SP Library is distributed in the hope that it will be useful, but
-  WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
-  or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
-  License for more details.
+The SP Library is distributed in the hope that it will be useful, but
+WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
+License for more details.
 
-  You should have received a copy of the GNU Lesser General Public License
-  along with the SP Library; see the file COPYING.LIB.  If not, write to
-  the Free Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston,
-  MA 02110-1301, USA.
-*/
+You should have received a copy of the GNU Lesser General Public License
+along with the SP Library; see the file COPYING.LIB.  If not, write to
+the Free Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston,
+MA 02110-1301, USA. */
 
 #include <stdio.h> /* for stderr */
 #include <stdlib.h>
@@ -175,27 +174,35 @@ mpzspv_reverse (mpzspv_t x, spv_size_t offset, spv_size_t len, mpzspm_t mpzspm)
     }
 }
 
-#if 0
-/* Return {xp, xn} / B^(xn-1) mod d where B = 2^GMP_NUMB_LIMB.
-   Assume d < B - 1 */
+/* Return {xp, xn} mod p.
+   Assume 2p < B where B = 2^GMP_NUMB_LIMB.
+   We first compute {xp, xn} / B^n mod p using Montgomery reduction,
+   where the number N to factor has n limbs.
+   Then we multiply by B^(n+1) mod p (precomputed) and divide by B mod p.
+   Assume invm = -1/p mod B and Bpow = B^n mod p */
 static mp_limb_t
-ecm_bdiv_r_1 (mp_ptr xp, mp_size_t xn, mp_limb_t d)
+ecm_mod_1 (mp_ptr xp, mp_size_t xn, mp_limb_t p, mp_size_t n,
+           mp_limb_t invm, mp_limb_t Bpow)
 {
-  mp_limb_t di, q, cy, hi, lo, x0, x1;
+  mp_limb_t q, cy, hi, lo, x0, x1;
 
   if (xn == 0)
     return 0;
-  __gmpn_binvert (&di, &d, 1, &x0); /* di = 1/d mod B */
-  di = -di;                         /* -1/d mod B */
+
+  /* the code below assumes xn <= n+1, thus we call mpn_mod_1 otherwise,
+     but this should never (or rarely) happen */
+  if (xn > n + 1)
+    return mpn_mod_1 (xp, xn, p);
+
   x0 = xp[0];
   cy = (mp_limb_t) 0;
-  while (xn > 1)
+  while (n-- > 0)
     {
       /* Invariant: cy is the input carry on xp[1], x0 is xp[0] */
-      x1 = xp[1];
-      q = x0 * di; /* q = -x0/d mod B */
-      umul_ppmm (hi, lo, q, d); /* hi*B + lo = -x0 mod B */
-      /* Add hi*B + lo to x1*B + x0. Since d <= B-2 we have
+      x1 = (xn > 1) ? xp[1] : 0;
+      q = x0 * invm; /* q = -x0/p mod B */
+      umul_ppmm (hi, lo, q, p); /* hi*B + lo = -x0 mod B */
+      /* Add hi*B + lo to x1*B + x0. Since p <= B-2 we have
          hi*B + lo <= (B-1)(B-2) = B^2-3B+2, thus hi <= B-3 */
       hi += cy + (lo != 0); /* cannot overflow */
       x0 = x1 + hi;
@@ -204,12 +211,18 @@ ecm_bdiv_r_1 (mp_ptr xp, mp_size_t xn, mp_limb_t d)
       xp ++;
     }
   if (cy != 0)
-    x0 -= d;
-  while (x0 >= d)
-    x0 -= d;
-  return x0;
+    x0 -= p;
+  /* now x0 = {xp, xn} / B^n mod p */
+  umul_ppmm (x1, x0, x0, Bpow);
+  /* since Bpow < p, x1 <= p-1 */
+  q = x0 * invm;
+  umul_ppmm (hi, lo, q, p);
+  /* hi <= p-1 thus hi+x1+1 < 2p-1 < B */
+  hi = hi + x1 + (lo != 0);
+  while (hi >= p)
+    hi -= p;
+  return hi;
 }
-#endif
 
 /* convert mpzvi to CRT representation, naive version */
 static void
@@ -218,6 +231,7 @@ mpzspv_from_mpzv_slow (mpzspv_t x, const spv_size_t offset, mpz_t mpzvi,
 {
   const unsigned int sp_num = mpzspm->sp_num;
   unsigned int j;
+  mp_size_t n = mpz_size (mpzspm->modulus);
 
   /* GMP's comments on mpn_preinv_mod_1:
    *
@@ -233,10 +247,18 @@ mpzspv_from_mpzv_slow (mpzspv_t x, const spv_size_t offset, mpz_t mpzvi,
      floor(2^128/(4*sp))-2^64 = floor(2^126/sp)-2^64.
      On 32-bit it is floor(2^62/sp) where sp has 31 bits, and mpn_preinv_mod_1
      needs floor(2^64/(2*sp))-2^32 = floor(2^63/sp)-2^32. */
+
+  /* Note: we could improve this as follows. Assume the number N to factor has
+     n limbs. Instead of computing v mod p by reducing v by the high limbs,
+     we first compute v/B^(n-1) mod p by reducing v by the low limbs, then
+     deduce v mod p using a precomputed value of B^(n-1) mod p.
+     The reduction v/B is done by using a precomputed k = 1/B mod p,
+     thus v1*B+v0 = (v1+k*v0)*B and so on. */
   
   for (j = 0; j < sp_num; j++)
-    x[j][offset] = mpn_mod_1 (PTR(mpzvi), SIZ(mpzvi),
-                              (mp_limb_t) mpzspm->spm[j]->sp);
+    x[j][offset] = ecm_mod_1 (PTR(mpzvi), SIZ(mpzvi),
+                              (mp_limb_t) mpzspm->spm[j]->sp, n,
+                              mpzspm->spm[j]->invm, mpzspm->spm[j]->Bpow);
   /* The typecast to mp_limb_t assumes that mp_limb_t is at least
      as wide as sp_t */
 }

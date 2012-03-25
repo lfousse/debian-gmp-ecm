@@ -61,11 +61,11 @@ AWK = gawk
 CC = gcc -std=gnu99
 CCAS = gcc -std=gnu99
 CCASDEPMODE = depmode=gcc3
-CCASFLAGS = -O2 -pedantic -m64 -mtune=amdfam10 -march=amdfam10
+CCASFLAGS = -O2 -m64 -march=k8 -mtune=k8
 CCDEPMODE = depmode=gcc3
-CFLAGS = -W -Wall -Wundef -O2 -pedantic -m64 -mtune=amdfam10 -march=amdfam10
+CFLAGS = -W -Wall -Wundef -pedantic -O2 -m64 -march=k8 -mtune=k8
 CPP = gcc -std=gnu99 -E
-CPPFLAGS = -I/users/caramel/logiciels/gmp-5.0.4/x86_64/include -I/users/caramel/logiciels/gmp-5.0.4/x86_64/include
+CPPFLAGS = -I/users/caramel/logiciels/mpir-2.5.1/x86_64/include -I/users/caramel/logiciels/mpir-2.5.1/x86_64/include
 CYGPATH_W = echo
 DEFS = -DHAVE_CONFIG_H
 DEPDIR = .deps
@@ -78,7 +78,7 @@ ECHO_T =
 EGREP = /bin/grep -E
 EXEEXT = 
 FGREP = /bin/grep -F
-GMPLIB = /users/caramel/logiciels/gmp-5.0.4/x86_64/lib/libgmp.a
+GMPLIB = /users/caramel/logiciels/mpir-2.5.1/x86_64/lib/libgmp.a
 GREP = /bin/grep
 GSL_LD_FLAGS = 
 INSTALL = /usr/bin/install -c
@@ -108,10 +108,10 @@ OTOOL64 =
 PACKAGE = ecm
 PACKAGE_BUGREPORT = ecm-discuss@lists.gforge.inria.fr
 PACKAGE_NAME = ecm
-PACKAGE_STRING = ecm 6.4.1
+PACKAGE_STRING = ecm 6.4.2
 PACKAGE_TARNAME = ecm
 PACKAGE_URL = 
-PACKAGE_VERSION = 6.4.1
+PACKAGE_VERSION = 6.4.2
 PATH_SEPARATOR = :
 POW_LIB = 
 RANLIB = ranlib
@@ -120,7 +120,7 @@ SET_MAKE =
 SHELL = /bin/bash
 STRIP = strip
 VALGRIND = valgrind -q --error-exitcode=1
-VERSION = 6.4.1
+VERSION = 6.4.2
 XSLDIR = /usr/share/sgml/docbook/xsl-stylesheets-1.68.1-1.1
 XSLTPROC = 
 abs_builddir = /users/caramel/zimmerma/svn/ecm/build.vc10/bench_mulredc

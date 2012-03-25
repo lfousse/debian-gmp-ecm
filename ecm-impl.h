@@ -1,22 +1,24 @@
 /* ecm-impl.h - header file for libecm
  
-  Copyright 2001, 2002, 2003, 2004, 2005 Paul Zimmermann and Alexander Kruppa.
+Copyright 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011,
+2012 Paul Zimmermann, Alexander Kruppa and Cyril Bouvier.
  
-  This program is free software; you can redistribute it and/or modify it
-  under the terms of the GNU General Public License as published by the
-  Free Software Foundation; either version 2 of the License, or (at your
-  option) any later version.
- 
-  This program is distributed in the hope that it will be useful, but WITHOUT
-  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-  FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
-  more details.
- 
-  You should have received a copy of the GNU General Public License along
-  with this program; see the file COPYING.  If not, write to the Free
-  Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
-  02111-1307, USA.
-*/
+This file is part of the ECM Library.
+
+The ECM Library is free software; you can redistribute it and/or modify
+it under the terms of the GNU Lesser General Public License as published by
+the Free Software Foundation; either version 3 of the License, or (at your
+option) any later version.
+
+The ECM Library is distributed in the hope that it will be useful, but
+WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
+License for more details.
+
+You should have received a copy of the GNU Lesser General Public License
+along with the ECM Library; see the file COPYING.LIB.  If not, see
+http://www.gnu.org/licenses/ or write to the Free Software Foundation, Inc.,
+51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA. */
 
 #ifndef _ECM_IMPL_H
 #define _ECM_IMPL_H 1
@@ -763,13 +765,19 @@ int  mpn_fft_best_k (mp_size_t, int);
 mp_size_t mpn_fft_next_size (mp_size_t, int);
 
 /* batch.c */
+#define compute_s  __ECM(compute_s )
 void compute_s (mpz_t, unsigned long);
+#define write_s_in_file __ECM(write_s_in_file)
 int write_s_in_file (char *, mpz_t);
+#define read_s_from_file  __ECM(read_s_from_file)
 void read_s_from_file (mpz_t, char *); 
+#define ecm_stage1_batch  __ECM(ecm_stage1_batch)
 int ecm_stage1_batch (mpz_t, mpres_t, mpres_t, mpmod_t, double, double *, 
                                                                 int,  mpz_t);
 
 /* ellparam_batch.c */
+#define get_curve_from_ell_parametrization \
+                                      __ECM(get_curve_from_ell_parametrization )
 int get_curve_from_ell_parametrization (mpz_t, mpres_t, mpz_t, mpmod_t);
 
 /* sets_long.c */

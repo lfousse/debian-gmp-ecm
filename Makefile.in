@@ -41,7 +41,7 @@ EXTRA_PROGRAMS = rho$(EXEEXT) batch$(EXEEXT) $(am__EXEEXT_1) \
 @ENABLE_ASM_REDC_TRUE@am__append_1 = bench_mulredc test_mulredc
 @ENABLE_ASM_REDC_FALSE@am__append_2 = bench_mulredc
 bin_PROGRAMS = ecm$(EXEEXT)
-noinst_PROGRAMS = tune$(EXEEXT) ecmfactor$(EXEEXT) ecmfactor2$(EXEEXT) \
+noinst_PROGRAMS = tune$(EXEEXT) ecmfactor$(EXEEXT) \
 	bench_mulredc$(EXEEXT)
 @MEMORY_DEBUG_TRUE@am__append_3 = memory.c
 @MEMORY_DEBUG_TRUE@am__append_4 = memory.c
@@ -134,8 +134,7 @@ bench_mulredc_OBJECTS = bench_mulredc-bench_mulredc.$(OBJEXT)
 @ENABLE_ASM_REDC_TRUE@	$(am__DEPENDENCIES_1)
 am_ecm_OBJECTS = ecm-auxi.$(OBJEXT) ecm-b1_ainc.$(OBJEXT) \
 	ecm-candi.$(OBJEXT) ecm-eval.$(OBJEXT) ecm-random.$(OBJEXT) \
-	ecm-main.$(OBJEXT) ecm-trial.$(OBJEXT) ecm-resume.$(OBJEXT) \
-	ecm-getprime.$(OBJEXT)
+	ecm-main.$(OBJEXT) ecm-resume.$(OBJEXT) ecm-getprime.$(OBJEXT)
 ecm_OBJECTS = $(am_ecm_OBJECTS)
 ecm_LDADD = $(LDADD)
 ecm_LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) \
@@ -147,13 +146,6 @@ ecmfactor_LDADD = $(LDADD)
 ecmfactor_DEPENDENCIES = libecm.la $(am__DEPENDENCIES_1)
 ecmfactor_LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) \
 	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(ecmfactor_CFLAGS) \
-	$(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
-ecmfactor2_SOURCES = ecmfactor2.c
-ecmfactor2_OBJECTS = ecmfactor2-ecmfactor2.$(OBJEXT)
-ecmfactor2_LDADD = $(LDADD)
-ecmfactor2_DEPENDENCIES = libecm.la $(am__DEPENDENCIES_1)
-ecmfactor2_LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) \
-	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(ecmfactor2_CFLAGS) \
 	$(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
 am_rho_OBJECTS = rho-rho.$(OBJEXT)
 rho_OBJECTS = $(am_rho_OBJECTS)
@@ -193,11 +185,11 @@ LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) \
 	--mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) \
 	$(LDFLAGS) -o $@
 SOURCES = $(libecm_la_SOURCES) $(batch_SOURCES) bench_mulredc.c \
-	$(ecm_SOURCES) ecmfactor.c ecmfactor2.c $(rho_SOURCES) \
-	test_mulredc.c $(tune_SOURCES)
+	$(ecm_SOURCES) ecmfactor.c $(rho_SOURCES) test_mulredc.c \
+	$(tune_SOURCES)
 DIST_SOURCES = $(am__libecm_la_SOURCES_DIST) $(batch_SOURCES) \
-	bench_mulredc.c $(ecm_SOURCES) ecmfactor.c ecmfactor2.c \
-	$(rho_SOURCES) test_mulredc.c $(am__tune_SOURCES_DIST)
+	bench_mulredc.c $(ecm_SOURCES) ecmfactor.c $(rho_SOURCES) \
+	test_mulredc.c $(am__tune_SOURCES_DIST)
 RECURSIVE_TARGETS = all-recursive check-recursive dvi-recursive \
 	html-recursive info-recursive install-data-recursive \
 	install-dvi-recursive install-exec-recursive \
@@ -413,7 +405,7 @@ libecm_la_LIBADD = $(MULREDCLIBRARY)
 LDADD = libecm.la $(GMPLIB)
 ecm_CPPFLAGS = -DOUTSIDE_LIBECM
 ecm_CFLAGS = $(OPENMP_CFLAGS)
-ecm_SOURCES = auxi.c b1_ainc.c candi.c eval.c random.c main.c trial.c \
+ecm_SOURCES = auxi.c b1_ainc.c candi.c eval.c random.c main.c \
               resume.c getprime.c champions.h
 
 tune_SOURCES = mpmod.c tune.c mul_lo.c listz.c auxlib.c ks-multiply.c \
@@ -423,7 +415,6 @@ tune_SOURCES = mpmod.c tune.c mul_lo.c listz.c auxlib.c ks-multiply.c \
 tune_CPPFLAGS = -DTUNE $(MULREDCINCPATH)
 tune_LDADD = $(MULREDCLIBRARY) $(GMPLIB)
 ecmfactor_CFLAGS = $(OPENMP_CFLAGS)
-ecmfactor2_CFLAGS = $(OPENMP_CFLAGS)
 rho_SOURCES = rho.c
 rho_CPPFLAGS = -DTESTDRIVE
 rho_LDADD = -lprimegen $(GMPLIB) $(GSL_LD_FLAGS)
@@ -604,9 +595,6 @@ ecm$(EXEEXT): $(ecm_OBJECTS) $(ecm_DEPENDENCIES)
 ecmfactor$(EXEEXT): $(ecmfactor_OBJECTS) $(ecmfactor_DEPENDENCIES) 
 	@rm -f ecmfactor$(EXEEXT)
 	$(ecmfactor_LINK) $(ecmfactor_OBJECTS) $(ecmfactor_LDADD) $(LIBS)
-ecmfactor2$(EXEEXT): $(ecmfactor2_OBJECTS) $(ecmfactor2_DEPENDENCIES) 
-	@rm -f ecmfactor2$(EXEEXT)
-	$(ecmfactor2_LINK) $(ecmfactor2_OBJECTS) $(ecmfactor2_LDADD) $(LIBS)
 rho$(EXEEXT): $(rho_OBJECTS) $(rho_DEPENDENCIES) 
 	@rm -f rho$(EXEEXT)
 	$(LINK) $(rho_OBJECTS) $(rho_LDADD) $(LIBS)
@@ -633,9 +621,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ecm-main.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ecm-random.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ecm-resume.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ecm-trial.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ecmfactor-ecmfactor.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ecmfactor2-ecmfactor2.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libecm_la-Fgw.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libecm_la-auxarith.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libecm_la-auxlib.Plo@am__quote@
@@ -1059,20 +1045,6 @@ ecm-main.obj: main.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ecm_CPPFLAGS) $(CPPFLAGS) $(ecm_CFLAGS) $(CFLAGS) -c -o ecm-main.obj `if test -f 'main.c'; then $(CYGPATH_W) 'main.c'; else $(CYGPATH_W) '$(srcdir)/main.c'; fi`
 
-ecm-trial.o: trial.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ecm_CPPFLAGS) $(CPPFLAGS) $(ecm_CFLAGS) $(CFLAGS) -MT ecm-trial.o -MD -MP -MF $(DEPDIR)/ecm-trial.Tpo -c -o ecm-trial.o `test -f 'trial.c' || echo '$(srcdir)/'`trial.c
-@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/ecm-trial.Tpo $(DEPDIR)/ecm-trial.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='trial.c' object='ecm-trial.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ecm_CPPFLAGS) $(CPPFLAGS) $(ecm_CFLAGS) $(CFLAGS) -c -o ecm-trial.o `test -f 'trial.c' || echo '$(srcdir)/'`trial.c
-
-ecm-trial.obj: trial.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ecm_CPPFLAGS) $(CPPFLAGS) $(ecm_CFLAGS) $(CFLAGS) -MT ecm-trial.obj -MD -MP -MF $(DEPDIR)/ecm-trial.Tpo -c -o ecm-trial.obj `if test -f 'trial.c'; then $(CYGPATH_W) 'trial.c'; else $(CYGPATH_W) '$(srcdir)/trial.c'; fi`
-@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/ecm-trial.Tpo $(DEPDIR)/ecm-trial.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='trial.c' object='ecm-trial.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ecm_CPPFLAGS) $(CPPFLAGS) $(ecm_CFLAGS) $(CFLAGS) -c -o ecm-trial.obj `if test -f 'trial.c'; then $(CYGPATH_W) 'trial.c'; else $(CYGPATH_W) '$(srcdir)/trial.c'; fi`
-
 ecm-resume.o: resume.c
 @am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ecm_CPPFLAGS) $(CPPFLAGS) $(ecm_CFLAGS) $(CFLAGS) -MT ecm-resume.o -MD -MP -MF $(DEPDIR)/ecm-resume.Tpo -c -o ecm-resume.o `test -f 'resume.c' || echo '$(srcdir)/'`resume.c
 @am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/ecm-resume.Tpo $(DEPDIR)/ecm-resume.Po
@@ -1114,20 +1086,6 @@ ecmfactor-ecmfactor.obj: ecmfactor.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='ecmfactor.c' object='ecmfactor-ecmfactor.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ecmfactor_CFLAGS) $(CFLAGS) -c -o ecmfactor-ecmfactor.obj `if test -f 'ecmfactor.c'; then $(CYGPATH_W) 'ecmfactor.c'; else $(CYGPATH_W) '$(srcdir)/ecmfactor.c'; fi`
-
-ecmfactor2-ecmfactor2.o: ecmfactor2.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ecmfactor2_CFLAGS) $(CFLAGS) -MT ecmfactor2-ecmfactor2.o -MD -MP -MF $(DEPDIR)/ecmfactor2-ecmfactor2.Tpo -c -o ecmfactor2-ecmfactor2.o `test -f 'ecmfactor2.c' || echo '$(srcdir)/'`ecmfactor2.c
-@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/ecmfactor2-ecmfactor2.Tpo $(DEPDIR)/ecmfactor2-ecmfactor2.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='ecmfactor2.c' object='ecmfactor2-ecmfactor2.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ecmfactor2_CFLAGS) $(CFLAGS) -c -o ecmfactor2-ecmfactor2.o `test -f 'ecmfactor2.c' || echo '$(srcdir)/'`ecmfactor2.c
-
-ecmfactor2-ecmfactor2.obj: ecmfactor2.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ecmfactor2_CFLAGS) $(CFLAGS) -MT ecmfactor2-ecmfactor2.obj -MD -MP -MF $(DEPDIR)/ecmfactor2-ecmfactor2.Tpo -c -o ecmfactor2-ecmfactor2.obj `if test -f 'ecmfactor2.c'; then $(CYGPATH_W) 'ecmfactor2.c'; else $(CYGPATH_W) '$(srcdir)/ecmfactor2.c'; fi`
-@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/ecmfactor2-ecmfactor2.Tpo $(DEPDIR)/ecmfactor2-ecmfactor2.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='ecmfactor2.c' object='ecmfactor2-ecmfactor2.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ecmfactor2_CFLAGS) $(CFLAGS) -c -o ecmfactor2-ecmfactor2.obj `if test -f 'ecmfactor2.c'; then $(CYGPATH_W) 'ecmfactor2.c'; else $(CYGPATH_W) '$(srcdir)/ecmfactor2.c'; fi`
 
 rho-rho.o: rho.c
 @am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(rho_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT rho-rho.o -MD -MP -MF $(DEPDIR)/rho-rho.Tpo -c -o rho-rho.o `test -f 'rho.c' || echo '$(srcdir)/'`rho.c
@@ -1998,7 +1956,9 @@ ecm-params:	tune$(EXEEXT)
 
 check: ecm$(EXEEXT)
 	$(srcdir)/test.pp1 ./ecm$(EXEEXT)
+	echo ""
 	$(srcdir)/test.pm1 ./ecm$(EXEEXT)
+	echo ""
 	$(srcdir)/test.ecm ./ecm$(EXEEXT)
 
 longcheck: ecm$(EXEEXT)

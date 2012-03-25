@@ -1,24 +1,24 @@
 /* Modular multiplication.
 
-  Copyright 2002, 2003, 2004, 2005, 2011, 2012 Paul Zimmermann, Alexander Kruppa and Cyril Bouvier.
+Copyright 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012
+Paul Zimmermann, Alexander Kruppa and Cyril Bouvier.
 
-  This file is part of the ECM Library.
+This file is part of the ECM Library.
 
-  The ECM Library is free software; you can redistribute it and/or modify
-  it under the terms of the GNU Lesser General Public License as published by
-  the Free Software Foundation; either version 2.1 of the License, or (at your
-  option) any later version.
+The ECM Library is free software; you can redistribute it and/or modify
+it under the terms of the GNU Lesser General Public License as published by
+the Free Software Foundation; either version 3 of the License, or (at your
+option) any later version.
 
-  The ECM Library is distributed in the hope that it will be useful, but
-  WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
-  or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
-  License for more details.
+The ECM Library is distributed in the hope that it will be useful, but
+WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
+License for more details.
 
-  You should have received a copy of the GNU Lesser General Public License
-  along with the ECM Library; see the file COPYING.LIB.  If not, write to
-  the Free Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston,
-  MA 02110-1301, USA.
-*/
+You should have received a copy of the GNU Lesser General Public License
+along with the ECM Library; see the file COPYING.LIB.  If not, see
+http://www.gnu.org/licenses/ or write to the Free Software Foundation, Inc.,
+51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA. */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -225,8 +225,7 @@ base2mod_2 (mpres_t R, const mpres_t S, mp_size_t n, mpz_t modulus)
 
 /* subquadratic REDC, at mpn level.
    {orig,n} is the original modulus.
-   {aux,n} is the auxiliary modulus.
-   Requires xn = 2n or 2n-1 and ABSIZ(orig_modulus)=ABSIZ(aux_modulus)=n.
+   Requires xn = 2n or 2n-1 and ABSIZ(orig_modulus)=n.
  */
 static void
 ecm_redc_n (mp_ptr rp, mp_srcptr x0p, mp_size_t xn,
@@ -234,8 +233,10 @@ ecm_redc_n (mp_ptr rp, mp_srcptr x0p, mp_size_t xn,
 {
   mp_ptr tp, up, xp;
   mp_size_t nn = n + n;
-  mp_limb_t cy;
+  mp_limb_t cy, cin;
   TMP_DECL(marker);
+
+  ASSERT((xn == 2 * n) || (xn == 2 * n - 1));
 
   TMP_MARK(marker);
   up = TMP_ALLOC_LIMBS(nn + nn);
@@ -258,18 +259,16 @@ ecm_redc_n (mp_ptr rp, mp_srcptr x0p, mp_size_t xn,
      either 0, or a carry out. If xp[n-1] <> 0 or tp[n-1] <> 0, 
      then there is a carry. We use a binary OR, which sets the zero flag
      if and only if both operands are zero. */
+  cin = (mp_limb_t) ((xp[n - 1] | tp[n - 1]) ? 1 : 0);
 #ifdef HAVE___GMPN_ADD_NC
-  cy = __gmpn_add_nc (rp, tp + n, xp + n, n, 
-                      (mp_limb_t) ((xp[n - 1] | tp[n - 1]) ? 1 : 0));
+  cy = __gmpn_add_nc (rp, tp + n, xp + n, n, cin);
 #else
   cy = mpn_add_n (rp, tp + n, xp + n, n);
-  cy += mpn_add_1 (rp, rp, n, (mp_limb_t) ((xp[n - 1] | tp[n - 1]) ? 1 : 0));
+  cy += mpn_add_1 (rp, rp, n, cin);
 #endif
-  /* when N < B^n/4, we don't need to perform this last reduction,
-     if we allow residues in [0, 2N).
-     See for example the slides from David Harvey at Sage Days 35
-     (http://wiki.sagemath.org/SageFlintDays/slides) */
-  if (orig[n-1] >> (GMP_NUMB_BITS - 2) && (cy || mpn_cmp (rp, orig, n) > 0))
+  /* since we add at most N-1 to the upper half of {x0p,2n},
+     one adjustment is enough */
+  if (cy)
     cy -= mpn_sub_n (rp, rp, orig, n);
   ASSERT (cy == 0);
   TMP_FREE(marker);
@@ -741,7 +740,8 @@ ecm_sqrredc_basecase_n (mp_ptr rp, mp_srcptr s1p,
 /* R <- S1 * S2 mod modulus
    i.e. R <- S1*S2/r^nn mod n, where n has nn limbs, and r=2^GMP_NUMB_BITS.
    Same as ecm_redc_basecase previous, but combined with mul
-   Neither input argument must be in modulus->temp1 */
+   Neither input argument must be in modulus->temp1
+*/
 static void 
 ecm_mulredc_basecase (mpres_t R, const mpres_t S1, const mpres_t S2, 
                       mpmod_t modulus)
@@ -1920,9 +1920,7 @@ void
 mpres_set_z (mpres_t R, const mpz_t S, mpmod_t modulus)
 {
   if (modulus->repr == ECM_MOD_MPZ || modulus->repr == ECM_MOD_BASE2)
-    {
-      mpz_mod (R, S, modulus->orig_modulus);
-    }
+    mpz_mod (R, S, modulus->orig_modulus);
   else if (modulus->repr == ECM_MOD_MODMULN)
     {
       mpz_mod (modulus->temp2, S, modulus->orig_modulus);
@@ -2319,7 +2317,9 @@ mpresn_sub (mpres_t R, const mpres_t S1, const mpres_t S2, mpmod_t modulus)
     }
 }
 
-/* (R, T) <- (S1 + S2, S1 - S2) */
+/* (R, T) <- (S1 + S2, S1 - S2)
+   Assume R differs from both S1 and S2.
+ */
 void
 mpresn_addsub (mpres_t R, mpres_t T,
                const mpres_t S1, const mpres_t S2, mpmod_t modulus)
@@ -2331,6 +2331,8 @@ mpresn_addsub (mpres_t R, mpres_t T,
   mp_size_t n = ABSIZ(modulus->orig_modulus);
   ATTRIBUTE_UNUSED mp_limb_t cy;
 
+  ASSERT (R != S1);
+  ASSERT (R != S2);
   ASSERT (SIZ(S1) == n || -SIZ(S1) == n);
   ASSERT (SIZ(S2) == n || -SIZ(S2) == n);
 
