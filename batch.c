@@ -1,3 +1,25 @@
+/* batch.c - Implement batch mode for step 1 of ECM
+ 
+Copyright 2011, 2012 Cyril Bouvier, Paul Zimmermann and David Cleaver.
+ 
+This file is part of the ECM Library.
+
+The ECM Library is free software; you can redistribute it and/or modify
+it under the terms of the GNU Lesser General Public License as published by
+the Free Software Foundation; either version 3 of the License, or (at your
+option) any later version.
+
+The ECM Library is distributed in the hope that it will be useful, but
+WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
+License for more details.
+
+You should have received a copy of the GNU Lesser General Public License
+along with the ECM Library; see the file COPYING.LIB.  If not, see
+http://www.gnu.org/licenses/ or write to the Free Software Foundation, Inc.,
+51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA. */
+
+
 /* ECM stage 1 in batch mode, for initial point (x:z) with small coordinates,
    such that x and z fit into a mp_limb_t.
    For example we can start with (x=2:y=1) with the curve by^2 = x^3 + ax^2 + x
@@ -7,13 +29,7 @@
    Y^2 = X^3 + a/b*X^2 + 1/b^2*X.
 */
 
-#ifdef GPUECM
-#include <stdlib.h>
-#include "ecm-ecm.h"
-#else
 #include "ecm-impl.h"
-#endif
-
 
 #define MAX_HEIGHT 32
 
@@ -159,7 +175,8 @@ mpresn_print (mpres_t x, mpmod_t n)
    assume (x2:z2) - (x1:z1) = (2:1)
    Uses 4 modular multiplies and 4 modular squarings.
    Inputs are x1, z1, x2, z2, d, n.
-   Auxiliary variables: q, t, u, v, w.
+   Use two auxiliary variables: t, w (it seems using one only is not possible
+   if all mpresn_mul and mpresn_sqr calls don't overlap input and output).
 
    In the batch 1 mode, we pass d_prime such that the actual d is d_prime/beta.
    Since beta is a square, if d_prime is a square (on 64-bit machines),
@@ -168,62 +185,88 @@ mpresn_print (mpres_t x, mpmod_t n)
 */
 static void
 dup_add_batch1 (mpres_t x1, mpres_t z1, mpres_t x2, mpres_t z2,
-         mpres_t q, mpres_t t, mpres_t u, mpres_t v, mpres_t w,
-         mp_limb_t d_prime, mpmod_t n)
+                mpres_t t, mpres_t w, mp_limb_t d_prime, mpmod_t n)
 {
-  mpresn_addsub (w, u, x1, z1, n); /* w = x1+/-z1 */
-  mpresn_addsub (t, v, x2, z2, n); /* t = x2+/-z2 */
+  /* active: x1 z1 x2 z2 */
+  mpresn_addsub (w, z1, x1, z1, n); /* w = x1+z1, z1 = x1-z1 */
+  /* active: w z1 x2 z2 */
+  mpresn_addsub (x1, x2, x2, z2, n); /* x1 = x2+z2, x2 = x2-z2 */
+  /* active: w z1 x1 x2 */
 
-  mpresn_mul (t, t, u, n); /* t = (x1-z1)(x2+z2) */
-  mpresn_mul (v, v, w, n); /* v = (x2-z2)(x1+z1) */
-  mpresn_sqr (w, w, n);    /* w = (x1+z1)^2 */
-  mpresn_sqr (u, u, n);    /* u = (x1-z1)^2 */
+  mpresn_mul (z2, w, x2, n); /* w = (x1+z1)(x2-z2) */
+  /* active: w z1 x1 z2 */
+  mpresn_mul (x2, z1, x1, n); /* x2 = (x1-z1)(x2+z2) */
+  /* active: w z1 x2 z2 */
+  mpresn_sqr (t, z1, n);    /* t = (x1-z1)^2 */
+  /* active: w t x2 z2 */
+  mpresn_sqr (z1, w, n);    /* z1 = (x1+z1)^2 */
+  /* active: z1 t x2 z2 */
 
-  mpresn_mul (x1, u, w, n); /* xdup = (x1+z1)^2 * (x1-z1)^2 */
+  mpresn_mul (x1, z1, t, n); /* xdup = (x1+z1)^2 * (x1-z1)^2 */
+  /* active: x1 z1 t x2 z2 */
 
-  mpresn_sub (w, w, u, n);   /* w = (x1+z1)^2 - (x1-z1)^2 */
+  mpresn_sub (w, z1, t, n);   /* w = (x1+z1)^2 - (x1-z1)^2 */
+  /* active: x1 w t x2 z2 */
 
-  mpresn_mul_1 (q, w, d_prime, n); /* q = d * ((x1+z1)^2 - (x1-z1)^2) */
+  mpresn_mul_1 (z1, w, d_prime, n); /* z1 = d * ((x1+z1)^2 - (x1-z1)^2) */
+  /* active: x1 z1 w t x2 z2 */
 
-  mpresn_add (u, u, q, n);  /* u = (x1-z1)^2 - d* ((x1+z1)^2 - (x1-z1)^2) */
-  mpresn_mul (z1, w, u, n); /* zdup = w * [(x1-z1)^2 - d* ((x1+z1)^2 - (x1-z1)^2)] */
+  mpresn_add (t, t, z1, n);  /* t = (x1-z1)^2 - d* ((x1+z1)^2 - (x1-z1)^2) */
+  /* active: x1 w t x2 z2 */
+  mpresn_mul (z1, w, t, n); /* zdup = w * [(x1-z1)^2 - d* ((x1+z1)^2 - (x1-z1)^2)] */
+  /* active: x1 z1 x2 z2 */
 
-  mpresn_add (w, v, t, n);
-  mpresn_sub (v, v, t, n);
+  mpresn_addsub (w, z2, x2, z2, n);
+  /* active: x1 z1 w z2 */
 
-  mpresn_sqr (v, v, n);
   mpresn_sqr (x2, w, n);
-  mpresn_add (z2, v, v, n);
+  /* active: x1 z1 x2 z2 */
+  mpresn_sqr (w, z2, n);
+  /* active: x1 z1 x2 w */
+  mpresn_add (z2, w, w, n);
 }
 
 static void
 dup_add_batch2 (mpres_t x1, mpres_t z1, mpres_t x2, mpres_t z2,
-         mpres_t q, mpres_t t, mpres_t u, mpres_t v, mpres_t w,
-         mpres_t d, mpmod_t n)
+                mpres_t t, mpres_t w, mpres_t d, mpmod_t n)
 {
-  mpresn_addsub (w, u, x1, z1, n); /* w = x1+/-z1 */
-  mpresn_addsub (t, v, x2, z2, n); /* t = x2+/-z2 */
+  /* active: x1 z1 x2 z2 */
+  mpresn_addsub (w, z1, x1, z1, n); /* w = x1+z1, z1 = x1-z1 */
+  /* active: w z1 x2 z2 */
+  mpresn_addsub (x1, x2, x2, z2, n); /* x1 = x2+z2, x2 = x2-z2 */
+  /* active: w z1 x1 x2 */
 
-  mpresn_mul (t, t, u, n); /* t = (x1-z1)(x2+z2) */
-  mpresn_mul (v, v, w, n); /* v = (x2-z2)(x1+z1) */
-  mpresn_sqr (w, w, n);    /* w = (x1+z1)^2 */
-  mpresn_sqr (u, u, n);    /* u = (x1-z1)^2 */
+  mpresn_mul (z2, w, x2, n); /* w = (x1+z1)(x2-z2) */
+  /* active: w z1 x1 z2 */
+  mpresn_mul (x2, z1, x1, n); /* x2 = (x1-z1)(x2+z2) */
+  /* active: w z1 x2 z2 */
+  mpresn_sqr (t, z1, n);    /* t = (x1-z1)^2 */
+  /* active: w t x2 z2 */
+  mpresn_sqr (z1, w, n);    /* z1 = (x1+z1)^2 */
+  /* active: z1 t x2 z2 */
 
-  mpresn_mul (x1, u, w, n); /* xdup = (x1+z1)^2 * (x1-z1)^2 */
+  mpresn_mul (x1, z1, t, n); /* xdup = (x1+z1)^2 * (x1-z1)^2 */
+  /* active: x1 z1 t x2 z2 */
 
-  mpresn_sub (w, w, u, n);   /* w = (x1+z1)^2 - (x1-z1)^2 */
+  mpresn_sub (w, z1, t, n);   /* w = (x1+z1)^2 - (x1-z1)^2 */
+  /* active: x1 w t x2 z2 */
 
-  mpresn_mul (q, w, d, n); /* q = d * ((x1+z1)^2 - (x1-z1)^2) */
+  mpresn_mul (z1, w, d, n); /* z1 = d * ((x1+z1)^2 - (x1-z1)^2) */
+  /* active: x1 z1 w t x2 z2 */
 
-  mpresn_add (u, u, q, n);  /* u = (x1-z1)^2 - d* ((x1+z1)^2 - (x1-z1)^2) */
-  mpresn_mul (z1, w, u, n); /* zdup = w * [(x1-z1)^2 - d* ((x1+z1)^2 - (x1-z1)^2)] */
+  mpresn_add (t, t, z1, n);  /* t = (x1-z1)^2 - d* ((x1+z1)^2 - (x1-z1)^2) */
+  /* active: x1 w t x2 z2 */
+  mpresn_mul (z1, w, t, n); /* zdup = w * [(x1-z1)^2 - d* ((x1+z1)^2 - (x1-z1)^2)] */
+  /* active: x1 z1 x2 z2 */
 
-  mpresn_add (w, v, t, n);
-  mpresn_sub (v, v, t, n);
+  mpresn_addsub (w, z2, x2, z2, n);
+  /* active: x1 z1 w z2 */
 
-  mpresn_sqr (v, v, n);
   mpresn_sqr (x2, w, n);
-  mpresn_add (z2, v, v, n);
+  /* active: x1 z1 x2 z2 */
+  mpresn_sqr (w, z2, n);
+  /* active: x1 z1 x2 w */
+  mpresn_add (z2, w, w, n);
 }
 
 
@@ -253,7 +296,7 @@ ecm_stage1_batch (mpz_t f, mpres_t x, mpres_t A, mpmod_t n, double B1,
 
   mpres_t x1, z1, x2, z2;
   unsigned long i;
-  mpres_t q, t, u, v, w;
+  mpres_t t, u;
   int ret = ECM_NO_FACTOR_FOUND;
 
   MEMORY_TAG;
@@ -265,17 +308,14 @@ ecm_stage1_batch (mpz_t f, mpres_t x, mpres_t A, mpmod_t n, double B1,
   MEMORY_TAG;
   mpres_init (z2, n);
   MEMORY_TAG;
-  mpres_init (q, n);
-  MEMORY_TAG;
   mpres_init (t, n);
   MEMORY_TAG;
   mpres_init (u, n);
-  MEMORY_TAG;
-  mpres_init (v, n);
-  MEMORY_TAG;
-  mpres_init (w, n);
-  MEMORY_TAG;
-  mpres_init (d_2, n);
+  if (batch == 2)
+    {
+      MEMORY_TAG;
+      mpres_init (d_2, n);
+    }
   MEMORY_UNTAG;
 
   /* initialize P */
@@ -330,8 +370,6 @@ ecm_stage1_batch (mpz_t f, mpres_t x, mpres_t A, mpmod_t n, double B1,
   mpresn_pad (z1, n);
   mpresn_pad (x2, n);
   mpresn_pad (z2, n);
-  if (batch == 2)
-    mpresn_pad (d_2, n);
 
   /* now perform the double-and-add ladder */
   if (batch == 1)
@@ -340,22 +378,23 @@ ecm_stage1_batch (mpz_t f, mpres_t x, mpres_t A, mpmod_t n, double B1,
         {
           if (mpz_tstbit (s, i) == 0) /* (j,j+1) -> (2j,2j+1) */
             /* P2 <- P1+P2    P1 <- 2*P1 */
-            dup_add_batch1 (x1, z1, x2, z2, q, t, u, v , w, d_1, n);
+            dup_add_batch1 (x1, z1, x2, z2, t, u, d_1, n);
           else /* (j,j+1) -> (2j+1,2j+2) */
               /* P1 <- P1+P2     P2 <- 2*P2 */
-            dup_add_batch1 (x2, z2, x1, z1, q, t, u, v, w, d_1, n);
+            dup_add_batch1 (x2, z2, x1, z1, t, u, d_1, n);
         }
     }
-  else
+  else /* batch = 2 */
     {
+      mpresn_pad (d_2, n);
       for (i = mpz_sizeinbase (s, 2) - 1; i-- > 0;)
         {
           if (mpz_tstbit (s, i) == 0) /* (j,j+1) -> (2j,2j+1) */
             /* P2 <- P1+P2    P1 <- 2*P1 */
-            dup_add_batch2 (x1, z1, x2, z2, q, t, u, v , w, d_2, n);
+            dup_add_batch2 (x1, z1, x2, z2, t, u, d_2, n);
           else /* (j,j+1) -> (2j+1,2j+2) */
               /* P1 <- P1+P2     P2 <- 2*P2 */
-            dup_add_batch2 (x2, z2, x1, z1, q, t, u, v, w, d_2, n);
+            dup_add_batch2 (x2, z2, x1, z1, t, u, d_2, n);
         }
     }
 
@@ -375,12 +414,12 @@ ecm_stage1_batch (mpz_t f, mpres_t x, mpres_t A, mpmod_t n, double B1,
   mpz_clear (z1);
   mpz_clear (x2);
   mpz_clear (z2);
-  mpz_clear (q);
   mpz_clear (t);
   mpz_clear (u);
-  mpz_clear (v);
-  mpz_clear (w);
-  mpz_clear (d_2);
+  if (batch == 2)
+    {
+      mpz_clear (d_2);
+    }
 
   return ret;
 }

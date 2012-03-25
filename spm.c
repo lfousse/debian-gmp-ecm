@@ -1,23 +1,23 @@
 /* spm.c - "small prime modulus" functions to precompute an inverse and a
    primitive root for a small prime
 
-  Copyright 2005, 2008 Dave Newman and Jason Papadopoulos.
+Copyright 2005, 2006, 2008, 2009, 2010, 2012 Dave Newman, Jason Papadopoulos,
+Paul Zimmermann, Alexander Kruppa.
 
-  The SP Library is free software; you can redistribute it and/or modify
-  it under the terms of the GNU Lesser General Public License as published by
-  the Free Software Foundation; either version 2.1 of the License, or (at your
-  option) any later version.
+The SP Library is free software; you can redistribute it and/or modify
+it under the terms of the GNU Lesser General Public License as published by
+the Free Software Foundation; either version 3 of the License, or (at your
+option) any later version.
 
-  The SP Library is distributed in the hope that it will be useful, but
-  WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
-  or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
-  License for more details.
+The SP Library is distributed in the hope that it will be useful, but
+WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
+License for more details.
 
-  You should have received a copy of the GNU Lesser General Public License
-  along with the SP Library; see the file COPYING.LIB.  If not, write to
-  the Free Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston,
-  MA 02110-1301, USA.
-*/
+You should have received a copy of the GNU Lesser General Public License
+along with the SP Library; see the file COPYING.LIB.  If not, write to
+the Free Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston,
+MA 02110-1301, USA. */
 
 #include <stdlib.h>
 #include "sp.h"
@@ -90,9 +90,11 @@ nttdata_clear(sp_nttdata_t data)
 }
 
 /* Compute some constants, including a primitive n'th root of unity. 
-   Returns NULL in case of error. */
+   Returns NULL in case of error.
+   k is the number of limbs of the number to factor
+*/
 spm_t
-spm_init (spv_size_t n, sp_t sp)
+spm_init (spv_size_t n, sp_t sp, mp_size_t k)
 {
   sp_t a, b, bd, sc;
   spv_size_t q, nc, ntt_power;
@@ -104,6 +106,26 @@ spm_init (spv_size_t n, sp_t sp)
 
   spm->sp = sp;
   sp_reciprocal (spm->mul_c, sp);
+
+  /* compute spm->invm = -1/p mod B where B = 2^GMP_NUMB_BITS */
+  a = sp_pow (2, GMP_NUMB_BITS, sp, spm->mul_c); /* a = B mod p */
+  a = sp_inv (a, sp, spm->mul_c);                /* a = 1/B mod p */
+  /* a = 1/B mod p thus B*a - 1 = invm*p */
+  a --;
+  b = GMP_NUMB_MASK;
+#if SP_NUMB_BITS == W_TYPE_SIZE - 2
+  a = (a << 2) + (b >> (GMP_NUMB_BITS - 2));
+  b = (b << 2) & GMP_NUMB_MASK;
+  udiv_qrnnd (bd, sc, a, b, sp << 2);
+#else
+  a = (a << 1) + (b >> (GMP_NUMB_BITS - 1));
+  b = (b << 1) & GMP_NUMB_MASK;
+  udiv_qrnnd (bd, sc, a, b, sp << 1);
+#endif
+  spm->invm = bd;
+
+  /* compute spm->Bpow = B^(k+1) mod p */
+  spm->Bpow = sp_pow (2, GMP_NUMB_BITS * (k + 1), sp, spm->mul_c);
 
   /* find an $n$-th primitive root $a$ of unity $(mod sp)$. */
 

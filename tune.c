@@ -1,23 +1,22 @@
 /* Tune program for GMP-ECM.
 
-  Copyright 2003, 2005, 2006, 2007, 2008, 2009, 2010, 2012 Paul Zimmermann,
-  Alexander Kruppa, Dave Newman and Jason Papadopoulos.
+Copyright 2003, 2005, 2006, 2007, 2008, 2009, 2010, 2012 Paul Zimmermann,
+Alexander Kruppa, Dave Newman and Jason Papadopoulos.
 
-  This program is free software; you can redistribute it and/or modify it
-  under the terms of the GNU General Public License as published by the
-  Free Software Foundation; either version 2 of the License, or (at your
-  option) any later version.
+This program is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 3 of the License, or (at your
+option) any later version.
 
-  This program is distributed in the hope that it will be useful, but WITHOUT
-  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-  FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
-  more details.
+This program is distributed in the hope that it will be useful, but
+WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
+more details.
 
-  You should have received a copy of the GNU General Public License along
-  with this program; see the file COPYING.  If not, write to the Free
-  Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
-  02111-1307, USA.
-*/
+You should have received a copy of the GNU General Public License
+along with this program; see the file COPYING.  If not, see
+http://www.gnu.org/licenses/ or write to the Free Software Foundation, Inc.,
+51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA. */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -26,7 +25,7 @@
 
 /* 250ms, we (probably) don't need any more precision */
 #define GRANULARITY 250
-#define MAX_LOG2_LEN 18 /* 2 * 131072 */ 
+#define MAX_LOG2_LEN 18 /* 2 * 131072 */
 #define MAX_LEN (1U << max_log2_len)
 #define MAX_LOG2_MPZSPV_NORMALISE_STRIDE (MIN (12, max_log2_len))
 #define M_str "95209938255048826235189575712705128366296557149606415206280987204268594538412191641776798249266895999715600261737863698825644292938050707507901970225804581"
