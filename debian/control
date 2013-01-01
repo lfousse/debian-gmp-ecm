@@ -9,7 +9,8 @@ Standards-Version: 3.9.1
 Package: gmp-ecm
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}
-Conflicts: ecm
+Breaks: ecm (<< 1.00-2)
+Replaces: ecm (<< 1.00-2)
 Description: Factor integers using the Elliptic Curve Method
  gmp-ecm is a free implementation of the Elliptic Curve Method (ECM)
  for integer factorization.
