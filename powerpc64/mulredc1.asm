@@ -38,12 +38,19 @@ C final carry returned in r3
 
 include(`config.m4')
 
-	TEXT
-.align 5 C powerPC 32 byte alignment
 	GLOBL GSYM_PREFIX`'mulredc1
-	TYPE(GSYM_PREFIX`'mulredc`'1,`function')
+	GLOBL .GSYM_PREFIX`'mulredc1
 
+	.section ".opd", "aw"
+	.align	3
 GSYM_PREFIX`'mulredc1:
+	.quad	.GSYM_PREFIX`'mulredc1, .TOC.@tocbase, 0
+	.size	GSYM_PREFIX`'mulredc1, 24
+
+	TEXT
+	.align	5	C powerPC 32 byte alignment
+	TYPE(.GSYM_PREFIX`'mulredc`'1,`@function')
+.GSYM_PREFIX`'mulredc1:
 		mulld   r8, r4, r5			C x*y low half T0
 		mulhdu  r9, r4, r5			C x*y high half T1
 		mulld   r0, r7, r8			C u = t0 * invm
@@ -54,3 +61,6 @@ GSYM_PREFIX`'mulredc1:
 		std     r9, 0(r3)			C store in z
 		addze   r3, r8				C return carry
 		blr
+
+	.size	.GSYM_PREFIX`'mulredc1, .-.GSYM_PREFIX`'mulredc1
+

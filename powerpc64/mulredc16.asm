@@ -38,12 +38,15 @@ C final carry returned in r3
 
 include(`config.m4')
 
-
-
-	TEXT
-.align 5 C powerPC 32 byte alignment
 	GLOBL GSYM_PREFIX`'mulredc16
-	TYPE(GSYM_PREFIX`'mulredc`'16,`function')
+	GLOBL .GSYM_PREFIX`'mulredc16
+
+	.section ".opd", "aw"
+	.align	3
+GSYM_PREFIX`'mulredc16:
+	.quad	.GSYM_PREFIX`'mulredc16, .TOC.@tocbase, 0
+	.size	GSYM_PREFIX`'mulredc16, 24
+
 
 C Implements multiplication and REDC for two input numbers of 16 words
 
@@ -112,8 +115,10 @@ C The tmp array needs 16+1 entries, but tmp[16] is stored in
 C r15, so only 16 entries are used in the stack.
 
 
-
-GSYM_PREFIX`'mulredc16:
+	TEXT
+	.align	5	C powerPC 32 byte alignment
+	TYPE(.GSYM_PREFIX`'mulredc`'16,`@function')
+.GSYM_PREFIX`'mulredc16:
 
 C ########################################################################
 C # i = 0 pass
@@ -802,3 +807,6 @@ C Copy result from tmp memory to z
 	ldu     r13, 8(r1)
 	addi    r1, r1, 8
 	blr
+
+	.size	.GSYM_PREFIX`'mulredc16, .-.GSYM_PREFIX`'mulredc16
+

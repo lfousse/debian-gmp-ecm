@@ -142,7 +142,6 @@ usage (void)
     printf ("  -one         Stop processing a candidate if a factor is found (looping mode)\n");
     printf ("  -n           run ecm in \"nice\" mode (below normal priority)\n");
     printf ("  -nn          run ecm in \"very nice\" mode (idle priority)\n");
-    printf ("  -t n         Trial divide candidates before P-1, P+1 or ECM up to n\n");
     printf ("  -ve n        Verbosely show short (< n character) expressions on each loop\n");
     printf ("  -cofdec      Force cofactor output in decimal (even if expressions are used)\n");
     printf ("  -B2scale f   Multiplies the default B2 value by f \n");
@@ -184,7 +183,7 @@ print_config ()
 #endif
 
 #ifdef HAVE_SSE2
-  printf ("HAVE_SSE2 = %d\n$", HAVE_SSE2);
+  printf ("HAVE_SSE2 = %d\n", HAVE_SSE2);
 #else
   printf ("HAVE_SSE2 undefined\n");
 #endif
@@ -311,7 +310,7 @@ int
 main (int argc, char *argv[])
 {
   char **argv0 = argv;
-  mpz_t x, sigma, A, f, orig_x0, B2, B2min, startingB2min;
+  mpz_t seed, x, sigma, A, f, orig_x0, B2, B2min, startingB2min;
   mpcandi_t n;
   mpgocandi_t go;
   mpq_t rat_x0;
@@ -356,7 +355,6 @@ main (int argc, char *argv[])
   int deep=1, trial_factor_found;
   unsigned int displayexpr = 0;
   unsigned int decimal_cofactor = 0;
-  double maxtrialdiv = 0.0;
   double B2scale = 1.0;
   double maxmem = 0.;
   double stage1time = 0.;
@@ -393,6 +391,7 @@ main (int argc, char *argv[])
   mpgocandi_t_init (&go);
 
   /* Init variables we might need to store options */
+  MPZ_INIT (seed);
   MPZ_INIT (sigma);
   MPZ_INIT (A);
   MPZ_INIT (B2);
@@ -689,17 +688,6 @@ main (int argc, char *argv[])
 	      fprintf (stderr, "Can't find input file %s\n", infilename);
 	      exit (EXIT_FAILURE);
 	    }
-	  argv += 2;
-	  argc -= 2;
-	}
-      else if ((argc > 2) && (strcmp (argv[1], "-t") == 0))
-	{
-	  maxtrialdiv = strtod (argv[2], NULL);
-	  if (maxtrialdiv <= 0.0)
-	    {
-	      fprintf (stderr, "Error, the -t option requires a positive argument\n");
-	      exit (EXIT_FAILURE);
-  	    }
 	  argv += 2;
 	  argc -= 2;
 	}
@@ -1055,7 +1043,15 @@ main (int argc, char *argv[])
 
   /* We may need random numbers for sigma/starting point */
   gmp_randinit_default (randstate);
-  gmp_randseed_ui (randstate, get_random_ui ());
+  mpz_set_ui (seed, get_random_ul ());
+  if (mpz_sizeinbase (seed, 2) <= 32)
+    {
+      mpz_mul_2exp (seed, seed, 32);
+      mpz_add_ui (seed, seed, get_random_ul ());
+    }
+  if (verbose >= 3)
+    gmp_printf ("Random seed: %Zd\n", seed);
+  gmp_randseed (randstate, seed);
 
 
   /* Install signal handlers */
@@ -1719,6 +1715,7 @@ OutputFactorStuff:;
   mpz_clear (sigma);
   mpz_clear (A);
   mpq_clear (rat_x0);
+  mpz_clear (seed);
   mpgocandi_t_free (&go);
 
   ecm_clear (params);

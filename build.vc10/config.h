@@ -1,6 +1,6 @@
 /* config.h.in.  Generated from configure.in by autoheader.  */
 
-#define VERSION "6.4.2"
+#define VERSION "6.4.4"
 
 #define VERSION_GPU "gpu_ecm-win"
 
@@ -224,6 +224,12 @@
 #undef size_t
 
 #ifdef _MSC_VER
+#  if _MSC_VER < 1600
+#    define int64_t     __int64
+#    define uint64_t    unsigned __int64
+#  endif
 #  define strncasecmp strnicmp
-#  define alloca  _alloca
+#  define alloca      _alloca
+#  define fseek64     _fseek64
+#  define ftell64     _ftell64
 #endif
