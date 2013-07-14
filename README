@@ -1,4 +1,5 @@
-This is the README file for GMP-ECM. (See README.lib for the ecm library.)
+This is the README file for GMP-ECM. (See INSTALL-ecm for installing GMP-ECM
+and the ecm library, and README.lib for using the ecm library.)
 
 Table of contents of this file:
 1. Basic usage.
@@ -34,6 +35,10 @@ ecm 1000000 5e8 < composites
 Scientific notation is accepted for B1 and B2 values. The actual B2 value
 used may be larger than the specified value to let parameters satisfy some 
 conditions imposed by the stage 2 algorithm.
+
+To run one curve with B1=11e7 on M1061, simply do:
+
+echo "2^1061-1" | ecm 11e7
 
 To run more than one ECM curve on each input number, use the -c parameter.
 
@@ -503,7 +508,7 @@ and a non-zero code (false) means "is composite". Example:
   ecm -prpcmd "pfgw --" -c 900 1e6 <hugecandidates.txt
 
 where pfgw is an OpenPFGW binary, available (only for Intel x86 and 
-compatible cpus) at <http://groups.yahoo.com/group/openpfgw/>.
+compatible cpus) at <http://sourceforge.net/projects/openpfgw/>.
 
 The parameter -idlecmd <cmd> will make GMP-ECM run <cmd> before each ECM,
 P-1 or P+1 attempt on a number. If the exit status of <cmd> is non-zero,
@@ -515,6 +520,26 @@ system is idle again.
 ##############################################################################
 
 8. How to get the best of GMP-ECM?
+
+[this part has to be rewritten, beginning of new part]
+
+After configuring GMP-ECM, type "make bench_mulredc" (or
+"make bench_mulredc.exe" under Windows) and type:
+
+$ ./bench_mulredc # or bench_mulredc.exe under Windows
+
+This will output at the end two lines as follows:
+
+/* 0:mulredc 1:mul+redc_1 2:mul+redc_2 3:mul+redc_n */
+#define TUNE_MULREDC_TABLE {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0}
+/* 0:mulredc 1:sqr+redc_1 2:sqr+redc_2 3:sqr+redc_n */
+#define TUNE_SQRREDC_TABLE {0,0,0,0,0,0,0,0,1,1,3,1,1,3,1,1,1,1,2,1,2}
+
+Then put those lines in the ecm-params.h file (which is a symbolic link),
+or replace the corresponding values in that file if already present, and
+recompile GMP-ECM.
+
+[end of new part]
 
 Choice of modular multiplication. The ecm program may choose between 4 kinds
 of modular arithmetic:

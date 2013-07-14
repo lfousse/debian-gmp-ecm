@@ -1,24 +1,24 @@
 /* Dickman's rho function (to compute probability of success of ecm).
 
-  Copyright 2004, 2005, 2007, 2008 Alexander Kruppa.
+Copyright 2004, 2005, 2006, 2008, 2009, 2010, 2011 Alexander Kruppa,
+Paul Zimmermann.
 
-  This file is part of the ECM Library.
+This file is part of the ECM Library.
 
-  The ECM Library is free software; you can redistribute it and/or modify
-  it under the terms of the GNU Lesser General Public License as published by
-  the Free Software Foundation; either version 2.1 of the License, or (at your
-  option) any later version.
+The ECM Library is free software; you can redistribute it and/or modify
+it under the terms of the GNU Lesser General Public License as published by
+the Free Software Foundation; either version 3 of the License, or (at your
+option) any later version.
 
-  The ECM Library is distributed in the hope that it will be useful, but
-  WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
-  or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
-  License for more details.
+The ECM Library is distributed in the hope that it will be useful, but
+WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
+License for more details.
 
-  You should have received a copy of the GNU Lesser General Public License
-  along with the ECM Library; see the file COPYING.LIB.  If not, write to
-  the Free Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston,
-  MA 02110-1301, USA.
-*/
+You should have received a copy of the GNU Lesser General Public License
+along with the ECM Library; see the file COPYING.LIB.  If not, see
+http://www.gnu.org/licenses/ or write to the Free Software Foundation, Inc.,
+51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA. */
 
 #include "config.h"
 #if defined(TESTDRIVE)
@@ -40,6 +40,14 @@
 #endif
 #include "ecm-impl.h"
 
+/* For Suyama's curves, we have a known torsion factor of 12 = 2^2*3^1, and
+   an average extra exponent of 1/2 for 2, and 1/3 for 3 due to the probability
+   that the group order divided by 12 is divisible by 2 or 3, thus on average
+   we should have 2^2.5*3^1.333 ~ 24.5, however experimentally we have
+   2^3.323*3^1.687 ~ 63.9 (see Alexander Kruppa's thesis, Table 5.1 page 96,
+   row sigma=2, http://tel.archives-ouvertes.fr/tel-00477005/en/).
+   The exp(ECM_EXTRA_SMOOTHNESS) value takes into account the extra
+   smoothness with respect to a random number. */
 #ifndef ECM_EXTRA_SMOOTHNESS
 #define ECM_EXTRA_SMOOTHNESS 3.134
 #endif
@@ -588,7 +596,7 @@ prob (double B1, double B2, double N, double nr, int S, double delta)
 {
   const double sumthresh = 20000.;
   double alpha, beta, stage1, stage2, brsu;
-  const double effN = N / exp(delta);
+  const double effN = N / exp (delta);
 
   ASSERT(rhotable != NULL);
   

@@ -1,28 +1,26 @@
-/* 
-  Functions for sets of long ints, to factor (Z/NZ)* into a set of sums
-  as described in section 5 of "Improved Stage 2 to $P\pm{}1$ Factoring 
-  Algorithms" by Peter L. Montgomery and Alexander Kruppa, ANTS 2008
-  (8th Algorithmic Number Theory Symposium).
+/* Functions for sets of long ints, to factor (Z/NZ)* into a set of sums
+   as described in section 5 of "Improved Stage 2 to $P\pm{}1$ Factoring 
+   Algorithms" by Peter L. Montgomery and Alexander Kruppa, ANTS 2008
+   (8th Algorithmic Number Theory Symposium).
   
-  Copyright 2007, 2008 Alexander Kruppa.
+Copyright 2007, 2008, 2009, 2012 Alexander Kruppa, Paul Zimmermann.
 
-  This file is part of the ECM Library.
+This file is part of the ECM Library.
 
-  The ECM Library is free software; you can redistribute it and/or modify
-  it under the terms of the GNU Lesser General Public License as published by
-  the Free Software Foundation; either version 2.1 of the License, or (at your
-  option) any later version.
+The ECM Library is free software; you can redistribute it and/or modify
+it under the terms of the GNU Lesser General Public License as published by
+the Free Software Foundation; either version 3 of the License, or (at your
+option) any later version.
 
-  The ECM Library is distributed in the hope that it will be useful, but
-  WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
-  or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
-  License for more details.
+The ECM Library is distributed in the hope that it will be useful, but
+WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
+License for more details.
 
-  You should have received a copy of the GNU Lesser General Public License
-  along with the ECM Library; see the file COPYING.LIB.  If not, write to
-  the Free Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston,
-  MA 02110-1301, USA.
-*/
+You should have received a copy of the GNU Lesser General Public License
+along with the ECM Library; see the file COPYING.LIB.  If not, see
+http://www.gnu.org/licenses/ or write to the Free Software Foundation, Inc.,
+51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA. */
 
 #include "config.h"
 #include "ecm-impl.h"
@@ -62,8 +60,12 @@ set_copy (set_long_t *T, set_long_t *S)
 }
 
 
-/* Exchange two adjacent sets in memory. */
-
+/* Exchange two adjacent sets in memory. Since all "elem" arrays are stored
+   in the same chunk of allocated memory, and not in different chunks, we
+   cannot simply swap the "elem" pointers.
+   If the set T has size c and the next has size d, after the swap the set T
+   will have size d and the next will have size c.
+*/
 static void 
 set_swap (set_long_t *T)
 {
@@ -74,6 +76,8 @@ set_swap (set_long_t *T)
   ASSERT(tmp != NULL);
   set_copy (tmp, T);
   set_copy (T, next);
+  /* warning: sets_nextset(T) might differ from next, if T and next had
+     different sizes */
   set_copy (sets_nextset(T), tmp);  
 }
 

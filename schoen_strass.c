@@ -1,24 +1,24 @@
 /* Arithmetic modulo Fermat numbers.
 
-  Copyright 2004, 2005 Alexander Kruppa.
+Copyright 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2012 Alexander Kruppa,
+Paul Zimmermann
 
-  This file is part of the ECM Library.
+This file is part of the ECM Library.
 
-  The ECM Library is free software; you can redistribute it and/or modify
-  it under the terms of the GNU Lesser General Public License as published by
-  the Free Software Foundation; either version 2.1 of the License, or (at your
-  option) any later version.
+The ECM Library is free software; you can redistribute it and/or modify
+it under the terms of the GNU Lesser General Public License as published by
+the Free Software Foundation; either version 3 of the License, or (at your
+option) any later version.
 
-  The ECM Library is distributed in the hope that it will be useful, but
-  WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
-  or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
-  License for more details.
+The ECM Library is distributed in the hope that it will be useful, but
+WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
+License for more details.
 
-  You should have received a copy of the GNU Lesser General Public License
-  along with the ECM Library; see the file COPYING.LIB.  If not, write to
-  the Free Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston,
-  MA 02110-1301, USA.
-*/
+You should have received a copy of the GNU Lesser General Public License
+along with the ECM Library; see the file COPYING.LIB.  If not, see
+http://www.gnu.org/licenses/ or write to the Free Software Foundation, Inc.,
+51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA. */
 
 #include <stdio.h>
 #include <stdlib.h> /* for abs if assertions enabled */
@@ -172,8 +172,9 @@ F_mulmod (mpz_t R, mpz_t S1, mpz_t S2, unsigned int n)
     {
       unsigned long k;
       
-      /* WARNING: _mpz_realloc does not keep the value!!! */
       _mpz_realloc (gt, n2 + 1);
+      /* in case the reallocation fails, _mpz_realloc sets the value to 0 */
+      ASSERT_ALWAYS (mpz_cmp_ui (gt, 0) != 0);
       k = mpn_fft_best_k (n2, S1 == S2);
       mpn_mul_fft (PTR(gt), n2, PTR(S1), ABSIZ(S1), PTR(S2), ABSIZ(S2), k);
       MPN_NORMALIZE(PTR(gt), n2);

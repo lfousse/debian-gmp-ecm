@@ -39,12 +39,6 @@
 /* Define to 1 if you have the `fileno' function. */
 #undef HAVE_FILENO
 
-/* Define to 1 if you have the `floor' function. */
-#undef HAVE_FLOOR
-
-/* Define to 1 if you have the `fmod' function. */
-#undef HAVE_FMOD
-
 /* Define to 1 if you have the `gethostname' function. */
 #undef HAVE_GETHOSTNAME
 
@@ -90,6 +84,9 @@
 /* Define to 1 if you have the <limits.h> header file. */
 #undef HAVE_LIMITS_H
 
+/* Define to 1 if the system has the type `long long int'. */
+#undef HAVE_LONG_LONG_INT
+
 /* Define to 1 if you have the <malloc.h> header file. */
 #undef HAVE_MALLOC_H
 
@@ -108,14 +105,11 @@
 /* Define to 1 if you have the `memset' function. */
 #undef HAVE_MEMSET
 
-/* Define to 1 if you have the `mpn_sqr' function. */
-#undef HAVE_MPN_SQR
+/* Define to 1 if GMP is MPIR */
+#undef HAVE_MPIR
 
 /* Define to 1 if you have the `nice' function. */
 #undef HAVE_NICE
-
-/* Define to 1 if you have the `pow' function. */
-#undef HAVE_POW
 
 /* Define to 1 if you have the `setpriority' function. */
 #undef HAVE_SETPRIORITY
@@ -125,9 +119,6 @@
 
 /* Define to 1 if you have the <signal.h> header file. */
 #undef HAVE_SIGNAL_H
-
-/* Define to 1 if you have the `sqrt' function. */
-#undef HAVE_SQRT
 
 /* Define to 1 to enable SSE2 instructions in NTT code */
 #undef HAVE_SSE2
@@ -186,8 +177,20 @@
 /* Define to 1 if you have the `__gmpn_mod_34lsub1' function. */
 #undef HAVE___GMPN_MOD_34LSUB1
 
+/* Define to 1 if you have the `__gmpn_mullo_n' function. */
+#undef HAVE___GMPN_MULLO_N
+
+/* Define to 1 if you have the `__gmpn_preinv_mod_1' function. */
+#undef HAVE___GMPN_PREINV_MOD_1
+
 /* Define to 1 if you have the `__gmpn_redc_1' function. */
 #undef HAVE___GMPN_REDC_1
+
+/* Define to 1 if you have the `__gmpn_redc_2' function. */
+#undef HAVE___GMPN_REDC_2
+
+/* Define to 1 if you have the `__gmpn_redc_n' function. */
+#undef HAVE___GMPN_REDC_N
 
 /* Define to the sub-directory in which libtool stores uninstalled libraries.
    */
@@ -196,8 +199,8 @@
 /* Define to 1 if you want memory debugging */
 #undef MEMORY_DEBUG
 
-/* Define to 1 to use asm redc */
-#undef NATIVE_REDC
+/* Define to 1 if you want Svoboda mulredc */
+#undef MULREDC_SVOBODA
 
 /* Define to 1 if your C compiler doesn't accept -c and -o together. */
 #undef NO_MINUS_C_MINUS_O
@@ -217,6 +220,9 @@
 /* Define to the one symbol short name of this package. */
 #undef PACKAGE_TARNAME
 
+/* Define to the home page for this package. */
+#undef PACKAGE_URL
+
 /* Define to the version of this package. */
 #undef PACKAGE_VERSION
 
@@ -234,6 +240,9 @@
 /* Define to 1 if you can safely include both <sys/time.h> and <time.h>. */
 #undef TIME_WITH_SYS_TIME
 
+/* Define to 1 to use asm redc */
+#undef USE_ASM_REDC
+
 /* Version number of package */
 #undef VERSION
 
@@ -243,9 +252,14 @@
 /* Define to 1 if you want shell command execution */
 #undef WANT_SHELLCMD
 
-/* Define to 1 if x86_64 ecm_redc3() and mulredc*() functions should be called
-   with Windows ABI */
+/* Define to 1 if x86_64 mulredc*() functions should be called with Windows
+   ABI */
 #undef WINDOWS64_ABI
+
+/* Define for Solaris 2.5.1 so the uint64_t typedef from <sys/synch.h>,
+   <pthread.h>, or <semaphore.h> is not used. If the typedef were allowed, the
+   #define below would cause a syntax error. */
+#undef _UINT64_T
 
 /* Define to empty if `const' does not conform to ANSI C. */
 #undef const
@@ -256,5 +270,13 @@
 #undef inline
 #endif
 
+/* Define to the type of a signed integer type of width exactly 64 bits if
+   such a type exists and the standard includes do not define it. */
+#undef int64_t
+
 /* Define to `unsigned int' if <sys/types.h> does not define. */
 #undef size_t
+
+/* Define to the type of an unsigned integer type of width exactly 64 bits if
+   such a type exists and the standard includes do not define it. */
+#undef uint64_t

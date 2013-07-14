@@ -1,22 +1,22 @@
 /* Functions for reading a writing resume file lines.
 
-  Copyright 2001, 2002, 2003 Paul Zimmermann and Alexander Kruppa.
+Copyright 2001, 2002, 2003, 2004, 2005, 2006, 2008, 2010, 2011, 2012
+Paul Zimmermann, Alexander Kruppa and Cyril Bouvier.
 
-  This program is free software; you can redistribute it and/or modify it
-  under the terms of the GNU General Public License as published by the
-  Free Software Foundation; either version 2 of the License, or (at your
-  option) any later version.
+This program is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 3 of the License, or (at your
+option) any later version.
 
-  This program is distributed in the hope that it will be useful, but WITHOUT
-  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-  FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
-  more details.
+This program is distributed in the hope that it will be useful, but
+WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
+more details.
 
-  You should have received a copy of the GNU General Public License along
-  with this program; see the file COPYING.  If not, write to the Free
-  Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
-  02111-1307, USA.
-*/
+You should have received a copy of the GNU General Public License
+along with this program; see the file COPYING.  If not, see
+http://www.gnu.org/licenses/ or write to the Free Software Foundation, Inc.,
+51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA. */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -121,8 +121,7 @@ read_resumefile_line (int *method, mpz_t x, mpcandi_t *n, mpz_t sigma, mpz_t A,
         mpz_t x0, double *b1, char *program, char *who, char *rtime, 
         char *comment, FILE *fd)
 {
-  int a, c;
-  int have_method, have_x, have_z, have_n, have_sigma, have_a, have_b1, 
+  int a, have_method, have_x, have_z, have_n, have_sigma, have_a, have_b1, 
       have_checksum, have_qx;
   unsigned int saved_checksum;
   char tag[16];
@@ -140,7 +139,7 @@ read_resumefile_line (int *method, mpz_t x, mpcandi_t *n, mpz_t sigma, mpz_t A,
       if (facceptstr (fd, "#"))
         {
           while (!facceptnl (fd) && !feof (fd))
-            c = fgetc (fd);
+            fgetc (fd);
           continue;
         }
       
@@ -219,7 +218,8 @@ read_resumefile_line (int *method, mpz_t x, mpcandi_t *n, mpz_t sigma, mpz_t A,
             }
           else if (strcmp (tag, "CHECKSUM") == 0)
             {
-              fscanf (fd, "%u", &saved_checksum);
+              if (fscanf (fd, "%u", &saved_checksum) != 1)
+                goto error;
               have_checksum = 1;
             }
           else if (strcmp (tag, "COMMENT") == 0)
@@ -244,7 +244,8 @@ read_resumefile_line (int *method, mpz_t x, mpcandi_t *n, mpz_t sigma, mpz_t A,
             }
           else if (strcmp (tag, "B1") == 0)
             {
-              fscanf (fd, "%lf", b1);
+              if (fscanf (fd, "%lf", b1) != 1)
+                goto error;
               have_b1 = 1;
             }
           else if (strcmp (tag, "PROGRAM") == 0)
@@ -373,7 +374,7 @@ read_resumefile_line (int *method, mpz_t x, mpcandi_t *n, mpz_t sigma, mpz_t A,
 error:
       /* In case of error, read rest of line and try next line */
       while (!facceptnl (fd) && !feof (fd))
-        c = fgetc (fd);
+        fgetc (fd);
     }
     
     /* We hit EOF without reading a proper save line */
@@ -468,8 +469,13 @@ write_resumefile_line (char *fn, int method, double B1, mpz_t sigma, mpz_t A,
   mpz_out_str (file, 16, x);
   mpz_mul_ui (checksum, checksum, mpz_fdiv_ui (n->n, CHKSUMMOD));
   mpz_mul_ui (checksum, checksum, mpz_fdiv_ui (x, CHKSUMMOD));
+#ifdef GPUECM
+  fprintf (file, "; CHECKSUM=%lu; PROGRAM=GPU-ECM %s;",
+           mpz_fdiv_ui (checksum, CHKSUMMOD), VERSION_GPU);
+#else
   fprintf (file, "; CHECKSUM=%lu; PROGRAM=GMP-ECM %s;",
            mpz_fdiv_ui (checksum, CHKSUMMOD), VERSION);
+#endif
   mpz_clear (checksum);
   
   if (mpz_sgn (x0) != 0)

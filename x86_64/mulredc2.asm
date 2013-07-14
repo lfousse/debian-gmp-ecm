@@ -130,8 +130,10 @@ ifdef(`WINDOWS64_ABI',
 	movq 	%rax, %T0		# Move low word of product to T0
 	movq	%rdx, %T1		# Move high word of product to T1
 
-	imulq	%INVM, %rax		# %rax = ((x[i]*y[0]+tmp[0])*invm)%2^64
-	movq	%rax, %U		# this is the new u value
+ifdef(`MULREDC_SVOBODA',
+, `'
+`	imulq	%INVM, %rax		# %rax = ((x[i]*y[0]+tmp[0])*invm)%2^64'
+) 	movq	%rax, %U		# this is the new u value
 
 	mulq	(%MP)			# multipy u*m[0]
 	addq	%rax, %T0		# Now %T0 = 0, need not be stored
@@ -145,7 +147,9 @@ ifdef(`WANT_ASSERT',
 `	pushf
 	testq	%T0, %T0
 	jz	2f
-	call	GSYM_PREFIX`'abort
+	lea     _GLOBAL_OFFSET_TABLE_(%rip), %rbx # if we do PIC code, we 
+		# need to set rbx; if not, it doesnt hurt
+	call	GSYM_PREFIX`'abort@plt
 LABEL_SUFFIX(2)
 	popf')
 define(`TT', defn(`T0'))dnl
@@ -215,7 +219,9 @@ ifdef(`WANT_ASSERT',
 `	pushf
 	testq	%T0, %T0
 	jz	4f
-	call	GSYM_PREFIX`'abort
+	lea     _GLOBAL_OFFSET_TABLE_(%rip), %rbx # if we do PIC code, we 
+		# need to set rbx; if not, it doesnt hurt
+	call	GSYM_PREFIX`'abort@plt
 LABEL_SUFFIX(4)
 	popf')
 define(`TT', defn(`T0'))dnl

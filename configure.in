@@ -1,4 +1,4 @@
-m4_define([ECM_VERSION], [6.3])
+m4_define([ECM_VERSION], [6.4.4])
 
 AC_PREREQ([2.57])
 AC_INIT([ecm], ECM_VERSION, [ecm-discuss@lists.gforge.inria.fr])
@@ -47,9 +47,9 @@ fi
 ############################
 
 dnl Assertions are enabled by default for beta/rc releases. The last parameter
-dnl of AC_ARG_ENABLE() sets the default value.
+dnl of AC_ARG_ENABLE() sets the default value (change also default=...).
 AC_ARG_ENABLE([assert],
-[AS_HELP_STRING([--enable-assert], [enable ASSERT checking [[default=yes]]])],[],[enable_assert=no])
+[AS_HELP_STRING([--enable-assert], [enable ASSERT checking [[default=no]]])],[],[enable_assert=no])
 if test "x$enable_assert" = xyes; then
   AC_DEFINE([WANT_ASSERT],1,[Define to 1 if you want assertions enabled])
   GMP_DEFINE([WANT_ASSERT], 1)
@@ -71,7 +71,7 @@ AC_ARG_ENABLE([sse2],
 [AS_HELP_STRING([--enable-sse2], [use SSE2 instructions in NTT code (default=yes for 32-bit x86 systems, if supported)])])
 
 AC_ARG_ENABLE([asm-redc],
-[AS_HELP_STRING([--enable-asm-redc], [use an asm redc [[default=yes on x86_64 and powerpc64, no on others]]])])
+[AS_HELP_STRING([--enable-asm-redc], [use an asm redc (default=yes on x86_64 and powerpc64, no on others)])])
 
 AC_ARG_ENABLE([memory-debug],
 [AS_HELP_STRING([--enable-memory-debug], [enable memory debugging [[default=no]]])])
@@ -79,6 +79,13 @@ if test "x$enable_memory_debug" = xyes; then
   AC_DEFINE([MEMORY_DEBUG], 1, [Define to 1 if you want memory debugging])
 fi
 AM_CONDITIONAL([MEMORY_DEBUG], [test "x$enable_memory_debug" = xyes])
+
+AC_ARG_ENABLE([mulredc-svoboda],
+[AS_HELP_STRING([--enable-mulredc-svoboda], [enable Svoboda mulredc [[default=no]]])])
+if test "x$enable_mulredc_svoboda" = xyes; then
+  AC_DEFINE([MULREDC_SVOBODA],1,[Define to 1 if you want Svoboda mulredc])
+  GMP_DEFINE([MULREDC_SVOBODA], 1)
+fi
 
 
 
@@ -103,12 +110,12 @@ if test "x$GMP_CC$GMP_CFLAGS" = x; then
    do
      test $cpp = /lib/cpp || cpp="$cpp -E"
      echo "Trying to run $cpp" >&AS_MESSAGE_LOG_FD
-     AC_LANG_CONFTEST([foo])
+     AC_LANG_CONFTEST([AC_LANG_SOURCE([foo])])
      if $cpp $CPPFLAGS conftest.$ac_ext > /dev/null 2> /dev/null ; then
        # Get CC and CFLAGS
-       AC_LANG_CONFTEST([#include "gmp.h"
+       AC_LANG_CONFTEST([AC_LANG_SOURCE([#include "gmp.h"
 MPFR_OPTION_CC __GMP_CC
-MPFR_OPTION_CFLAGS __GMP_CFLAGS])
+MPFR_OPTION_CFLAGS __GMP_CFLAGS])])
        echo "Trying to parse gmp.h with: $cpp $CPPFLAGS conftest.$ac_ext" >&AS_MESSAGE_LOG_FD
        if $cpp $CPPFLAGS conftest.$ac_ext 2> /dev/null > conftest.out; then
          GMP_CC="`$EGREP MPFR_OPTION_CC conftest.out | $SED -e 's/MPFR_OPTION_CC //g' | $SED -e 's/"//g'`"
@@ -136,7 +143,7 @@ dnl But these variables may be invalid, so we must check them first.
 dnl Note: we do not use AC_RUN_IFELSE, as it implies AC_PROG_CC.
 if test "x$GMP_CC$GMP_CFLAGS" != x; then
    AC_MSG_CHECKING([whether CC=$GMP_CC and CFLAGS=$GMP_CFLAGS works])
-   AC_LANG_CONFTEST([int main (void) { return 0; }])
+   AC_LANG_CONFTEST([AC_LANG_SOURCE([int main (void) { return 0; }])])
    if $GMP_CC $GMP_CFLAGS -o conftest conftest.$ac_ext 2> /dev/null ; then
      AC_MSG_RESULT([yes])
      CFLAGS=$GMP_CFLAGS
@@ -164,6 +171,9 @@ LT_INIT([disable-shared])
 
 
 dnl Checks for typedefs, structures, and compiler characteristics.
+AC_TYPE_INT64_T
+AC_TYPE_UINT64_T
+AC_TYPE_LONG_LONG_INT
 
 dnl Check if compiler supports "const," if not define it to empty string
 AC_C_CONST
@@ -195,7 +205,7 @@ fi
 # asm_redc enabled by default for x86_64 and 64 bit PowerPC
 if test "x$enable_asm_redc" = x; then
   case $host in
-    x86_64* | powerpc-apple-darwin* | powerpc64-*-linux*) enable_asm_redc=yes;;
+    x86_64*-*-* | powerpc-apple-darwin* | powerpc64-*-linux*) enable_asm_redc=yes;;
     *) enable_asm_redc=no;;
   esac
 fi
@@ -203,8 +213,27 @@ fi
 if test "x$enable_asm_redc" = xyes; then
   case $host in
     pentium4-*-* | pentium3-*-* | viac7-*-* | i786-*-*) ASMPATH=pentium4;;
-    x86_64-*-*)  ASMPATH=x86_64;; 
-    powerpc-apple-darwin*) ASMPATH=powerpc64;;
+    x86_64*-*-*)
+# In case GMP has been compiled with a 32-bit ABI...
+# Use AC_COMPILE_IFELSE instead of AC_PREPROC_IFELSE, otherwise
+# GMP's CFLAGS doesn't seem to be taken into account.
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([
+#if defined(__i386__)
+#error
+#endif])], [], [AC_MSG_NOTICE([32-bit ABI (i386), disabling asm-redc])
+                enable_asm_redc=no])
+                          ASMPATH=x86_64;;
+# warning: with powerpc-apple-darwin* we can have ABI=32
+# see bug #10646 on the bug tracker, where config.guess says
+# powerpc-apple-darwin8.11.0 (this a 64-bit machine, but most applications
+# are compiled in 32 bits). It works with --disable-asm-redc.
+    powerpc-apple-darwin*)
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([
+#if defined(__ppc__)
+#error
+#endif])], [], [AC_MSG_NOTICE([32-bit PowerPC, disabling asm-redc])
+                enable_asm_redc=no])
+                          ASMPATH=powerpc64;;
     powerpc64-*-linux*)
 			  ECM_INCLUDE([<"$srcdir"/powerpc64/powerpc-defs.m4>])
 			  ASMPATH=powerpc64;;
@@ -213,9 +242,11 @@ if test "x$enable_asm_redc" = xyes; then
     		   	  ASMPATH=athlon;;
     *) AC_MSG_ERROR([[asm redc not available on this machine $host]]);;
   esac
+fi
 
+if test "x$enable_asm_redc" = xyes; then
 # do the necessary definitions and includes
-  AC_DEFINE([NATIVE_REDC],1,[Define to 1 to use asm redc])
+  AC_DEFINE([USE_ASM_REDC],1,[Define to 1 to use asm redc])
   test "x$CCAS" != x || CCAS="$CC -c"
   AC_SUBST([CCAS])
   GMP_PROG_M4
@@ -226,7 +257,7 @@ if test "x$enable_asm_redc" = xyes; then
 
   case $host in
     *-*-mingw32) GMP_DEFINE([WINDOWS64_ABI], 1)
-                 AC_DEFINE([WINDOWS64_ABI], 1,[Define to 1 if x86_64 ecm_redc3() and mulredc*() functions should be called with Windows ABI]);;
+                 AC_DEFINE([WINDOWS64_ABI], 1,[Define to 1 if x86_64 mulredc*() functions should be called with Windows ABI]);;
     *) ;;
   esac
 
@@ -257,7 +288,7 @@ dnl for them by default and let the tests below check if it works
     ;;
   esac
 fi
-# If the neccessary predefines (__GNUC__ or __ICL, and __i386__)
+# If the necessary predefines (__GNUC__ or __ICL, and __i386__)
 # are not set, SSE2 will never be compiled in, and we switch off
 # the SSE2 flag
 if test "x$enable_sse2" = xyes; then
@@ -265,8 +296,8 @@ if test "x$enable_sse2" = xyes; then
 #if !defined(__GNUC__) && !defined(__ICL) || !defined(__i386__)
 #error
 #IRIXdoesnotexitaterrordirective
-#endif])], [], dnl Neccessary predefines are present. Nothing to do
-  [ dnl Neccessary predefines are not present. Switch off SSE2
+#endif])], [], dnl Necessary predefines are present. Nothing to do
+  [ dnl Necessary predefines are not present. Switch off SSE2
     AC_MSG_NOTICE([Not using GCC or ICC, or not a 32-bit x86. SSE2 disabled])
     enable_sse2=no])
 fi
@@ -275,9 +306,9 @@ if test "x$enable_sse2" = xyes; then
   AC_MSG_CHECKING([for SSE2 support])
   m4_define([SSE2_TEST_PROG], [AC_LANG_PROGRAM([], dnl
 [#if (defined(__GNUC__) || defined(__ICL)) && defined(__i386__)
-/* When there are no constraints, registers are referred to by
-   single % sign, not double. Argh */
-asm volatile ("pmuludq %xmm2, %xmm0");
+/* On some machines, a program without constraints may pass without -msse2 but
+   those with constraints in spv.c fail, thus we test with constraints here. */
+asm volatile ("pmuludq %%xmm2, %%xmm0" : : :"%xmm0");
 #else
 #error
 #IRIXdoesnotexitaterrordirective
@@ -306,14 +337,17 @@ fi
 ########################
 dnl If user wants GWNUM, check if the file exists (either as .a or .lib)
 if test "x$with_gwnum" != "x"; then
+  if test "x$enable_openmp" = xyes; then
+      AC_MSG_ERROR([Woltman's GWNUM currently cannot be used together with OpenMP])
+  fi
   AC_CHECK_FILE([$with_gwnum/gwnum.a], [
     AC_DEFINE([HAVE_GWNUM], 1, [Define to 1 if gwnum.a or gwnum.lib exist])
-    GWLIB="$with_gwnum/gwnum.a"
+    GWLIB="$with_gwnum/gwnum.a -lpthread"
     CPPFLAGS="$CPPFLAGS -I$with_gwnum"
   ],[
     AC_CHECK_FILE([$with_gwnum/gwnum.lib], [
       AC_DEFINE([HAVE_GWNUM], 1, [Define to 1 if gwnum.a or gwnum.lib exist])
-      GWLIB="$with_gwnum/gwnum.lib"
+      GWLIB="$with_gwnum/gwnum.lib -lpthread"
       CPPFLAGS="$CPPFLAGS -I$with_gwnum"
     ],[
       with_gwnum=
@@ -334,10 +368,16 @@ AC_CHECK_HEADERS([ctype.h sys/types.h sys/resource.h])
 dnl Checks for library functions that are not in GMP
 AC_FUNC_STRTOD
 
+dnl Check functions in the math library
+AC_CHECK_LIB(m,pow,,AC_MSG_ERROR(required function missing))
+AC_CHECK_LIB(m,floor,,AC_MSG_ERROR(required function missing))
+AC_CHECK_LIB(m,sqrt,,AC_MSG_ERROR(required function missing))
+AC_CHECK_LIB(m,fmod,,AC_MSG_ERROR(required function missing))
+AC_CHECK_LIB(m,cos)
+
 dnl Check for GSL but don't add it to LIBS, since only rho uses it and
 dnl we don't want all other binaries to depend on it. 
 dnl If found, pass link flags to Makefile via GSL_LD_FLAGS
-AC_CHECK_LIB([m],[cos])
 GSL_LD_FLAGS=
 dnl Check if "-lgslcblas" works. If yes, check if "-lgsl -lgslcblas" works.
 dnl If both work, put "-lgsl -lgslcblas" in GSL_LD_FLAGS
@@ -349,7 +389,6 @@ AC_CHECK_LIB([gslcblas],[cblas_dgemm], dnl
    dnl Here comes the "OTHER-LIBRARIES" field for AC_CHECK_LIB [gsl]:
    [-lgslcblas])])
 
-AC_CHECK_FUNCS([floor sqrt pow fmod], [], [AC_MSG_ERROR([required function missing])])
 AC_CHECK_FUNCS([isascii memset strchr strlen strncasecmp strstr], [], [AC_MSG_ERROR([required function missing])])
 AC_CHECK_FUNCS([access unlink], [], [AC_MSG_ERROR([required function missing])])
 AC_CHECK_FUNCS([isspace isdigit isxdigit], [], [AC_MSG_ERROR([required function missing])])
@@ -399,15 +438,28 @@ dnl we start looking for libgmp.a
 AC_MSG_CHECKING([for recent GMP])
 AC_PREPROC_IFELSE([AC_LANG_SOURCE([[
 #include <gmp.h>
-#if (__GNU_MP_VERSION < 4 || (__GNU_MP_VERSION == 4 && __GNU_MP_VERSION_MINOR < 1))
+#if (__GNU_MP_VERSION <= 4)
 #error
 #IRIXdoesnotexitaterrordirective
 #endif
 ]])],
   [AC_MSG_RESULT(yes)],
   [AC_MSG_RESULT(no)
-   AC_MSG_ERROR([GMP 4.1.0 or newer is required])]
+   AC_MSG_ERROR([GMP 5.0.0 or newer is required])]
 )
+
+dnl Figure out if GMP is MPIR
+AC_MSG_CHECKING([if GMP is MPIR])
+AC_PREPROC_IFELSE([AC_LANG_SOURCE([[
+#include <gmp.h>
+#ifndef __MPIR_VERSION
+#error
+#IRIXdoesnotexitaterrordirective
+#endif
+]])],
+  [AC_MSG_RESULT(yes)
+   AC_DEFINE([HAVE_MPIR],1,[Define to 1 if GMP is MPIR])],
+  [AC_MSG_RESULT(no)])
 
 dnl Now choose how to link the GMP library. If we can, we'd prefer to
 dnl link it statically since that makes for faster function calls. To
@@ -482,22 +534,8 @@ return strcmp (buffer, gmp_version);
    [AC_MSG_RESULT([cross-compiling: cannot test])]
 )
 
-AC_CHECK_FUNCS([__gmpn_add_nc __gmpn_mod_34lsub1 __gmpn_redc_1])
-
-# mpn_sqr() is renamed to __gmpn_sqr() in GMP 5.0.x, but may not be 
-# in future versions. AC_CHECK_FUNCS() does not allow including header 
-# files. Thus, a custom test for mpn_sqr()
-AC_MSG_CHECKING([for mpn_sqr])
-AC_LINK_IFELSE([AC_LANG_PROGRAM([[
-#ifdef HAVE_GMP_H
-#include <gmp.h>
-#endif]],[[
-  mpn_sqr ((mp_ptr) 0, (mp_ptr) 0, (mp_size_t) 0);
-  return 0;
-]])], [AC_MSG_RESULT(yes)
-       AC_DEFINE([HAVE_MPN_SQR], 1, [Define to 1 if you have the `mpn_sqr' function.])],
-   [AC_MSG_RESULT(no)]
-)
+AC_CHECK_FUNCS([__gmpn_add_nc __gmpn_mod_34lsub1 __gmpn_redc_1 __gmpn_redc_2])
+AC_CHECK_FUNCS([__gmpn_mullo_n __gmpn_redc_n __gmpn_preinv_mod_1])
 
 LIBS="$LIBS_BACKUP"
 
@@ -560,6 +598,8 @@ case $host in
   mips64el-*-*) config_arch="mips64el" ;;
   armv5tel-*-*) config_arch="armv5tel" ;;
   sparc64-*-*) config_arch="sparc64" ;;
+  ia64-*-*) config_arch="ia64" ;;
+  hppa2.0-*-*) config_arch="hppa2.0" ;;
   *) config_arch="default" ;;
 esac
 
@@ -569,6 +609,8 @@ if test x"$config_arch" = xathlon64; then
   if test -f /proc/cpuinfo; then
     if $EGREP -q "Core\(TM\)2" /proc/cpuinfo; then
       config_arch=core2
+    elif $EGREP -q "Core\(TM\) i5" /proc/cpuinfo; then
+      config_arch=corei5
     fi;
   else
     # No /proc/cpuinfo, tell user about ecm-params.h.core2
@@ -576,10 +618,23 @@ if test x"$config_arch" = xathlon64; then
   fi;
 fi
 
+# See if this is a Pentium 4, if we have /proc/cpuinfo 
+pentium4warn=no
+if test x"$config_arch" = xdefault; then
+  if test -f /proc/cpuinfo; then
+    if $EGREP -q "Pentium\(R\) 4" /proc/cpuinfo; then
+      config_arch=pentium4
+    fi;
+  else
+    # No /proc/cpuinfo, tell user about ecm-params.h.pentium4
+    pentium4warn=yes
+  fi;
+fi
+
 LIBS="$LIBS $GWLIB"
 
 GMP_FINISH
-AC_CONFIG_FILES([Makefile athlon/Makefile pentium4/Makefile x86_64/Makefile powerpc64/Makefile build.vc9/Makefile build.vc9/assembler/Makefile build.vc9/ecm/Makefile build.vc9/libecm/Makefile])
+AC_CONFIG_FILES([Makefile athlon/Makefile pentium4/Makefile x86_64/Makefile powerpc64/Makefile build.vc10/Makefile build.vc10/assembler/Makefile build.vc10/ecm/Makefile build.vc10/libecm/Makefile build.vc10/tune/Makefile build.vc10/bench_mulredc/Makefile])
 AC_CONFIG_LINKS([ecm-params.h:ecm-params.h.$config_arch])
 MUL_FFT_PARAMS="mul_fft-params.h.$config_arch"
 if ! test -f "$MUL_FFT_PARAMS"
@@ -644,5 +699,12 @@ if test x"$core2warn" = xyes; then
   AC_MSG_NOTICE([Your cpu was detected as x86_64; if it is a Core 2, please either use the ecm-params.h.core2 file by executing the commands:])
   AC_MSG_NOTICE([rm ecm-params.h])
   AC_MSG_NOTICE([ln -s ecm-params.h.core2 ecm-params.h])
+  AC_MSG_NOTICE([or generate a custom ecm-params.h file for your system as described in INSTALL.])
+fi
+
+if test x"$pentium4warn" = xyes; then
+  AC_MSG_NOTICE([Your cpu was detected as default; if it is a Pentium 4, please either use the ecm-params.h.pentium4 file by executing the commands:])
+  AC_MSG_NOTICE([rm ecm-params.h])
+  AC_MSG_NOTICE([ln -s ecm-params.h.pentium4 ecm-params.h])
   AC_MSG_NOTICE([or generate a custom ecm-params.h file for your system as described in INSTALL.])
 fi

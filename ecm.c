@@ -1,25 +1,24 @@
 /* Elliptic Curve Method: toplevel and stage 1 routines.
 
-  Copyright 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008
-  Paul Zimmermann and Alexander Kruppa.
+Copyright 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011,
+2012 Paul Zimmermann, Alexander Kruppa, Cyril Bouvier, David Cleaver.
 
-  This file is part of the ECM Library.
+This file is part of the ECM Library.
 
-  The ECM Library is free software; you can redistribute it and/or modify
-  it under the terms of the GNU Lesser General Public License as published by
-  the Free Software Foundation; either version 2.1 of the License, or (at your
-  option) any later version.
+The ECM Library is free software; you can redistribute it and/or modify
+it under the terms of the GNU Lesser General Public License as published by
+the Free Software Foundation; either version 3 of the License, or (at your
+option) any later version.
 
-  The ECM Library is distributed in the hope that it will be useful, but
-  WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
-  or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
-  License for more details.
+The ECM Library is distributed in the hope that it will be useful, but
+WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
+License for more details.
 
-  You should have received a copy of the GNU Lesser General Public License
-  along with the ECM Library; see the file COPYING.LIB.  If not, write to
-  the Free Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston,
-  MA 02110-1301, USA.
-*/
+You should have received a copy of the GNU Lesser General Public License
+along with the ECM Library; see the file COPYING.LIB.  If not, see
+http://www.gnu.org/licenses/ or write to the Free Software Foundation, Inc.,
+51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA. */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -32,6 +31,19 @@
 # define ULONG_MAX __GMP_ULONG_MAX
 #endif
 
+/* the following factor takes into account the smaller expected smoothness
+   for Montgomery's curves (batch mode) with respect to Suyama's curves */
+#if GMP_NUMB_BITS >= 64
+/* For GMP_NUMB_BITS >= 64 we use A=4d-2 with d a square (see main.c). In that
+   case, Cyril Bouvier and Razvan Barbulescu have shown that the average
+   expected torsion is that of a generic Suyama curve multiplied by the
+   constant 2^(1/3)/(3*3^(1/128)) */
+#define BATCH1_EXTRA_SMOOTHNESS 0.416384512396064
+#else
+/* For A=4d-2 for d a random integer, the average expected torsion is that
+   of a generic Suyama curve multiplied by the constant 1/(3*3^(1/128)) */
+#define BATCH1_EXTRA_SMOOTHNESS 0.330484606500389
+#endif
 /******************************************************************************
 *                                                                             *
 *                            Elliptic Curve Method                            *
@@ -70,18 +82,18 @@ get_curve_from_sigma (mpz_t f, mpres_t A, mpres_t x, mpz_t sigma, mpmod_t n)
 
   mpres_set_z  (u, sigma, n);
   mpres_mul_ui (v, u, 4, n);   /* v = (4*sigma) mod n */
-  mpres_mul (t, u, u, n);
+  mpres_sqr (t, u, n);
   mpres_sub_ui (u, t, 5, n);       /* u = (sigma^2-5) mod n */
-  mpres_mul (t, u, u, n);
+  mpres_sqr (t, u, n);
   mpres_mul (x, t, u, n);          /* x = (u^3) mod n */
-  mpres_mul (t, v, v, n);
+  mpres_sqr (t, v, n);
   mpres_mul (z, t, v, n);          /* z = (v^3) mod n */
   mpres_mul (t, x, v, n);
   mpres_mul_ui (b, t, 4, n);       /* b = (4*x*v) mod n */
   mpres_mul_ui (t, u, 3, n);
   mpres_sub (u, v, u, n);          /* u' = v-u */
   mpres_add (v, t, v, n);          /* v' = (3*u+v) mod n */
-  mpres_mul (t, u, u, n);
+  mpres_sqr (t, u, n);
   mpres_mul (u, t, u, n);          /* u'' = ((v-u)^3) mod n */
   mpres_mul (A, u, v, n);          /* a = (u'' * v') mod n = 
                                       ((v-u)^3 * (3*u+v)) mod n */
@@ -151,7 +163,7 @@ montgomery_to_weierstrass (mpz_t f, mpres_t x, mpres_t y, mpres_t A, mpmod_t n)
   mpres_mul (x, x, y, n);    /* (3x+a)/(3g) */
 
   /* update A */
-  mpres_mul (A, A, A, n);    /* a^2 */
+  mpres_sqr (A, A, n);    /* a^2 */
   mpres_sub_ui (A, A, 3, n);
   mpres_neg (A, A, n);       /* 3-a^2 */
   mpres_mul (A, A, y, n);    /* (3-a^2)/(3g^2) */
@@ -189,8 +201,8 @@ add3 (mpres_t x3, mpres_t z3, mpres_t x2, mpres_t z2, mpres_t x1, mpres_t z1,
   mpres_add (w, u, v, n);        /* w = 2*(x1*x2-z1*z2) */
   mpres_sub (v, u, v, n);        /* v = 2*(x2*z1-x1*z2) */
 
-  mpres_mul (w, w, w, n);        /* w = 4*(x1*x2-z1*z2)^2 */
-  mpres_mul (v, v, v, n);        /* v = 4*(x2*z1-x1*z2)^2 */
+  mpres_sqr (w, w, n);           /* w = 4*(x1*x2-z1*z2)^2 */
+  mpres_sqr (v, v, n);           /* v = 4*(x2*z1-x1*z2)^2 */
 
   if (x == x3) /* same variable: in-place variant */
     {
@@ -219,9 +231,9 @@ duplicate (mpres_t x2, mpres_t z2, mpres_t x1, mpres_t z1, mpmod_t n,
            mpres_t b, mpres_t u, mpres_t v, mpres_t w)
 {
   mpres_add (u, x1, z1, n);
-  mpres_mul (u, u, u, n);   /* u = (x1+z1)^2 mod n */
+  mpres_sqr (u, u, n);      /* u = (x1+z1)^2 mod n */
   mpres_sub (v, x1, z1, n);
-  mpres_mul (v, v, v, n);   /* v = (x1-z1)^2 mod n */
+  mpres_sqr (v, v, n);      /* v = (x1-z1)^2 mod n */
   mpres_mul (x2, u, v, n);  /* x2 = u*v = (x1^2 - z1^2)^2 mod n */
   mpres_sub (w, u, v, n);   /* w = u-v = 4*x1*z1 */
   mpres_mul (u, w, b, n);   /* u = w*b = ((A+2)/4*(4*x1*z1)) mod n */
@@ -321,13 +333,13 @@ ecm_mul_end:
    DUP is the cost of a duplicate
 */
 static double
-lucas_cost (unsigned long n, double v)
+lucas_cost (ecm_uint n, double v)
 {
-  unsigned long d, e, r;
+  ecm_uint d, e, r;
   double c; /* cost */
 
   d = n;
-  r = (unsigned long) ((double) d * v + 0.5);
+  r = (ecm_uint) ((double) d * v + 0.5);
   if (r >= n)
     return (ADD * (double) n);
   d = n - r;
@@ -407,11 +419,11 @@ lucas_cost (unsigned long n, double v)
 */
 
 static void
-prac (mpres_t xA, mpres_t zA, unsigned long k, mpmod_t n, mpres_t b,
+prac (mpres_t xA, mpres_t zA, ecm_uint k, mpmod_t n, mpres_t b,
       mpres_t u, mpres_t v, mpres_t w, mpres_t xB, mpres_t zB, mpres_t xC, 
       mpres_t zC, mpres_t xT, mpres_t zT, mpres_t xT2, mpres_t zT2)
 {
-  unsigned long d, e, r, i = 0, nv;
+  ecm_uint d, e, r, i = 0, nv;
   double c, cmin;
   __mpz_struct *tmp;
 #define NV 10  
@@ -444,7 +456,7 @@ prac (mpres_t xA, mpres_t zA, unsigned long k, mpmod_t n, mpres_t b,
     }
 
   d = k;
-  r = (unsigned long) ((double) d * val[i] + 0.5);
+  r = (ecm_uint) ((double) d * val[i] + 0.5);
   
   /* first iteration always begins by Condition 3, then a swap */
   d = k - r;
@@ -615,12 +627,8 @@ ecm_stage1 (mpz_t f, mpres_t x, mpres_t A, mpmod_t n, double B1,
   mpres_set_ui (z, 1, n);
 
   mpres_add_ui (b, A, 2, n);
-  mpres_div_2exp (b, b, 2, n); /* b == (A0+2)*B/4, where B=2^(k*GMP_NUMB_LIMB)
+  mpres_div_2exp (b, b, 2, n); /* b == (A0+2)*B/4, where B=2^(k*GMP_NUMB_BITS)
                                   for MODMULN or REDC, B=1 otherwise */
-#ifndef FULL_REDUCTION
-  mpres_semi_normalize (b, mpz_size (n->orig_modulus));
-#endif
-
   /* preload group order */
   if (go != NULL)
     ecm_mul (x, z, go, n, b);
@@ -644,7 +652,7 @@ ecm_stage1 (mpz_t f, mpres_t x, mpres_t A, mpmod_t n, double B1,
     {
       for (r = p; r <= B1; r *= p)
 	if (r > *B1done)
-	  prac (x, z, (unsigned long) p, n, b, u, v, w, xB, zB, xC, zC, xT,
+	  prac (x, z, (ecm_uint) p, n, b, u, v, w, xB, zB, xC, zC, xT,
 		zT, xT2, zT2);
 
       if (mpres_is_zero (z, n))
@@ -681,10 +689,6 @@ ecm_stage1 (mpz_t f, mpres_t x, mpres_t A, mpmod_t n, double B1,
     writechkfile (chkfilename, ECM_ECM, *B1done, n, A, x, z);
   getprime_clear (); /* free the prime tables, and reinitialize */
 
-  /* Normalize z to 1 */
-#ifndef FULL_REDUCTION
-  mpres_normalize (z); /* needed for gcd */
-#endif
   if (!mpres_invert (u, z, n)) /* Factor found? */
     {
       mpres_gcd (f, z, n);
@@ -733,7 +737,7 @@ choose_S (mpz_t B2len)
 
 static void
 print_expcurves (double B1, const mpz_t B2, unsigned long dF, unsigned long k, 
-                 int S)
+                 int S, int batch)
 {
   double prob;
   int i, j;
@@ -748,7 +752,10 @@ print_expcurves (double B1, const mpz_t B2, unsigned long dF, unsigned long k,
     {
       sep = (i < DIGITS_END) ? '\t' : '\n';
       prob = ecmprob (B1, mpz_get_d (B2),
-                      pow (10., i - .5), (double) dF * dF * k, S);
+                      /* in batch mode, the extra smoothness is smaller */
+                      pow (10., i - .5) /
+                      ((batch == 1) ? BATCH1_EXTRA_SMOOTHNESS : 1.0),
+                      (double) dF * dF * k, S);
       if (prob > 1. / 10000000)
         outputf (OUTPUT_VERBOSE, "%.0f%c", floor (1. / prob + .5), sep);
       else if (prob > 0.)
@@ -760,7 +767,7 @@ print_expcurves (double B1, const mpz_t B2, unsigned long dF, unsigned long k,
 
 static void
 print_exptime (double B1, const mpz_t B2, unsigned long dF, unsigned long k, 
-               int S, double tottime)
+               int S, double tottime, int batch)
 {
   double prob, exptime;
   int i, j;
@@ -774,8 +781,11 @@ print_exptime (double B1, const mpz_t B2, unsigned long dF, unsigned long k,
   for (i = DIGITS_START; i <= DIGITS_END; i += DIGITS_INCR)
     {
       sep = (i < DIGITS_END) ? '\t' : '\n';
-      prob = ecmprob (B1, mpz_get_d (B2), 
-                      pow (10., i - .5), (double) dF * dF * k, S);
+      prob = ecmprob (B1, mpz_get_d (B2),
+                      /* in batch mode, the extra smoothness is smaller */
+                      pow (10., i - .5) /
+                      ((batch == 1) ? BATCH1_EXTRA_SMOOTHNESS : 1.0),
+                      (double) dF * dF * k, S);
       exptime = (prob > 0.) ? tottime / prob : HUGE_VAL;
       outputf (OUTPUT_TRACE, "Digits: %d, Total time: %.0f, probability: "
                "%g, expected time: %.0f\n", i, tottime, prob, exptime);
@@ -868,7 +878,9 @@ ecm (mpz_t f, mpz_t x, mpz_t sigma, mpz_t n, mpz_t go, double *B1done,
      unsigned long k, const int S, int verbose, int repr, int nobase2step2, int use_ntt,
      int sigma_is_A, FILE *os, FILE* es, char *chkfilename,
      char *TreeFilename, double maxmem, double stage1time, 
-     gmp_randstate_t rng, int (*stop_asap)(void))
+     gmp_randstate_t rng, int (*stop_asap)(void), int batch, mpz_t batch_s,
+     ATTRIBUTE_UNUSED double gw_k, ATTRIBUTE_UNUSED unsigned long gw_b,
+     ATTRIBUTE_UNUSED unsigned long gw_n, ATTRIBUTE_UNUSED signed long gw_c)
 {
   int youpi = ECM_NO_FACTOR_FOUND;
   int base2 = 0;  /* If n is of form 2^n[+-]1, set base to [+-]n */
@@ -891,6 +903,20 @@ ecm (mpz_t f, mpz_t x, mpz_t sigma, mpz_t n, mpz_t go, double *B1done,
   ECM_STDOUT = (os == NULL) ? stdout : os;
   ECM_STDERR = (es == NULL) ? stdout : es;
 
+#ifdef MPRESN_NO_ADJUSTMENT
+  /* When no adjustment is made in mpresn_ functions, N should be smaller
+     than B^n/16 */
+  if (mpz_sizeinbase (n, 2) > mpz_size (n) * GMP_NUMB_BITS - 4)
+    {
+      outputf (OUTPUT_ERROR, "Error, N should be smaller than B^n/16\n");
+      return ECM_ERROR;
+    }
+#endif
+
+  /* In batch mode, we force MODMULN */
+  if (batch)
+    repr = ECM_MOD_MODMULN;
+
   /* if n is even, return 2 */
   if (mpz_divisible_2exp_p (n, 1))
     {
@@ -901,10 +927,10 @@ ecm (mpz_t f, mpz_t x, mpz_t sigma, mpz_t n, mpz_t go, double *B1done,
   /* now n is odd */
 
   /* check that B1 is not too large */
-  if (B1 > (double) ULONG_MAX)
+  if (B1 > (double) ECM_UINT_MAX)
     {
       outputf (OUTPUT_ERROR, "Error, maximal step 1 bound for ECM is %lu.\n", 
-               ULONG_MAX);
+               ECM_UINT_MAX);
       return ECM_ERROR;
     }
 
@@ -1025,6 +1051,49 @@ ecm (mpz_t f, mpz_t x, mpz_t sigma, mpz_t n, mpz_t go, double *B1done,
       if (youpi != ECM_NO_FACTOR_FOUND)
 	  goto end_of_ecm;
     }
+  else if (sigma_is_A == 1 && batch == 1)
+    {
+      if (mpz_sgn (sigma) == 0)
+        {
+          int i;
+
+          /* We choose a positive integer d' smaller than B=2^GMP_NUMB_BITS
+             and consider d = d'/B and A = 4d-2 */
+          do
+            mpz_urandomb (sigma, rng, 32);  /* generates d' <> 0 */
+          while (mpz_sgn (sigma) == 0);
+          ASSERT((GMP_NUMB_BITS % 2) == 0);
+          if (GMP_NUMB_BITS >= 64)
+            mpz_mul (sigma, sigma, sigma);      /* ensures d' (and thus d) is
+                                                   a square, which increases
+                                                   the success probability */
+          /* divide d' by B to get d */
+          for (i = 0; i < GMP_NUMB_BITS; i++)
+            {
+              if (mpz_tstbit (sigma, 0) == 1)
+                mpz_add (sigma, sigma, n);
+              mpz_div_2exp (sigma, sigma, 1);
+            }
+          mpz_mul_2exp (sigma, sigma, 2);           /* 4d */
+          mpz_sub_ui (sigma, sigma, 2);             /* 4d-2 */
+        }
+      
+      mpres_set_z (P.A, sigma, modulus);
+    }
+  else if (sigma_is_A == 1 && batch == 2)
+    {
+      if (mpz_sgn (sigma) == 0)
+        {
+          mpz_urandomb (sigma, rng, 32);
+          mpz_add_ui (sigma, sigma, 2);
+          youpi = get_curve_from_ell_parametrization (f, P.A, sigma, modulus);
+          mpres_get_z (sigma, P.A, modulus);
+          if (youpi != ECM_NO_FACTOR_FOUND)
+	          goto end_of_ecm;
+        }
+      else    /* sigma contains the A value */
+          mpres_set_z (P.A, sigma, modulus);
+    }
   else if (sigma_is_A == 1)
     {
       /* sigma contains the A value */
@@ -1082,9 +1151,9 @@ ecm (mpz_t f, mpz_t x, mpz_t sigma, mpz_t n, mpz_t go, double *B1done,
       mpz_init (t);
       MEMORY_UNTAG;
       mpres_get_z (t, P.A, modulus);
-      outputf (OUTPUT_RESVERBOSE, "a=%Zd\n", t);
+      outputf (OUTPUT_RESVERBOSE, "A=%Zd\n", t);
       mpres_get_z (t, P.x, modulus);
-      outputf (OUTPUT_RESVERBOSE, "starting point: x=%Zd\n", t);
+      outputf (OUTPUT_RESVERBOSE, "starting point: x0=%Zd\n", t);
       mpz_clear (t);
     }
 
@@ -1101,15 +1170,15 @@ ecm (mpz_t f, mpz_t x, mpz_t sigma, mpz_t n, mpz_t go, double *B1done,
       else
         {
           rhoinit (256, 10);
-          print_expcurves (B1, B2, dF, k, root_params.S);
+          print_expcurves (B1, B2, dF, k, root_params.S, batch);
         }
     }
 
 #ifdef HAVE_GWNUM
-  /* Right now, we only do base 2 numbers with GWNUM */
+  /* We will only use GWNUM for numbers of the form k*b^n+c */
 
-  if (base2 != 0 && B1 >= *B1done)
-      youpi = gw_ecm_stage1 (f, &P, modulus, B1, B1done, go);
+  if (gw_b != 0 && B1 >= *B1done && batch == 0)
+      youpi = gw_ecm_stage1 (f, &P, modulus, B1, B1done, go, gw_k, gw_b, gw_n, gw_c);
 
   /* At this point B1 == *B1done unless interrupted, or no GWNUM ecm_stage1
      is available */
@@ -1119,8 +1188,15 @@ ecm (mpz_t f, mpz_t x, mpz_t sigma, mpz_t n, mpz_t go, double *B1done,
 #endif
 
   if (B1 > *B1done)
-    youpi = ecm_stage1 (f, P.x, P.A, modulus, B1, B1done, go, stop_asap,
-                        chkfilename);
+    {
+      if (batch != 0)
+        /* FIXME: go, stop_asap and chkfilename are ignored in batch mode */
+        youpi = ecm_stage1_batch (f, P.x, P.A, modulus, B1, B1done, batch, 
+                                                            batch_s);
+      else
+        youpi = ecm_stage1 (f, P.x, P.A, modulus, B1, B1done, go, stop_asap,
+                            chkfilename);
+    }
   
   if (stage1time > 0.)
     {
@@ -1228,7 +1304,7 @@ end_of_ecm_rhotable:
               (stop_asap == NULL || !(*stop_asap)()))
             print_exptime (B1, B2, dF, k, root_params.S, 
                            (long) (stage1time * 1000.) + 
-                           elltime (st, cputime ()));
+                           elltime (st, cputime ()), batch);
           rhoinit (1, 0); /* Free memory of rhotable */
         }
     }

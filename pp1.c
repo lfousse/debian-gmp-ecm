@@ -1,33 +1,32 @@
 /* The 'P+1' algorithm.
 
-  Copyright 2002, 2003, 2004, 2005, 2006, 2007, 2008
-  Paul Zimmermann and Alexander Kruppa.
+Copyright 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012
+Paul Zimmermann and Alexander Kruppa.
 
-  This file is part of the ECM Library.
+This file is part of the ECM Library.
 
-  The ECM Library is free software; you can redistribute it and/or modify
-  it under the terms of the GNU Lesser General Public License as published by
-  the Free Software Foundation; either version 2.1 of the License, or (at your
-  option) any later version.
+The ECM Library is free software; you can redistribute it and/or modify
+it under the terms of the GNU Lesser General Public License as published by
+the Free Software Foundation; either version 3 of the License, or (at your
+option) any later version.
 
-  The ECM Library is distributed in the hope that it will be useful, but
-  WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
-  or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
-  License for more details.
+The ECM Library is distributed in the hope that it will be useful, but
+WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
+License for more details.
 
-  You should have received a copy of the GNU Lesser General Public License
-  along with the ECM Library; see the file COPYING.LIB.  If not, write to
-  the Free Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston,
-  MA 02110-1301, USA.
+You should have received a copy of the GNU Lesser General Public License
+along with the ECM Library; see the file COPYING.LIB.  If not, see
+http://www.gnu.org/licenses/ or write to the Free Software Foundation, Inc.,
+51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA. */
 
-  References:
+/* References:
 
-  A p+1 Method of Factoring, H. C. Williams, Mathematics of Computation,
-  volume 39, number 159, pages 225-234, 1982.
+A p+1 Method of Factoring, H. C. Williams, Mathematics of Computation,
+volume 39, number 159, pages 225-234, 1982.
 
-  Evaluating recurrences of form X_{m+n} = f(X_m, X_n, X_{m-n}) via
-  Lucas chains, Peter L. Montgomery, December 1983, revised January 1992.
-*/
+Evaluating recurrences of form X_{m+n} = f(X_m, X_n, X_{m-n}) via
+Lucas chains, Peter L. Montgomery, December 1983, revised January 1992. */
 
 #include <math.h>
 #include <stdlib.h>
@@ -80,7 +79,7 @@ pp1_mul (mpres_t P1, mpres_t P0, mpz_t e, mpmod_t n, mpres_t P, mpres_t Q)
   
   /* now e >= 2 */
   mpz_sub_ui (e, e, 1);
-  mpres_mul (P, P0, P0, n);
+  mpres_sqr (P, P0, n);
   mpres_sub_ui (P, P, 2, n); /* P = V_2(P0) = P0^2-2 */
   mpres_set (Q, P0, n);      /* Q = V_1(P0) = P0 */
 
@@ -95,7 +94,7 @@ pp1_mul (mpres_t P1, mpres_t P0, mpz_t e, mpmod_t n, mpres_t P, mpres_t Q)
               mpres_mul (Q, P, Q, n);
               mpres_sub (Q, Q, P0, n);
             }
-          mpres_mul (P, P, P, n);
+          mpres_sqr (P, P, n);
           mpres_sub_ui (P, P, 2, n);
         }
       else /* k -> 2k */
@@ -104,7 +103,7 @@ pp1_mul (mpres_t P1, mpres_t P0, mpz_t e, mpmod_t n, mpres_t P, mpres_t Q)
           mpres_sub (P, P, P0, n);
           if (i) /* Q is not needed for last iteration */
             {
-              mpres_mul (Q, Q, Q, n);
+              mpres_sqr (Q, Q, n);
               mpres_sub_ui (Q, Q, 2, n);
             }
         }
@@ -215,7 +214,7 @@ pp1_stage1 (mpz_t f, mpres_t P0, mpmod_t n, double B1, double *B1done,
   /* then all primes > sqrt(B1) and taken with exponent 1 */
   for (; p <= B1; p = getprime ())
     {
-      pp1_mul_prac (P0, (unsigned long) p, n, P, Q, R, S, T);
+      pp1_mul_prac (P0, (ecm_uint) p, n, P, Q, R, S, T);
   
       if (stop_asap != NULL && (*stop_asap) ())
         {
@@ -242,9 +241,6 @@ pp1_stage1 (mpz_t f, mpres_t P0, mpmod_t n, double B1, double *B1done,
     *B1done = p;
   
   mpres_sub_ui (P, P0, 2, n);
-#ifndef FULL_REDUCTION
-  mpres_normalize (P); /* needed for gcd */
-#endif
   mpres_gcd (f, P, n);
   youpi = mpz_cmp_ui (f, 1);
 
@@ -329,10 +325,10 @@ pp1_mul2 (mpres_t a, mpres_t b, mpres_t P, mpz_t e, mpmod_t n)
   while (l--)
     {
       /* square: (ax+b)^2 = (a^2P+2ab) x + (b^2-a^2) */
-      mpres_mul (t, a, a, n); /* a^2 */
+      mpres_sqr (t, a, n);    /* a^2 */
       mpres_mul (a, a, b, n);
       mpres_add (a, a, a, n); /* 2ab */
-      mpres_mul (b, b, b, n); /* b^2 */
+      mpres_sqr (b, b, n);    /* b^2 */
       mpres_sub (b, b, t, n); /* b^2-a^2 */
       mpres_mul (t, t, P, n); /* a^2P */
       mpres_add (a, t, a, n); /* a^2P+2ab */
@@ -893,6 +889,9 @@ pp1 (mpz_t f, mpz_t p, mpz_t n, mpz_t go, double *B1done, double B1,
 		    &faststage2_params, B2min, B2, use_ntt, ECM_PP1);
       if (P == ECM_ERROR)
 	{
+          outputf (OUTPUT_ERROR, 
+                   "Error: cannot choose suitable P value for your stage 2 "
+                   "parameters.\nTry a shorter B2min,B2 interval.\n");
 	  mpz_clear (faststage2_params.m_1);
 	  return ECM_ERROR;
 	}
@@ -970,12 +969,12 @@ pp1 (mpz_t f, mpz_t p, mpz_t n, mpz_t go, double *B1done, double B1,
   mpres_init (a, modulus);
   mpres_set_z (a, p, modulus);
 
-  /* since pp1_mul_prac takes an unsigned long, we have to check
-     that B1 <= MAX_ULONG */
-  if (B1 > (double) ULONG_MAX)
+  /* since pp1_mul_prac takes an ecm_uint, we have to check
+     that B1 <= ECM_UINT_MAX */
+  if (B1 > (double) ECM_UINT_MAX)
     {
       outputf (OUTPUT_ERROR, "Error, maximal step1 bound for P+1 is %lu\n", 
-               ULONG_MAX);
+               ECM_UINT_MAX);
       youpi = ECM_ERROR;
       goto clear_and_exit;
     }

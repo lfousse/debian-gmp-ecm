@@ -5,7 +5,7 @@ dnl   This file is part of the ECM Library.
 dnl 
 dnl   The ECM Library is free software; you can redistribute it and/or modify
 dnl   it under the terms of the GNU Lesser General Public License as published by
-dnl   the Free Software Foundation; either version 2.1 of the License, or (at your
+dnl   the Free Software Foundation; either version 3 of the License, or (at your
 dnl   option) any later version.
 dnl 
 dnl   The ECM Library is distributed in the hope that it will be useful, but
@@ -38,12 +38,19 @@ C final carry returned in r3
 
 include(`config.m4')
 
-	TEXT
-.align 5 C powerPC 32 byte alignment
 	GLOBL GSYM_PREFIX`'mulredc2
-	TYPE(GSYM_PREFIX`'mulredc`'2,`function')
+	GLOBL .GSYM_PREFIX`'mulredc2
 
+	.section ".opd", "aw"
+	.align	3
 GSYM_PREFIX`'mulredc2:
+	.quad	.GSYM_PREFIX`'mulredc2, .TOC.@tocbase, 0
+	.size	GSYM_PREFIX`'mulredc2, 24
+
+	TEXT
+	.align	5	C powerPC 32 byte alignment
+	TYPE(.GSYM_PREFIX`'mulredc`'2,`@function')
+.GSYM_PREFIX`'mulredc2:
 		ld      r12, 0(r4)          C XI = x[0]
 		ld      r0, 0(r5)           C y[0]
 		stdu    r13, -8(r1)         C save r13
@@ -111,3 +118,6 @@ GSYM_PREFIX`'mulredc2:
 		ldu     r13, 8(r1)
 		addi    r1, r1, 8
 		blr
+
+	.size	.GSYM_PREFIX`'mulredc2, .-.GSYM_PREFIX`'mulredc2
+

@@ -1,3 +1,52 @@
+Changes between GMP-ECM 6.4.3 and GMP-ECM 6.4.4:
+* Fixed PowerPC64 assembly code with --enable-shared (thanks Leif Leonhardy)
+* Fix to deal with change of semantics of internal GMP functions in GMP 5.1
+* Fixed small memory leak in non-NTT P-1 stage 2
+* Fixed segfaults with large non-NTT P+-1 stage 2
+* Removed defunct -t command line option
+
+Changes between GMP-ECM 6.4.2 and GMP-ECM 6.4.3:
+* Fixed bug reported by user "lorgix" on mersenneforum
+  (http://www.mersenneforum.org/showpost.php?p=286385&postcount=280)
+* Use 64-bit value for random seed under Windows
+
+Changes between GMP-ECM 6.4.1 and GMP-ECM 6.4.2:
+* Corrected the copyright headers
+* Reduced memory usage in stage 1 with -batch={1,2} mode.
+* Fixed bug in modular reduction (could occur only for numbers larger than
+  386 digits on 64-bit computers and 193 digits on 32-bit computers).
+* Speedup in stage 2 with the NTT default mode
+
+Changes between ecm-6.4 and ecm-6.4.1:
+* GMP-ECM is now distributed under the GPL version 3 or later for the binary,
+  and under the LGPL version 3 or later for the library
+* Fixed a speed regression with respect to ecm-6.3
+  http://lists.gforge.inria.fr/pipermail/ecm-discuss/2012-February/004103.html
+* Fixed a bug with the -treefile option which had been present for a long time
+* Several fixes for the Visual Studio 2010 build
+* New experimental option -batch=2, and speedup for -batch (i.e., -batch=1)
+* New tuning mechanism, now --enable-asm-redc is always recommended
+* New configure option --enable-mulredc-svoboda, for input numbers whose low
+  limbs is congruent to -1
+* New tuning parameters for Intel Core i5
+* New ecmbench utility
+
+Changes between ecm-6.3 and ecm-6.4:
+* Fixed configure problem with SSE2
+  (http://trac.sagemath.org/sage_trac/ticket/10252)
+* Fixed configure bug on 32-bit PowerPC (tried to use 64-bit assembly)
+  https://gforge.inria.fr/tracker/index.php?func=detail&aid=10646
+* Fixed dependencies from build directory
+  https://gforge.inria.fr/tracker/index.php?func=detail&aid=10648
+* Patch from David Cleaver to allow B1 >= 2^32 on machines where
+  "unsigned long" has 32 bits only
+* Patch from David Cleaver to use GWNUM 26.6 on Windows x64 with MingW64/Msys
+* Improved conversion from mpz_t to residue number system in NTT code
+* Better asm code for AMD cpus
+* Use of GMP's mpn_mullo_n and mpn_redc_2 when available
+* New option -batch with faster Stage 1 (but smaller success probability)
+* Added Visual Studio 2010 build
+
 Changes between ecm-6.2.3 and ecm-6.3:
 * New assembly code for 64-bit PowerPC (thanks to Philip McLaughlin)
 * Allow several processes to write to the same -save file

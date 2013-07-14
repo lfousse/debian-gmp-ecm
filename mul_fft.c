@@ -1,26 +1,26 @@
 /* An implementation in GMP of Scho"nhage's fast multiplication algorithm
-  modulo 2^N+1, by Paul Zimmermann, INRIA Lorraine, February 1998.
+   modulo 2^N+1, by Paul Zimmermann, INRIA Lorraine, February 1998.
 
-   Revised July 2002 and January 2003, Paul Zimmermann.
-   Further revised by Pierrick Gaudry, Paul Zimmermann, and Torbjorn Granlund,
-   March/April and November/December 2006, and also by Alexander Kruppa in
-   December 2006.
+Revised July 2002 and January 2003, Paul Zimmermann.
+Further revised by Pierrick Gaudry, Paul Zimmermann, and Torbjorn Granlund,
+March/April and November/December 2006, and also by Alexander Kruppa in
+December 2006.
 
-   Revised December 2007 for inclusion into GMP-ECM.
+Revised December 2007 for inclusion into GMP-ECM.
 
-   THE CONTENTS OF THIS FILE ARE FOR INTERNAL USE AND THE FUNCTIONS HAVE
-   MUTABLE INTERFACES.  IT IS ONLY SAFE TO REACH THEM THROUGH DOCUMENTED
-   INTERFACES.  IT IS ALMOST GUARANTEED THAT THEY'LL CHANGE OR DISAPPEAR IN
-   A FUTURE GNU MP RELEASE.
+THE CONTENTS OF THIS FILE ARE FOR INTERNAL USE AND THE FUNCTIONS HAVE
+MUTABLE INTERFACES.  IT IS ONLY SAFE TO REACH THEM THROUGH DOCUMENTED
+INTERFACES.  IT IS ALMOST GUARANTEED THAT THEY'LL CHANGE OR DISAPPEAR IN
+A FUTURE GNU MP RELEASE.
 
-Copyright 1998, 1999, 2000, 2001, 2002, 2003, 2004, 2005, 2006 Free Software
-Foundation, Inc.
+Copyright 1998, 1999, 2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008,
+2009, 2010, 2011 Free Software Foundation, Inc.
 
 This file is part of the GNU MP Library.
 
 The GNU MP Library is free software; you can redistribute it and/or modify
 it under the terms of the GNU Lesser General Public License as published by
-the Free Software Foundation; either version 2.1 of the License, or (at your
+the Free Software Foundation; either version 3 of the License, or (at your
 option) any later version.
 
 The GNU MP Library is distributed in the hope that it will be useful, but
@@ -60,13 +60,16 @@ MA 02110-1301, USA. */
    /* Throughout this file, Mp is chosen so that 
       ord_{2^Nprime + 1}(sqrt(2)^Mp) == 2^k */
 
+#include "config.h"
 #include <stdio.h>
 #include <stdlib.h> /* for abort() */
 #include <limits.h> /* for LONG_MAX */
 #include <assert.h>
-#include "config.h"
 #ifdef HAVE_ALLOCA_H
 #include <alloca.h>
+#endif
+#ifdef HAVE_MALLOC_H
+#include <malloc.h>
 #endif
 #include "gmp.h"
 #include "mul_fft-params.h"
@@ -124,7 +127,7 @@ MA 02110-1301, USA. */
 
 /* _PROTO macro is copied from longlong.h of GMP */
 #ifndef _PROTO
-#if (__STDC__-0) || defined (__cplusplus)
+#if (__STDC__-0) || defined (__cplusplus) || defined( _MSC_VER )
 #define _PROTO(x) x
 #else
 #define _PROTO(x) ()
@@ -1274,9 +1277,8 @@ static void
 mpn_fft_fft_radix4Rec (mp_ptr *Ap, mp_size_t ind_start, mp_size_t k,
     mp_size_t omega, mp_size_t n, mp_ptr *rotbuf)
 {
-  mp_size_t i, stride, stride2, K;
+  mp_size_t i, stride, stride2;
   
-  K = 1<<k;
   stride2 = 1<<(k-2);
   stride = 1<<(k-1);
 
@@ -1338,10 +1340,9 @@ static void
 mpn_fft_fft_radix4RecNeg (mp_ptr *Ap, mp_size_t ind_start, mp_size_t k,
     mp_size_t omega, mp_size_t n, mp_ptr *rotbuf)
 {
-  mp_size_t i, stride, stride2, K;
+  mp_size_t i, stride, stride2;
   mp_size_t N = MUL_4GMP_NUMB_BITS(n); /* 4 * n * GMP_NUMB_BITS */
 
-  K = 1 << k;
   stride2 = 1 << (k - 2);
   stride  = 1 << (k - 1);
 
@@ -1606,7 +1607,7 @@ mpn_fft_fft_bailey_decompose (mp_ptr A, mp_ptr *Ap, mp_size_t k,
   const mp_size_t K2 = 1 << k2;
   mp_size_t omegai;
   mp_ptr *BufA; 
-  mp_ptr T, tmp;
+  mp_ptr T, tmp = NULL;
   const int Kl = l << k;
     
   TMP_DECL;
@@ -1615,12 +1616,12 @@ mpn_fft_fft_bailey_decompose (mp_ptr A, mp_ptr *Ap, mp_size_t k,
   BufA = TMP_ALLOC_MP_PTRS (K1);
   ASSERT(BufA != NULL);
 
-  T = TMP_ALLOC_LIMBS(nprime + 1);
+  T = __GMP_ALLOCATE_FUNC_LIMBS(nprime + 1);
   ASSERT(T != NULL);
 
   if (nl > Kl)
     {
-      tmp = TMP_ALLOC_LIMBS(Kl + 1);
+      tmp = __GMP_ALLOCATE_FUNC_LIMBS(Kl + 1);
       ASSERT(tmp != NULL);
       mpn_mul_fft_reduce (tmp, /* A, */ n, nl, Kl, /* l, */ b);
       n = tmp;
@@ -1643,6 +1644,14 @@ mpn_fft_fft_bailey_decompose (mp_ptr A, mp_ptr *Ap, mp_size_t k,
     for (j = 0; j < K1; ++j)
       Ap[i+K2*j] = BufA[j];
   }
+
+  if (tmp != NULL) {
+    __GMP_FREE_FUNC_LIMBS(tmp, Kl + 1);
+    tmp = NULL;
+    n = NULL; /* n is now likewise invalid */
+  }
+  __GMP_FREE_FUNC_LIMBS (T, nprime + 1);
+  T = NULL;
 
   omegai = omega<<k1;
   for (j = 0; j < K1; ++j)
@@ -1825,7 +1834,7 @@ mpn_fft_mul_modF_K_fftInv (mp_ptr *ap, mp_ptr *bp, mp_size_t n, mp_size_t Mp, in
       ASSERT(Ap != NULL);
       Bp = TMP_ALLOC_MP_PTRS (K2);
       ASSERT(Bp != NULL);
-      A = TMP_ALLOC_LIMBS (2 * K2 * (nprime2 + 1));
+      A = __GMP_ALLOCATE_FUNC_LIMBS (2 * K2 * (nprime2 + 1));
       ASSERT(A != NULL);
       T = TMP_ALLOC_LIMBS (2 * (nprime2 + 1));
       ASSERT(T != NULL);
@@ -1843,14 +1852,8 @@ mpn_fft_mul_modF_K_fftInv (mp_ptr *ap, mp_ptr *bp, mp_size_t n, mp_size_t Mp, in
 		    n, K2, nprime2, nprime2, 2.0*(double)n/nprime2/K2));
       
       {
-	mp_ptr tp, tpn;
-	int n2 = n << 1;
         mp_size_t k1, k2, K1, omega, omegai;
         mp_ptr *BufA;
-
-	tp = TMP_ALLOC_LIMBS (n2);
-	ASSERT(tp != NULL);
-	tpn = tp + n;
 
 	k1 = old_k >> 1;
 	k2 = old_k - k1;
@@ -1916,6 +1919,8 @@ mpn_fft_mul_modF_K_fftInv (mp_ptr *ap, mp_ptr *bp, mp_size_t n, mp_size_t Mp, in
 	  }
 	}
       }
+      __GMP_FREE_FUNC_LIMBS (A, 2 * K2 * (nprime2 + 1));
+      A = NULL;
     }
   else
     {
@@ -2138,12 +2143,11 @@ mpn_mul_fft_internal (mp_ptr op, mp_size_t pl,
 				    some Ap[i] may point to the B[] array,
 				    and will be erase since we use the B[]
 				    array to store the final result {p,pla} */
-  TMP_DECL;
-  TMP_MARK;
+  mp_ptr bufAptr, bufBptr; /* Remember pointers to free memory */
 
-  rotbufA[0] = TMP_ALLOC_LIMBS(nprime+1);
+  bufAptr = rotbufA[0] = __GMP_ALLOCATE_FUNC_LIMBS(nprime+1);
   ASSERT(rotbufA[0] != NULL);
-  rotbufB[0] = TMP_ALLOC_LIMBS(nprime+1);
+  bufBptr = rotbufB[0] = __GMP_ALLOCATE_FUNC_LIMBS(nprime+1);
   ASSERT(rotbufB[0] != NULL);
 
   ASSERT(b == 1 || b == -1);
@@ -2270,7 +2274,8 @@ mpn_mul_fft_internal (mp_ptr op, mp_size_t pl,
   if (rec) /* store the carry out */
     op[pl] = i;
 
-  TMP_FREE;
+  __GMP_FREE_FUNC_LIMBS(bufAptr, nprime+1);
+  __GMP_FREE_FUNC_LIMBS(bufBptr, nprime+1);
 
   return i;
 }
@@ -2420,7 +2425,7 @@ mpn_mul_fft_aux (mp_ptr op, const mp_size_t pl,
     }
   ASSERT_ALWAYS (nprime < pl); /* otherwise we'll loop */
 
-  T = TMP_ALLOC_LIMBS (2 * (nprime + 1));
+  T = __GMP_ALLOCATE_FUNC_LIMBS (2 * (nprime + 1));
   ASSERT(T != NULL);
 
   TRACE (printf ("mpn_mul_fft_aux: %dx%d limbs -> %d times %dx%d limbs (%1.2f)\n",
@@ -2428,7 +2433,11 @@ mpn_mul_fft_aux (mp_ptr op, const mp_size_t pl,
 	 printf ("   temp space %ld\n", 2 * K * (nprime + 1));)
 
   A = __GMP_ALLOCATE_FUNC_LIMBS (2 * K * (nprime + 1));
-  ASSERT(A != NULL);
+  if (A == NULL)
+    {
+      fprintf (stderr, "Cannot allocate memory, please use -maxmem\n");
+      exit (EXIT_FAILURE);
+    }
   B = A + K * (nprime + 1);
   Ap = TMP_ALLOC_MP_PTRS (K);
   ASSERT(Ap != NULL);
@@ -2439,6 +2448,7 @@ mpn_mul_fft_aux (mp_ptr op, const mp_size_t pl,
                             l, _fft_l, T, 0, b);
 
   TMP_FREE;
+  __GMP_FREE_FUNC_LIMBS (T, 2 * (nprime + 1));
   __GMP_FREE_FUNC_LIMBS (A, 2 * K * (nprime + 1));
   if (use_tmp_n)
     __GMP_FREE_FUNC_LIMBS ((mp_ptr) n, pl + (b == 1));

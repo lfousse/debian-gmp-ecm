@@ -7,7 +7,7 @@ This file contains modified code from the GNU MP Library.
 
 The GNU MP Library is free software; you can redistribute it and/or modify
 it under the terms of the GNU Lesser General Public License as published by
-the Free Software Foundation; either version 2.1 of the License, or (at your
+the Free Software Foundation; either version 3 of the License, or (at your
 option) any later version.
 
 The GNU MP Library is distributed in the hope that it will be useful, but
@@ -34,7 +34,7 @@ MA 02110-1301, USA. */
 #elif defined (_MSC_VER)
 # include <malloc.h>
 # define alloca _alloca
-#elif HAVE_ALLOCA_H || defined (sun)
+#elif defined(HAVE_ALLOCA_H) || defined (sun)
 # include <alloca.h>
 #elif defined (_AIX) || defined (_IBMR2)
 #pragma alloca
@@ -78,7 +78,6 @@ MA 02110-1301, USA. */
 #ifndef MPN_ZERO
 #define MPN_ZERO(dst, n)			\
   do {						\
-    ASSERT ((n) >= 0);				\
     if ((n) != 0)				\
       {						\
 	mp_ptr __dst = (dst);			\
@@ -124,8 +123,35 @@ __GMP_DECLSPEC mp_limb_t __gmpn_add_nc (mp_ptr, mp_srcptr, mp_srcptr,
 #endif
 #endif
 
-#if defined(HAVE___GMPN_REDC_1)
+#define ECM_VERSION_NUM(a,b,c) (((a) << 16L) | ((b) << 8) | (c))
+
+#if !defined( __MPIR_RELEASE ) && ECM_VERSION_NUM(__GNU_MP_VERSION,__GNU_MP_VERSION_MINOR,__GNU_MP_VERSION_PATCHLEVEL) >= ECM_VERSION_NUM(5,1,0)
+#define MPN_REDC12_RETURNS_CARRY 1
+#endif
+
+/* GMP currently does not define prototypes for these, but MPIR does */
+#if defined(HAVE___GMPN_REDC_1) && !defined( __MPIR_RELEASE )
+#ifdef MPN_REDC12_RETURNS_CARRY
+  mp_limb_t __gmpn_redc_1 (mp_ptr, mp_ptr, mp_srcptr, mp_size_t, mp_limb_t);
+#else
   void __gmpn_redc_1 (mp_ptr, mp_ptr, mp_srcptr, mp_size_t, mp_limb_t);
+#endif
+#endif
+
+#if defined(HAVE___GMPN_REDC_2) && !defined( __MPIR_RELEASE )
+#ifdef MPN_REDC12_RETURNS_CARRY
+  mp_limb_t __gmpn_redc_2 (mp_ptr, mp_ptr, mp_srcptr, mp_size_t, mp_srcptr);
+#else
+  void __gmpn_redc_2 (mp_ptr, mp_ptr, mp_srcptr, mp_size_t, mp_srcptr);
+#endif
+#endif
+
+#if defined(HAVE___GMPN_REDC_N)
+  void __gmpn_redc_n (mp_ptr, mp_ptr, mp_srcptr, mp_size_t, mp_srcptr);
+#endif
+
+#if defined(HAVE___GMPN_MULLO_N)
+  void __gmpn_mullo_n (mp_ptr, mp_srcptr, mp_srcptr, mp_size_t);
 #endif
 
 #endif /* _ECM_GMP_H */

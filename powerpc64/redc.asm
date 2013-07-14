@@ -5,7 +5,7 @@ dnl   This file is part of the ECM Library.
 dnl
 dnl  The ECM Library is free software; you can redistribute it and/or modify
 dnl  it under the terms of the GNU Lesser General Public License as published by
-dnl  the Free Software Foundation; either version 2.1 of the License, or (at your
+dnl  the Free Software Foundation; either version 3 of the License, or (at your
 dnl  option) any later version.
 dnl
 dnl  The ECM Library is distributed in the hope that it will be useful, but
@@ -40,11 +40,20 @@ define(C, `
 dnl')
 
 include(`config.m4')
-        TEXT
-        GLOBL GSYM_PREFIX`'ecm_redc3
-        TYPE(GSYM_PREFIX`'ecm_redc3,`function')
 
+	GLOBL GSYM_PREFIX`'ecm_redc3
+	GLOBL .GSYM_PREFIX`'ecm_redc3
+
+	.section ".opd", "aw"
+	.align	3
 GSYM_PREFIX`'ecm_redc3:
+	.quad	.GSYM_PREFIX`'ecm_redc3, .TOC.@tocbase, 0
+	.size	GSYM_PREFIX`'ecm_redc3, 24
+
+	TEXT
+	.align	5		C 32 byte alignment
+	TYPE(.GSYM_PREFIX`'ecm_redc3,`@function')
+.GSYM_PREFIX`'ecm_redc3:
 
 	cmpdi	r5, 1				C length = 1?
 	bne		1f
@@ -318,3 +327,6 @@ dnl  finish inner
     addi    r1, r1, 16          C restore stack ptr
     mtlr    r0
     blr
+
+	.size	.GSYM_PREFIX`'ecm_redc3, .-.GSYM_PREFIX`'ecm_redc3
+

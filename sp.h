@@ -1,25 +1,27 @@
 /* sp.h - header file for the sp library
 
-  Copyright 2005, 2008 Dave Newman, Jason Papadopoulos and Paul Zimmermann.
-  Copyright 1991, 1993, 1994, 1995, 1996, 1997, 1999, 2000, 2001, 2002, 2003,
-  2004, 2005, 2010 Free Software Foundation, Inc. (for parts from gmp-impl.h).
+Copyright 2005, 2006, 2007, 2008, 2010, 2011, 2012 Dave Newman, Jason
+Papadopoulos, Paul Zimmermann, Brian Gladman, Alexander Kruppa.
 
-  This file is part of the SP library.
+Copyright 1991, 1993, 1994, 1995, 1996, 1997, 1999, 2000, 2001, 2002, 2003,
+2004, 2005, 2010 Free Software Foundation, Inc. (for parts from gmp-impl.h).
+
+This file is part of the SP library.
   
-  The SP Library is free software; you can redistribute it and/or modify
-  it under the terms of the GNU Lesser General Public License as published by
-  the Free Software Foundation; either version 2.1 of the License, or (at your
-  option) any later version.
+The SP Library is free software; you can redistribute it and/or modify
+it under the terms of the GNU Lesser General Public License as published by
+the Free Software Foundation; either version 3 of the License, or (at your
+option) any later version.
 
-  The SP Library is distributed in the hope that it will be useful, but
-  WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
-  or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
-  License for more details.
+The SP Library is distributed in the hope that it will be useful, but
+WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
+License for more details.
 
-  You should have received a copy of the GNU Lesser General Public License
-  along with the SP Library; see the file COPYING.LIB.  If not, write to
-  the Free Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston,
-  MA 02110-1301, USA.
+You should have received a copy of the GNU Lesser General Public License
+along with the SP Library; see the file COPYING.LIB.  If not, write to
+the Free Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston,
+MA 02110-1301, USA.
 */
 
 #ifndef _SP_H
@@ -45,6 +47,12 @@ extern size_t MPZSPV_NORMALISE_STRIDE;
 #endif
 
 #include <gmp.h>
+
+#if defined( __GNUC__ ) && __GNUC__ >= 3
+#define ATTRIBUTE_UNUSED __attribute__ ((unused))
+#else
+#define ATTRIBUTE_UNUSED
+#endif
 
 /**************
  * GMP_IMPL.H *
@@ -80,6 +88,10 @@ typedef mp_limb_t UDItype;
 
 #define LONGLONG_STANDALONE
 #include "longlong.h"
+
+/* we use the remainder tree for products of 2^I0_THRESHOLD moduli or more,
+   and the naive method for fewer moduli. We must have I0_THRESHOLD >= 1. */
+#define I0_THRESHOLD 7
 
 /*********
  * TYPES *
@@ -122,6 +134,13 @@ typedef __sp_nttdata sp_nttdata_t[1];
 
 #define MAX_NTT_BLOCK_SIZE 128
 
+/* Which steps to perform in convolution product funtions:
+   forward transform, pair-wise multiplication, inverse transform */
+#define NTT_MUL_STEP_FFT1 1
+#define NTT_MUL_STEP_FFT2 2
+#define NTT_MUL_STEP_MUL 4
+#define NTT_MUL_STEP_IFFT 8
+
 /* SPM */
 
 /* small prime modulus - this contains some precomputed constants to
@@ -130,6 +149,8 @@ typedef struct
 {
   sp_t sp;		/* value of the sp */
   sp_t mul_c;		/* constant used for reduction mod sp */
+  sp_t invm;            /* -1/sp mod 2^GMP_NUMB_BITS */
+  sp_t Bpow;            /* B^(n+1) mod sp where the input N has n limbs */
   sp_t prim_root;
   sp_t inv_prim_root;
   sp_nttdata_t nttdata;
@@ -157,6 +178,10 @@ typedef struct
     /* precomputed crt constants, see mpzspm.c */
     mpzv_t crt1, crt2;
     sp_t *crt3, **crt4, *crt5;
+
+    /* product tree to speed up conversion from mpz to sp */
+    mpzv_t *T;            /* product tree */
+    unsigned int d;       /* ceil(log(sp_num)/log(2)) */
   } __mpzspm_struct;
 
 typedef __mpzspm_struct * mpzspm_t;
@@ -345,7 +370,7 @@ static inline sp_t sp_add(sp_t a, sp_t b, sp_t m)
 
 #define sp_reciprocal(invxl,xl)              \
   do {                                       \
-    mp_limb_t dummy;                         \
+    ATTRIBUTE_UNUSED mp_limb_t dummy;        \
     udiv_qrnnd (invxl, dummy,                \
 		(sp_t) 1 << (2 * SP_NUMB_BITS + 1 -	\
 		W_TYPE_SIZE), 0, xl);        \
@@ -354,7 +379,8 @@ static inline sp_t sp_add(sp_t a, sp_t b, sp_t m)
 static inline sp_t sp_udiv_rem(sp_t nh, sp_t nl, sp_t d, sp_t di)
 {
   sp_t r;
-  mp_limb_t q1, q2, tmp;
+  mp_limb_t q1, q2;
+  ATTRIBUTE_UNUSED mp_limb_t tmp;
   q1 = nh << (2*(W_TYPE_SIZE - SP_NUMB_BITS)) |
 	    nl >> (2*SP_NUMB_BITS - W_TYPE_SIZE);
   umul_ppmm (q2, tmp, q1, di);
@@ -432,7 +458,7 @@ sp_pow (sp_t x, sp_t a, sp_t m, sp_t d)
     }
 }
 
-/* 1/x mod p */
+/* 1/x mod p where d is p->mul_c */
 #define sp_inv(x,p,d) sp_pow (x, (p) - 2, p, d)
 
 /* x / 2 mod m */
@@ -443,7 +469,7 @@ int sp_prime (sp_t);
 
 /* spm */
 
-spm_t spm_init (spv_size_t, sp_t);
+spm_t spm_init (spv_size_t, sp_t, mp_size_t);
 void spm_clear (spm_t);
 
 /* spv */
@@ -509,6 +535,14 @@ void mpzspv_pwmul (mpzspv_t, spv_size_t, mpzspv_t, spv_size_t, mpzspv_t,
 void mpzspv_to_ntt (mpzspv_t, spv_size_t, spv_size_t, spv_size_t, int,
     mpzspm_t);
 void mpzspv_from_ntt (mpzspv_t, spv_size_t, spv_size_t, spv_size_t, mpzspm_t);
+void mpzspv_mul_ntt (mpzspv_t, spv_size_t, mpzspv_t, spv_size_t, spv_size_t, 
+    mpzspv_t, spv_size_t, spv_size_t, spv_size_t, int, spv_size_t, mpzspm_t, 
+    int);
 void mpzspv_random (mpzspv_t, spv_size_t, spv_size_t, mpzspm_t);
+void mpzspv_to_dct1 (mpzspv_t, mpzspv_t, spv_size_t, spv_size_t, mpzspv_t, 
+    mpzspm_t);
+void mpzspv_mul_by_dct (mpzspv_t, const mpzspv_t, spv_size_t, const mpzspm_t, 
+    int);
+void mpzspv_sqr_reciprocal (mpzspv_t, spv_size_t, const mpzspm_t);
 
 #endif /* _SP_H */

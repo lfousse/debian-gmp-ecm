@@ -1,24 +1,23 @@
 /* Random initialization for P-1 and P+1.
 
-  Copyright 2005 Paul Zimmermann and Alexander Kruppa.
+Copyright 2005, 2006, 2008 Paul Zimmermann, Alexander Kruppa, Dave Newman.
 
-  This file is part of the ECM Library.
+This file is part of the ECM Library.
 
-  The ECM Library is free software; you can redistribute it and/or modify
-  it under the terms of the GNU Lesser General Public License as published by
-  the Free Software Foundation; either version 2.1 of the License, or (at your
-  option) any later version.
+The ECM Library is free software; you can redistribute it and/or modify
+it under the terms of the GNU Lesser General Public License as published by
+the Free Software Foundation; either version 3 of the License, or (at your
+option) any later version.
 
-  The ECM Library is distributed in the hope that it will be useful, but
-  WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
-  or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
-  License for more details.
+The ECM Library is distributed in the hope that it will be useful, but
+WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
+License for more details.
 
-  You should have received a copy of the GNU Lesser General Public License
-  along with the ECM Library; see the file COPYING.LIB.  If not, write to
-  the Free Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston,
-  MA 02110-1301, USA.
-*/
+You should have received a copy of the GNU Lesser General Public License
+along with the ECM Library; see the file COPYING.LIB.  If not, see
+http://www.gnu.org/licenses/ or write to the Free Software Foundation, Inc.,
+51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA. */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -94,11 +93,11 @@ pp1_random_seed (mpz_t seed, mpz_t n, gmp_randstate_t randstate)
   mpz_clear (q);
 }
 
-/* Produces a random unsigned int value */
+/* Produces a random unsigned long value */
 
 #if defined (_MSC_VER) || defined (__MINGW32__)
-unsigned int 
-get_random_ui (void)
+unsigned long 
+get_random_ul (void)
 {
   SYSTEMTIME tv;
   HCRYPTPROV Prov;
@@ -107,47 +106,50 @@ get_random_ui (void)
     CRYPT_VERIFYCONTEXT))
     {
       int r;
-      unsigned int rnd;
+      unsigned long rnd;
     
-      r = CryptGenRandom (Prov, sizeof (unsigned int), (void *) &rnd);
+      r = CryptGenRandom (Prov, sizeof (unsigned long), (void *) &rnd);
       CryptReleaseContext (Prov, 0);
       if (r)
         {
-#ifndef OUTSIDE_LIBECM /* warning: outputf is not exported from libecm */
+/* warning: outputf is not exported from libecm */
+#if !defined (OUTSIDE_LIBECM) && !defined(GPUECM)
           outputf (OUTPUT_DEVVERBOSE, "Got seed for RNG from CryptGenRandom\n");
 #endif
           return rnd;
         }
     }
   
-#ifndef OUTSIDE_LIBECM /* warning: outputf is not exported from libecm */
+/* warning: outputf is not exported from libecm */
+#if !defined (OUTSIDE_LIBECM) && !defined(GPUECM)
   outputf (OUTPUT_DEVVERBOSE, "Got seed for RNG from GetSystemTime\n");
 #endif
 
   GetSystemTime (&tv);
   /* This gets us 27 bits of somewhat "random" data based on the time clock.
      It would probably do the program justice if a better random mixing was done
-     in the non-MinGW get_random_ui if /dev/random does not exist */
+     in the non-MinGW get_random_ul if /dev/random does not exist */
   return ((tv.wHour<<22)+(tv.wMinute<<16)+(tv.wSecond<<10)+tv.wMilliseconds) ^
          ((tv.wMilliseconds<<17)+(tv.wMinute<<11)+(tv.wHour<<6)+tv.wSecond);
 }
 
 #else
 
-unsigned int 
-get_random_ui (void)
+unsigned long 
+get_random_ul (void)
 {
   FILE *rndfd;
   struct timeval tv;
-  unsigned int t;
+  unsigned long t;
 
   /* Try /dev/urandom */
   rndfd = fopen ("/dev/urandom", "r");
   if (rndfd != NULL)
     {
-      if (fread (&t, sizeof (unsigned int), 1, rndfd) == 1)
+      if (fread (&t, sizeof (unsigned long), 1, rndfd) == 1)
         {
-#ifndef OUTSIDE_LIBECM /* warning: outputf is not exported from libecm */
+/* warning: outputf is not exported from libecm */
+#if !defined (OUTSIDE_LIBECM) && !defined(GPUECM)
           outputf (OUTPUT_DEVVERBOSE, "Got seed for RNG from /dev/urandom\n");
 #endif
           fclose (rndfd);
@@ -159,20 +161,22 @@ get_random_ui (void)
 #ifdef HAVE_GETTIMEOFDAY
   if (gettimeofday (&tv, NULL) == 0)
     {
-#ifndef OUTSIDE_LIBECM
+/* warning: outputf is not exported from libecm */
+#if !defined (OUTSIDE_LIBECM) && !defined(GPUECM)
       outputf (OUTPUT_DEVVERBOSE, "Got seed for RNG from gettimeofday()\n");
 #endif
-      return tv.tv_sec + tv.tv_usec;
+      return (unsigned long) tv.tv_sec + 
+             (unsigned long) tv.tv_usec * 2147483629UL;
     }
 #endif
 
-#ifndef OUTSIDE_LIBECM
+/* warning: outputf is not exported from libecm */
+#if !defined (OUTSIDE_LIBECM) && !defined(GPUECM)
   outputf (OUTPUT_DEVVERBOSE, "Got seed for RNG from time()+getpid()\n");
 #endif
 
   /* Multiply one value by a large prime to get a bit of avalance effect */
-  return time (NULL) + getpid () * 2147483629;
+  return (unsigned long) time (NULL) + 
+         (unsigned long) getpid () * 2147483629UL;
 }
 #endif
-
-

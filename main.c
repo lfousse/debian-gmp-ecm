@@ -1,22 +1,23 @@
-/* GMP-ECM -- Integer factorization with ECM and Pollard 'P-1' methods.
+/* GMP-ECM -- Integer factorization with ECM, P-1 and P+1 methods.
 
-  Copyright 2001, 2002, 2003, 2004, 2005 Jim Fougeron, Laurent Fousse, Alexander Kruppa, Paul Zimmermann.
+Copyright 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011,
+2012 Jim Fougeron, Laurent Fousse, Alexander Kruppa, Paul Zimmermann, Cyril
+Bouvier.
 
-  This program is free software; you can redistribute it and/or modify it
-  under the terms of the GNU General Public License as published by the
-  Free Software Foundation; either version 2 of the License, or (at your
-  option) any later version.
+This program is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 3 of the License, or (at your
+option) any later version.
 
-  This program is distributed in the hope that it will be useful, but WITHOUT
-  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-  FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
-  more details.
+This program is distributed in the hope that it will be useful, but
+WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
+more details.
 
-  You should have received a copy of the GNU General Public License along
-  with this program; see the file COPYING.  If not, write to the Free
-  Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
-  02111-1307, USA.
-*/
+You should have received a copy of the GNU General Public License
+along with this program; see the file COPYING.  If not, see
+http://www.gnu.org/licenses/ or write to the Free Software Foundation, Inc.,
+51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA. */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -26,6 +27,7 @@
 #ifdef _MSC_VER
 #  include <winsock2.h>
 #endif
+#include "ecm-impl.h"
 #include "ecm-ecm.h"
 
 #ifdef HAVE_UNISTD_H /* for access() */
@@ -51,17 +53,7 @@
 
 /* #define DEBUG */
 
-/* people keeping track of champions and corresponding url's: ECM, P-1, P+1 */
-static char *champion_keeper[3] =
-{ "Richard Brent <champs@rpbrent.com>",
-  "Paul Zimmermann <zimmerma@loria.fr>",
-  "Paul Zimmermann <zimmerma@loria.fr>"};
-static char *champion_url[3] =
-{"http://wwwmaths.anu.edu.au/~brent/ftp/champs.txt",
- "http://www.loria.fr/~zimmerma/records/Pminus1.html",
- "http://www.loria.fr/~zimmerma/records/Pplus1.html"};
-/* minimal number of digits to enter the champions table for ECM, P-1, P+1 */
-static unsigned int champion_digits[3] = { 63, 50, 42 };
+#include "champions.h"
 
 /* probab_prime_p() can get called from other modules. Instead of passing
    prpcmd to those functions, we make it static here - this variable will
@@ -73,100 +65,15 @@ static  char *prpcmd = NULL;
 static int exit_asap_value = 0;
 static int exit_asap_signalnr = 0; /* Remembers which signal we received */
 
-/* Tries to read a number from a line from fd and stores it in r.
-   Keeps reading lines until a number is found. Lines beginning with "#"
-     are skipped.
-   Returns 1 if a number was successfully read, 0 if no number can be read 
-     (i.e. at EOF)
-   Function is now simpler.  Much of the logic (other than skipping # lines
-     is now contained within eval() function.
-*/
-
-int 
-read_number (mpcandi_t *n, FILE *fd, int primetest)
-{
-  int c;
-  
-new_line:
-  c = fgetc (fd);
-  
-  /* Skip comment lines beginning with '#' */
-  if (c == '#')
-    {
-      do
-        c = fgetc (fd);
-      while (c != EOF && !IS_NEWLINE(c));
-      if (IS_NEWLINE(c))
-        goto new_line;
-    }
-
-  if (c == EOF)
-    return 0;
-
-  ungetc (c, fd);
-  if (!eval (n, fd, primetest))
-    goto new_line;
-
-#if 0
-  /*  Code to test out eval_str function, which "appears" to work correctly. */
-  {
-    /* warning!! Line is pretty small, but since this is just testing code, we
-       can easily control the input for this test.  This code should NEVER be
-       compiled into released build, its only for testing of eval_str() */
-    char Line[500], *cp;
-    fgets (Line, sizeof(Line), fd);
-
-    if (!eval_str (n, Line, primetest, &cp))
-      goto new_line;
-    fprintf (stderr, "\nLine is at %X cp is at %X\n", Line, cp);
-  }
-#endif
-
-#if defined (DEBUG_EVALUATOR)
-  if (n->cpExpr)
-    fprintf (stderr, "%s\n", n->cpExpr);
-  mpz_out_str (stderr, 10, n->n);
-  fprintf (stderr, "\n");
-#endif
-
-  return 1;
-}
-
-int 
-probab_prime_p (mpz_t N, int reps)
-{
-#ifdef WANT_SHELLCMD
-  if (prpcmd != NULL)
-    {
-      FILE *fc;
-      int r;
-      fc = popen (prpcmd, "w");
-      if (fc != NULL)
-        {
-          gmp_fprintf (fc, "%Zd\n", N);
-          r = pclose (fc);
-          if (r == 0) /* Exit status of 0 means success = is a PRP */
-            return 1;
-          else
-            return 0;
-        } else {
-          fprintf (stderr, "Error executing the PRP command\n");
-          exit (EXIT_FAILURE);
-        }
-    } else
-#endif
-      return mpz_probab_prime_p (N, reps);
-}
-
-void 
+void
 signal_handler (int sig)
 {
   if (sig == SIGINT || sig == SIGTERM)
     {
       exit_asap_value = 1;
       exit_asap_signalnr = sig;
-      /* If one of these two signals arrives again, we'll let the default 
-         handler take over,  which will usually terminate the process 
+      /* If one of these two signals arrives again, we'll let the default
+         handler take over,  which will usually terminate the process
          immediately. */
       signal (SIGINT, SIG_DFL);
       signal (SIGTERM, SIG_DFL);
@@ -183,8 +90,7 @@ stop_asap_test ()
   return exit_asap_value;
 }
 
-
-static void 
+static void
 usage (void)
 {
     printf ("Usage: ecm [options] B1 [[B2min-]B2] < file\n");
@@ -217,7 +123,7 @@ usage (void)
     printf ("  -resume file resume residues from file, reads from stdin if file is \"-\"\n");
     printf ("  -chkpnt file save periodic checkpoints during stage 1 to file\n");
     printf ("  -primetest   perform a primality test on input\n");
-    printf ("  -treefile f  store product tree of F in files f.0 f.1 ... \n");
+    printf ("  -treefile f  [ECM only] store stage 2 data in files f.0, ... \n");
     printf ("  -maxmem n    use at most n MB of memory in stage 2\n");
     printf ("  -stage1time n add n seconds to ECM stage 1 time (for expected time est.)\n");
 #ifdef WANT_SHELLCMD
@@ -236,13 +142,17 @@ usage (void)
     printf ("  -one         Stop processing a candidate if a factor is found (looping mode)\n");
     printf ("  -n           run ecm in \"nice\" mode (below normal priority)\n");
     printf ("  -nn          run ecm in \"very nice\" mode (idle priority)\n");
-    printf ("  -t n         Trial divide candidates before P-1, P+1 or ECM up to n\n");
     printf ("  -ve n        Verbosely show short (< n character) expressions on each loop\n");
     printf ("  -cofdec      Force cofactor output in decimal (even if expressions are used)\n");
     printf ("  -B2scale f   Multiplies the default B2 value by f \n");
     printf ("  -go val      Preload with group order val, which can be a simple expression,\n");
     printf ("               or can use N as a placeholder for the number being factored.\n");
     printf ("  -printconfig Print compile-time configuration and exit.\n");
+
+    printf ("  -batch[=1|2] (experimental) use Montgomery parametrization and batch\n" 
+					  "               computation. Option -batch is equivalent to -batch=1\n");
+    printf ("  -bsaves file In the batch mode, save s in file.\n");
+    printf ("  -bloads file In the batch mode, load s from file.\n");
 
     printf ("  -h, --help   Prints this help and exit.\n");
 }
@@ -252,14 +162,19 @@ static void
 print_config ()
 {
   printf ("Compilation options:\n");
-#ifdef __GNU_MP_VERSION_PATCHLEVEL
-  printf ("Included GMP header files version %d.%d.%d\n", 
-          __GNU_MP_VERSION, __GNU_MP_VERSION_MINOR, 
-          __GNU_MP_VERSION_PATCHLEVEL);
-#else
-  printf ("Included GMP header files version %d.%d\n", 
-          __GNU_MP_VERSION, __GNU_MP_VERSION_MINOR);
-#endif
+#ifdef __MPIR_VERSION
+     printf ("Included MPIR header files version %d.%d.%d\n", 
+             __MPIR_VERSION, __MPIR_VERSION_MINOR, __MPIR_VERSION_PATCHLEVEL);
+#else /* __MPIR_VERSION */
+   #ifdef __GNU_MP_VERSION_PATCHLEVEL
+     printf ("Included GMP header files version %d.%d.%d\n", 
+             __GNU_MP_VERSION, __GNU_MP_VERSION_MINOR, 
+             __GNU_MP_VERSION_PATCHLEVEL);
+   #else
+     printf ("Included GMP header files version %d.%d\n", 
+             __GNU_MP_VERSION, __GNU_MP_VERSION_MINOR);
+   #endif
+#endif /* __MPIR_VERSION */
 
 #ifdef GWNUM_VERSION
   printf ("Included GWNUM header files version %s\n", GWNUM_VERSION);
@@ -268,7 +183,7 @@ print_config ()
 #endif
 
 #ifdef HAVE_SSE2
-  printf ("HAVE_SSE2 = %d\n$", HAVE_SSE2);
+  printf ("HAVE_SSE2 = %d\n", HAVE_SSE2);
 #else
   printf ("HAVE_SSE2 undefined\n");
 #endif
@@ -297,25 +212,15 @@ print_config ()
   printf ("MEMORY_DEBUG undefined\n");
 #endif
 
-#ifdef NATIVE_REDC
-  printf ("NATIVE_REDC = %d\n", NATIVE_REDC);
-#ifdef TUNE_MULREDC_THRESH
-  printf ("TUNE_MULREDC_THRESH = %d\n", TUNE_MULREDC_THRESH);
-#else
-  printf ("TUNE_MULREDC_THRESH undefined\n");
-#endif
-#ifdef TUNE_SQRREDC_THRESH
-  printf ("TUNE_SQRREDC_THRESH = %d\n", TUNE_SQRREDC_THRESH);
-#else
-  printf ("TUNE_SQRREDC_THRESH undefined\n");
-#endif
+#ifdef USE_ASM_REDC
+  printf ("USE_ASM_REDC = %d\n", USE_ASM_REDC);
 #ifdef WINDOWS64_ABI
   printf ("WINDOWS64_ABI = %d\n", WINDOWS64_ABI);
 #else
   printf ("WINDOWS64_ABI undefined\n");
 #endif
 #else
-  printf ("NATIVE_REDC undefined\n");
+  printf ("USE_ASM_REDC undefined\n");
 #endif
 
 #ifdef WANT_ASSERT
@@ -405,7 +310,7 @@ int
 main (int argc, char *argv[])
 {
   char **argv0 = argv;
-  mpz_t x, sigma, A, f, orig_x0, B2, B2min, startingB2min;
+  mpz_t seed, x, sigma, A, f, orig_x0, B2, B2min, startingB2min;
   mpcandi_t n;
   mpgocandi_t go;
   mpq_t rat_x0;
@@ -450,14 +355,22 @@ main (int argc, char *argv[])
   int deep=1, trial_factor_found;
   unsigned int displayexpr = 0;
   unsigned int decimal_cofactor = 0;
-  double maxtrialdiv = 0.0;
   double B2scale = 1.0;
   double maxmem = 0.;
   double stage1time = 0.;
   ecm_params params;
+  int batch = 0; /* By default we don't use batch mode */
+  char *savefile_s = NULL;
+  char *loadfile_s = NULL;
 #ifdef WANT_SHELLCMD
   char *faccmd = NULL;
   char *idlecmd = NULL;
+#endif
+#ifdef HAVE_GWNUM
+  double gw_k = 0.0;       /* set default values for gwnum poly k*b^n+c */
+  unsigned long gw_b = 0;  /* set default values for gwnum poly k*b^n+c */
+  unsigned long gw_n = 0;  /* set default values for gwnum poly k*b^n+c */
+  signed long gw_c = 0;    /* set default values for gwnum poly k*b^n+c */
 #endif
 
   /* check ecm is linked with a compatible library */
@@ -478,6 +391,7 @@ main (int argc, char *argv[])
   mpgocandi_t_init (&go);
 
   /* Init variables we might need to store options */
+  MPZ_INIT (seed);
   MPZ_INIT (sigma);
   MPZ_INIT (A);
   MPZ_INIT (B2);
@@ -577,6 +491,31 @@ main (int argc, char *argv[])
 	  breadthfirst = 1;
 	  argv++;
 	  argc--;
+        }
+      else if (strcmp (argv[1], "-batch") == 0 || 
+                                            strcmp (argv[1], "-batch=1") == 0)
+        {
+	  batch = 1;
+	  argv++;
+	  argc--;
+        }
+      else if (strcmp (argv[1], "-batch=2") == 0)
+        {
+	  batch = 2;
+	  argv++;
+	  argc--;
+        }
+      else if ((argc > 2) && (strcmp (argv[1], "-bsaves") == 0))
+        {
+          savefile_s = argv[2];
+          argv += 2;
+          argc -= 2;
+        }
+      else if ((argc > 2) && (strcmp (argv[1], "-bloads") == 0))
+        {
+          loadfile_s = argv[2];
+          argv += 2;
+          argc -= 2;
         }
       else if (strcmp (argv[1], "-h") == 0 || strcmp (argv[1], "--help") == 0)
         {
@@ -752,17 +691,6 @@ main (int argc, char *argv[])
 	  argv += 2;
 	  argc -= 2;
 	}
-      else if ((argc > 2) && (strcmp (argv[1], "-t") == 0))
-	{
-	  maxtrialdiv = strtod (argv[2], NULL);
-	  if (maxtrialdiv <= 0.0)
-	    {
-	      fprintf (stderr, "Error, the -t option requires a positive argument\n");
-	      exit (EXIT_FAILURE);
-  	    }
-	  argv += 2;
-	  argc -= 2;
-	}
       else if ((argc > 2) && (strcmp (argv[1], "-ve") == 0))
         {
 	  displayexpr = atoi (argv[2]);
@@ -873,22 +801,32 @@ main (int argc, char *argv[])
   /* start of the program */
   if (verbose >= 1)
     {
+      char Gmp_version[64];
+      char out0[128], *out = out0;
+
+#ifdef __MPIR_VERSION
+      sprintf (Gmp_version, "MPIR %d.%d.%d", __MPIR_VERSION,
+	       __MPIR_VERSION_MINOR, __MPIR_VERSION_PATCHLEVEL);
+#else /* original GMP */
+      sprintf (Gmp_version, "GMP %s", gmp_version);
+#endif /* __MPIR_VERSION */
+
+      out += sprintf (out, "GMP-ECM %s [configured with %s",
+                      VERSION, Gmp_version);
+
 #ifdef HAVE_GWNUM
-#ifdef NATIVE_REDC
-      printf ("GMP-ECM %s [configured with GMP %s, GWNUM %s and --enable-asm-redc] [", 
-              VERSION, gmp_version, GWNUM_VERSION);
-#else
-      printf ("GMP-ECM %s [configured with GMP %s and GWNUM %s] [", 
-              VERSION, gmp_version, GWNUM_VERSION);
+      out += sprintf (out, ", GWNUM %s", GWNUM_VERSION);
 #endif
-#else
-#ifdef NATIVE_REDC
-      printf ("GMP-ECM %s [configured with GMP %s and --enable-asm-redc] [",
-              VERSION, gmp_version);
-#else
-      printf ("GMP-ECM %s [configured with GMP %s] [", VERSION, gmp_version);
+
+#ifdef USE_ASM_REDC
+      out += sprintf (out, ", --enable-asm-redc");
 #endif
+
+#ifdef WANT_ASSERT
+      out += sprintf (out, ", --enable-assert");
 #endif
+
+      printf ("%s] [", out0);
       switch (method)
 	{
 	case ECM_PM1:
@@ -1043,6 +981,13 @@ main (int argc, char *argv[])
   params->maxmem = maxmem;
   params->stage1time = stage1time;
 
+  /* -treefile is valid for ECM only */
+  if (TreeFilename != NULL && method != ECM_ECM)
+    {
+      fprintf (stderr, "Error: the -treefile option is for ECM only\n");
+      exit (EXIT_FAILURE);
+    }
+
   /* Open resume file for reading, if resuming is requested */
   if (resumefilename != NULL)
     {
@@ -1098,7 +1043,15 @@ main (int argc, char *argv[])
 
   /* We may need random numbers for sigma/starting point */
   gmp_randinit_default (randstate);
-  gmp_randseed_ui (randstate, get_random_ui ());
+  mpz_set_ui (seed, get_random_ul ());
+  if (mpz_sizeinbase (seed, 2) <= 32)
+    {
+      mpz_mul_2exp (seed, seed, 32);
+      mpz_add_ui (seed, seed, get_random_ul ());
+    }
+  if (verbose >= 3)
+    gmp_printf ("Random seed: %Zd\n", seed);
+  gmp_randseed (randstate, seed);
 
 
   /* Install signal handlers */
@@ -1397,54 +1350,73 @@ BreadthFirstDoAgain:;
 	  FREE (s, n.ndigits + 1);
 	}
 
-      if ((!breadthfirst && cnt == count) || 
-          (breadthfirst && 1 == breadthfirst_cnt))
-	{
-	  int SomeFactor;
-	  /*  Note, if a factors are found, then n will be adjusted "down" */
-	  SomeFactor = trial_factor (&n, maxtrialdiv, deep);
-	  if (SomeFactor)
-	    {
-	      /* should we increase factors found for trivials ??? */
-	      trial_factor_found = 1;
-	      factsfound += SomeFactor;
-	      if (n.isPrp)
-	        {
-		  printf ("Probable prime cofactor ");
-		  if (n.cpExpr && !decimal_cofactor)
-		    printf ("%s", n.cpExpr);
-		  else
-		    mpz_out_str (stdout, 10, n.n);
-		  printf (" has %u digits\n", n.ndigits);
-		  /* Nothing left to do with this number, so simply continue. */
-		  cnt = 0; /* no more curve to perform */
-		  fflush (stdout);
-		  continue;
-		}
-	      fflush (stdout);
-	      if (!deep)
-		{
-		  /* Note, if we are not in deep mode, then there is no need 
-		     to continue if a factor was found */
-  		  factor_is_prime = 1;
-  		  mpz_set_ui (f,1);
-		  goto OutputFactorStuff;
-		}
-
-	    }
-        }
-
       factor_is_prime = 0;
 
       cnt --; /* one more curve performed */
 
       mpgocandi_fixup_with_N (&go, &n);
+      /* If we are in batch mode:
+         If A was given one should check that d fits in one word and that x0=2.
+         If A was not given one chooses it at random (and if x0 exists
+         it must be 2). */
+      if (batch != 0)
+        {
+          if (method != ECM_ECM)
+            {
+              fprintf (stderr, "Error, the -batch option is only valid for ECM\n");
+              exit (EXIT_FAILURE);
+            }
+          mpz_set_ui (sigma, 0); 
+
+          if (mpz_sgn (orig_x0) == 0)
+            mpz_set_ui (orig_x0, 2);
+          else if (mpz_cmp_ui (orig_x0, 2) != 0)
+            {
+              fprintf (stderr, "Error, x0 should be equal to 2"
+                       " in batch mode.\n");
+              exit (EXIT_FAILURE);
+            }
+          
+          mpz_set (x, orig_x0);
+        }
+      params->batch = batch;
+      if (params->batch != 0 && params->batch_B1 != B1)
+        {
+          int st;
+          params->batch_B1 = B1;
+
+          if (verbose > OUTPUT_NORMAL)
+            printf ("Batch mode %d: ", batch);
+          st = cputime ();
+          /* construct the batch exponent */
+          if (loadfile_s != NULL)
+            {
+            /* For now, there is no check that it correspond to the actual B1*/
+              read_s_from_file (params->batch_s, loadfile_s);
+              if (verbose > OUTPUT_NORMAL)
+                printf ("reading prime product of %zu bits took %ldms\n",
+                    mpz_sizeinbase (params->batch_s, 2), cputime () - st);
+            }
+          else
+            {
+              compute_s (params->batch_s, params->batch_B1);
+              if (verbose > OUTPUT_NORMAL)
+                printf ("computing prime product of %zu bits took %ldms\n",
+                    mpz_sizeinbase (params->batch_s, 2), cputime () - st);
+              if (savefile_s != NULL)
+                {
+                  int ret = write_s_in_file (savefile_s, params->batch_s);
+                  if (verbose > OUTPUT_NORMAL && ret > 0)
+                    printf ("Save s (%u bytes) in %s.\n", ret, savefile_s);
+                }
+            }
+        }
 
       /* set parameters that may change from one curve to another */
       params->method = method; /* may change with resume */
       mpz_set (params->x, x); /* may change with resume */
       /* if sigma is zero, then we use the A value instead */
-      params->sigma_is_A = (mpz_sgn (sigma) == 0) ? 1 : 0;
+      params->sigma_is_A = ((mpz_sgn (sigma) == 0 || batch != 0) ? 1 : 0);
       mpz_set (params->sigma, (params->sigma_is_A) ? A : sigma);
       mpz_set (params->go, go.Candi.n); /* may change if contains N */
       mpz_set (params->B2min, B2min); /* may change with -c */
@@ -1456,7 +1428,36 @@ BreadthFirstDoAgain:;
       if (use_ntt == 1 && (method == ECM_ECM || S != ECM_DEFAULT_S)) 
         params->use_ntt = (mpz_size (n.n) <= NTT_SIZE_THRESHOLD);
       else 
-        params->use_ntt = (use_ntt != 0);
+        params->use_ntt = use_ntt;
+
+#ifdef HAVE_GWNUM
+      /* check if the input number can be represented as k*b^n+c */
+      if (kbnc_z (&gw_k, &gw_b, &gw_n, &gw_c, n.n))
+        {
+          params->gw_k = gw_k;
+          params->gw_b = gw_b;
+          params->gw_n = gw_n;
+          params->gw_c = gw_c;
+          if (verbose > OUTPUT_NORMAL)
+            printf ("Found number: %.0f*%lu^%lu + %ld\n",
+                    gw_k, gw_b, gw_n, gw_c);
+        }
+      else if (kbnc_str (&gw_k, &gw_b, &gw_n, &gw_c, n.cpExpr, n.n))
+        {
+          params->gw_k = gw_k;
+          params->gw_b = gw_b;
+          params->gw_n = gw_n;
+          params->gw_c = gw_c;
+          if (verbose > OUTPUT_NORMAL)
+            printf ("Found number: %.0f*%lu^%lu + %ld\n",
+                    gw_k, gw_b, gw_n, gw_c);
+        }
+      else
+        {
+          if (verbose > OUTPUT_NORMAL)
+            printf ("Did not find a gwnum poly for the input number.\n");
+        }
+#endif
 
 #ifdef WANT_SHELLCMD
       /* See if the system is currently idle, if -idlecmd was given */
@@ -1495,6 +1496,12 @@ BreadthFirstDoAgain:;
       mpmod_selftest (n.n);
 #endif
       
+      if (mpz_cmp_ui (n.n, 0) <= 0)
+	{
+	  fprintf (stderr, "Error, input number should be positive\n");
+	  exit (EXIT_FAILURE);
+	}
+
       /* now call the ecm library */
       result = ecm_factor (f, n.n, B1, params);
 
@@ -1522,8 +1529,8 @@ BreadthFirstDoAgain:;
 	  if (verbose > 0)
             printf ("\n");
 
-          /* Complain about non-proper factors (1, 0, negative) */
-          if (mpz_cmp_ui (f, 2) < 0)
+          /* Complain about non-proper factors (0, negative) */
+          if (mpz_cmp_ui (f, 1) < 0)
             {
               fprintf (stderr, "Error: factor found is ");
               mpz_out_str (stderr, 10, f);
@@ -1708,6 +1715,7 @@ OutputFactorStuff:;
   mpz_clear (sigma);
   mpz_clear (A);
   mpq_clear (rat_x0);
+  mpz_clear (seed);
   mpgocandi_t_free (&go);
 
   ecm_clear (params);

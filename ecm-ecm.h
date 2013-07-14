@@ -1,22 +1,22 @@
 /* ecm-ecm.h - private header file for GMP-ECM.
 
-  Copyright 2001, 2002, 2003, 2004, 2005 Paul Zimmermann and Alexander Kruppa.
+Copyright 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011,
+2012 Paul Zimmermann, Alexander Kruppa and Cyril Bouvier.
 
-  This program is free software; you can redistribute it and/or modify it
-  under the terms of the GNU General Public License as published by the
-  Free Software Foundation; either version 2 of the License, or (at your
-  option) any later version.
+This program is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 3 of the License, or (at your
+option) any later version.
 
-  This program is distributed in the hope that it will be useful, but WITHOUT
-  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-  FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
-  more details.
+This program is distributed in the hope that it will be useful, but
+WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
+more details.
 
-  You should have received a copy of the GNU General Public License along
-  with this program; see the file COPYING.  If not, write to the Free
-  Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
-  02111-1307, USA.
-*/
+You should have received a copy of the GNU General Public License
+along with this program; see the file COPYING.  If not, see
+http://www.gnu.org/licenses/ or write to the Free Software Foundation, Inc.,
+51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA. */
 
 #ifndef _ECM_ECM_H
 #define _ECM_ECM_H 1
@@ -68,13 +68,23 @@ typedef struct
 
 /* auxi.c */
 unsigned int nb_digits  (const mpz_t);
-unsigned int get_random_ui (void);
+int probab_prime_p (mpz_t, int);
+int read_number (mpcandi_t*, FILE*, int);
 
+/* Various logging levels */
+/* OUTPUT_ALWAYS means print always, regardless of verbose value */
 #define OUTPUT_ALWAYS 0
+/* OUTPUT_NORMAL means print during normal program execution */
 #define OUTPUT_NORMAL 1
+/* OUTPUT_VERBOSE means print if the user requested more verbosity */
 #define OUTPUT_VERBOSE 2
-#define OUTPUT_DEVVERBOSE 3
-#define OUTPUT_TRACE 4
+/* OUTPUT_RESVERBOSE is for printing residues (after stage 1 etc) */
+#define OUTPUT_RESVERBOSE 3
+/* OUTPUT_DEVVERBOSE is for printing internal parameters (for developers) */
+#define OUTPUT_DEVVERBOSE 4
+/* OUTPUT_TRACE is for printing trace data, produces lots of output */
+#define OUTPUT_TRACE 5
+/* OUTPUT_ERROR is for printing error messages */
 #define OUTPUT_ERROR -1
 
 #define MAX_NUMBER_PRINT_LEN 1000
@@ -97,7 +107,7 @@ int  inc_verbose ();
 #define ECM_COMP_FAC_PRIME_COFAC (2+8)
 #define ECM_PRIME_FAC_PRIME_COFAC (2+4+8)
 
-/* getprime2.c */
+/* getprime.c */
 double getprime ();
 void getprime_clear ();
 void getprime_seek (double);
@@ -130,8 +140,15 @@ int write_resumefile_line (char *, int, double, mpz_t, mpz_t, mpz_t, mpcandi_t *
                            mpz_t, const char *);
 
 /* main.c */
-int read_number (mpcandi_t *n, FILE *, int primetest);
-int probab_prime_p (mpz_t, int);
+int kbnc_z (double *k, unsigned long *b, unsigned long *n, signed long *c,
+            mpz_t z);
+int kbnc_str (double *k, unsigned long *b, unsigned long *n, signed long *c,
+              char *z, mpz_t num);
+
+/* batch.c */
+void compute_s (mpz_t, unsigned long);
+int write_s_in_file (char *, mpz_t);
+void read_s_from_file (mpz_t, char *); 
 
 /* eval.c */
 int eval (mpcandi_t *n, FILE *fd, int bPrp);
@@ -151,6 +168,9 @@ void mpgocandi_t_init(mpgocandi_t *go);
 void mpgocandi_t_free(mpgocandi_t *go);
 int  mpgocandi_fixup_with_N(mpgocandi_t *go, mpcandi_t *n);
 
+/* random.c */
+unsigned long get_random_ul (void);
+
 /* random2.c */
 void pp1_random_seed  (mpz_t, mpz_t, gmp_randstate_t);
 void pm1_random_seed  (mpz_t, mpz_t, gmp_randstate_t);
@@ -158,8 +178,8 @@ void pm1_random_seed  (mpz_t, mpz_t, gmp_randstate_t);
 /* default number of probable prime tests */
 #define PROBAB_PRIME_TESTS 1
 
-/* maximal stage 1 bound = 2^53 + 4, the next prime being 2^53 + 5 */
-#define MAX_B1 9007199254740996.0
+/* maximal stage 1 bound = 2^53 - 1, the next prime being 2^53 + 5 */
+#define MAX_B1 9007199254740991.0
 
 /* The checksum for savefile is the product of all mandatory fields, modulo
    the greatest prime below 2^32 */

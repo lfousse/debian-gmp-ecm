@@ -1,4 +1,3165 @@
 ------------------------------------------------------------------------
+r2438 | kruppa | 2013-02-27 16:16:07 +0100 (Wed, 27 Feb 2013) | 3 lines
+
+Remove -t option from man page
+Makefile should look for ecm.xml in $(source)/
+
+------------------------------------------------------------------------
+r2436 | kruppa | 2013-02-26 19:46:56 +0100 (Tue, 26 Feb 2013) | 2 lines
+
+Replaced several alloca() by malloc() to avoid segfault with very large P+-1
+stage 2
+
+------------------------------------------------------------------------
+r2435 | kruppa | 2013-02-26 19:44:05 +0100 (Tue, 26 Feb 2013) | 2 lines
+
+Removed memory lead due to surplus mpres_init()
+
+------------------------------------------------------------------------
+r2434 | zimmerma | 2013-02-22 15:07:14 +0100 (Fri, 22 Feb 2013) | 2 lines
+
+[main.c] removed -t option (should have been removed in r1860)
+
+------------------------------------------------------------------------
+r2433 | kruppa | 2013-02-22 13:26:09 +0100 (Fri, 22 Feb 2013) | 3 lines
+
+Use malloc() instead of alloca() for tmp in mpn_fft_fft_bailey_decompose() 
+to avoid segfault with very large stage 2
+
+------------------------------------------------------------------------
+r2422 | zimmerma | 2013-02-19 21:04:41 +0100 (Tue, 19 Feb 2013) | 2 lines
+
+[champions.h] updated for ECM
+
+------------------------------------------------------------------------
+r2421 | zimmerma | 2013-02-19 21:02:29 +0100 (Tue, 19 Feb 2013) | 2 lines
+
+[ChangeLog] updated
+
+------------------------------------------------------------------------
+r2419 | zimmerma | 2013-02-19 20:58:19 +0100 (Tue, 19 Feb 2013) | 2 lines
+
+[INSTALL-ecm] updated
+
+------------------------------------------------------------------------
+r2417 | zimmerma | 2013-02-19 20:42:03 +0100 (Tue, 19 Feb 2013) | 2 lines
+
+[NEWS] updated
+
+------------------------------------------------------------------------
+r2416 | kruppa | 2013-02-19 19:42:04 +0100 (Tue, 19 Feb 2013) | 5 lines
+
+Merged r1971 from trunk:
+  applied patch from Leif Leonhardy to make the assembly code work with
+  --enable-shared (see http://trac.sagemath.org/sage_trac/ticket/11705)
+
+
+------------------------------------------------------------------------
+r2414 | kruppa | 2013-02-19 17:36:35 +0100 (Tue, 19 Feb 2013) | 2 lines
+
+Updated changelog
+
+------------------------------------------------------------------------
+r2413 | kruppa | 2013-02-19 16:15:15 +0100 (Tue, 19 Feb 2013) | 2 lines
+
+Test was backwards :(
+
+------------------------------------------------------------------------
+r2412 | kruppa | 2013-02-19 16:10:27 +0100 (Tue, 19 Feb 2013) | 2 lines
+
+Define correct __gmpn_redc_{12} prototype for GMP <5.1. Define REDC{12}
+macros only if the functions exist.
+
+------------------------------------------------------------------------
+r2411 | kruppa | 2013-02-19 13:29:43 +0100 (Tue, 19 Feb 2013) | 2 lines
+
+Use defined() for HAVE_ALLOCA_H test
+
+------------------------------------------------------------------------
+r2407 | kruppa | 2013-02-15 14:22:50 +0100 (Fri, 15 Feb 2013) | 2 lines
+
+MinGW has alloca() prototype in malloc.h
+
+------------------------------------------------------------------------
+r2406 | kruppa | 2013-02-14 13:08:03 +0100 (Thu, 14 Feb 2013) | 3 lines
+
+Merging r2344:
+Remove stray '$'
+
+------------------------------------------------------------------------
+r2405 | kruppa | 2013-02-13 19:18:14 +0100 (Wed, 13 Feb 2013) | 2 lines
+
+Update version numbers for 6.4.4
+
+------------------------------------------------------------------------
+r2404 | kruppa | 2013-02-13 18:31:09 +0100 (Wed, 13 Feb 2013) | 2 lines
+
+Fixed typo
+
+------------------------------------------------------------------------
+r2402 | kruppa | 2013-02-13 17:55:16 +0100 (Wed, 13 Feb 2013) | 2 lines
+
+Merge r2401 into 6.4.4 branch
+
+------------------------------------------------------------------------
+r2400 | kruppa | 2013-02-13 17:49:56 +0100 (Wed, 13 Feb 2013) | 2 lines
+
+Merge of commit r2320
+
+------------------------------------------------------------------------
+r2399 | kruppa | 2013-02-13 17:42:57 +0100 (Wed, 13 Feb 2013) | 1 line
+
+Branch for patchlevel release 6.4.4
+
+------------------------------------------------------------------------
+r2096 | kruppa | 2012-06-12 17:35:10 +0200 (Tue, 12 Jun 2012) | 2 lines
+Changed paths:
+   M /branches/6.4.3/build.vc10/Makefile.am
+
+Removed bench_mulredc from EXTRA_DIST to avoid including .svn dir in
+distribution
+
+------------------------------------------------------------------------
+r2095 | kruppa | 2012-06-12 17:26:17 +0200 (Tue, 12 Jun 2012) | 2 lines
+Changed paths:
+   M /branches/6.4.3/TODO
+   M /branches/6.4.3/ecm.1
+   M /branches/6.4.3/ecm.xml
+
+Remove incorrect hypen in "Peter Lawrence Montgomery"
+
+------------------------------------------------------------------------
+r2094 | brian_gladman | 2012-06-12 17:23:55 +0200 (Tue, 12 Jun 2012) | 1
+line
+Changed paths:
+   M /branches/6.4.3/build.vc10/tests.py
+
+Add a few more tests that I missed earlier
+
+------------------------------------------------------------------------
+r2093 | brian_gladman | 2012-06-12 16:45:25 +0200 (Tue, 12 Jun 2012) | 1
+line
+Changed paths:
+   M /branches/6.4.3/build.vc10/config.h
+   M /branches/6.4.3/build.vc10/readme.txt
+   M /branches/6.4.3/build.vc10/tests.py
+
+Minor update to Windows files and add new tests
+
+------------------------------------------------------------------------
+r2090 | kruppa | 2012-06-12 14:48:43 +0200 (Tue, 12 Jun 2012) | 2 lines
+Changed paths:
+   M /trunk/test.pm1
+
+Added test for bug fixed in revision 2068
+
+------------------------------------------------------------------------
+r2088 | kruppa | 2012-06-12 14:16:03 +0200 (Tue, 12 Jun 2012) | 2 lines
+Changed paths:
+   M /trunk/NEWS
+
+Updated for 6.4.3 release
+
+------------------------------------------------------------------------
+r2082 | kruppa | 2012-06-07 14:20:20 +0200 (Thu, 07 Jun 2012) | 2 lines
+Changed paths:
+   M /trunk/cudawrapper.c
+   M /trunk/ecm-ecm.h
+   M /trunk/ecm-impl.h
+   M /trunk/factor.c
+   M /trunk/main.c
+   M /trunk/random.c
+
+Make random value more 64-bit-like, following suggestion by Jayson King
+
+------------------------------------------------------------------------
+r2072 | zimmerma | 2012-06-04 10:33:24 +0200 (Mon, 04 Jun 2012) | 2 lines
+Changed paths:
+   M /trunk/NEWS
+
+[NEWS] added item
+
+------------------------------------------------------------------------
+r2068 | kruppa | 2012-06-01 23:15:44 +0200 (Fri, 01 Jun 2012) | 2 lines
+Changed paths:
+   M /trunk/mpzspm.c
+
+Replace mpz_init_set_ui() by mpz_set_sp() so it works under Windows
+
+------------------------------------------------------------------------
+r1878 | zimmerma | 2012-03-19 10:11:57 +0100 (Mon, 19 Mar 2012) | 2 lines
+Changed paths:
+   M /trunk/ecm-params.h.athlon64
+   M /trunk/ecm-params.h.core2
+   M /trunk/ecm-params.h.corei5
+
+updated default tuning parameters
+
+------------------------------------------------------------------------
+r1877 | bouvierc | 2012-03-18 22:31:30 +0100 (Sun, 18 Mar 2012) | 2 lines
+Changed paths:
+   D /trunk/gpu/gpu_ecm_cc13
+
+Remove old gpu code.
+
+------------------------------------------------------------------------
+r1876 | brian_gladman | 2012-03-17 22:42:08 +0100 (Sat, 17 Mar 2012) | 1 line
+Changed paths:
+   M /trunk/build.vc10/ecm/ecm.vcxproj
+   M /trunk/build.vc10/ecm/ecm.vcxproj.filters
+
+remove trial.c from VC++ build
+------------------------------------------------------------------------
+r1875 | zimmerma | 2012-03-17 10:36:43 +0100 (Sat, 17 Mar 2012) | 3 lines
+Changed paths:
+   M /trunk/NEWS
+   M /trunk/mpzspm.c
+   M /trunk/mpzspv.c
+   M /trunk/sp.h
+   M /trunk/spm.c
+
+implement new LSB reduction of residues mod small primes in mpzspv.c,
+yields significant speedup
+
+------------------------------------------------------------------------
+r1874 | zimmerma | 2012-03-17 08:08:46 +0100 (Sat, 17 Mar 2012) | 3 lines
+Changed paths:
+   M /trunk/batch.c
+   M /trunk/ellparam_batch.c
+
+[batch.c] fixed copyright years and typo
+[ellparam_batch.c] fixed copyright years
+
+------------------------------------------------------------------------
+r1873 | bouvierc | 2012-03-16 18:38:41 +0100 (Fri, 16 Mar 2012) | 2 lines
+Changed paths:
+   M /trunk/batch.c
+   M /trunk/ellparam_batch.c
+
+Wrong names in the Copyright.
+
+------------------------------------------------------------------------
+r1872 | zimmerma | 2012-03-16 18:35:39 +0100 (Fri, 16 Mar 2012) | 2 lines
+Changed paths:
+   D /trunk/gpu/getprime.c
+   D /trunk/gpu/getprime.h
+   D /trunk/gpu/makefile
+   D /trunk/gpu/modular_arithmetic.c
+   D /trunk/gpu/modular_arithmetic.h
+   D /trunk/gpu/prototype.c
+   D /trunk/gpu/prototype.h
+   D /trunk/gpu/stage1-c.c
+   D /trunk/gpu/stage1.c
+
+removed obsolete files
+
+------------------------------------------------------------------------
+r1871 | bouvierc | 2012-03-16 18:08:34 +0100 (Fri, 16 Mar 2012) | 2 lines
+Changed paths:
+   M /trunk/batch.c
+   M /trunk/ellparam_batch.c
+   M /trunk/main.c
+
+Add licence in batch.c and ellparam_batch.c
+
+------------------------------------------------------------------------
+r1867 | zimmerma | 2012-03-16 17:03:40 +0100 (Fri, 16 Mar 2012) | 2 lines
+Changed paths:
+   M /trunk/Fgw.c
+   M /trunk/Makefile.am
+   M /trunk/NEWS
+   M /trunk/auxarith.c
+   M /trunk/auxi.c
+   M /trunk/auxlib.c
+   M /trunk/b1_ainc.c
+   M /trunk/bestd.c
+   M /trunk/build.vc10/config.h
+   M /trunk/candi.c
+   M /trunk/configure.in
+   D /trunk/countsmooth.c
+   M /trunk/ecm-ecm.h
+   M /trunk/ecm-gmp.h
+   M /trunk/ecm-impl.h
+   M /trunk/ecm.c
+   M /trunk/ecm.h
+   M /trunk/ecm2.c
+   M /trunk/ecm_ntt.c
+   M /trunk/ecmfactor.c
+   M /trunk/eval.c
+   M /trunk/factor.c
+   M /trunk/getprime.c
+   M /trunk/gpu/getprime.c
+   M /trunk/gpu/modular_arithmetic.c
+   M /trunk/gpu/prototype.c
+   M /trunk/gpu/stage1-c.c
+   M /trunk/gpu/stage1.c
+   M /trunk/ks-multiply.c
+   M /trunk/listz.c
+   M /trunk/lucas.c
+   M /trunk/main.c
+   M /trunk/median.c
+   M /trunk/memory.c
+   M /trunk/mpmod.c
+   M /trunk/mpmod.h
+   M /trunk/mpzspm.c
+   M /trunk/mpzspv.c
+   M /trunk/mul_fft.c
+   M /trunk/mul_lo.c
+   A /trunk/nodist/rho.gp (from /trunk/rho.gp:1864)
+   M /trunk/ntt_gfp.c
+   M /trunk/pm1.c
+   M /trunk/pm1fs2.c
+   M /trunk/polyeval.c
+   M /trunk/powerpc64/mulredc.m4
+   M /trunk/powerpc64/mulredc_1_2.m4
+   M /trunk/powerpc64/redc.asm
+   M /trunk/pp1.c
+   M /trunk/random.c
+   M /trunk/resume.c
+   M /trunk/rho.c
+   D /trunk/rho.gp
+   D /trunk/runecm2.c
+   M /trunk/schoen_strass.c
+   M /trunk/sets_long.c
+   M /trunk/sp.c
+   M /trunk/sp.h
+   M /trunk/spm.c
+   M /trunk/spv.c
+   M /trunk/stage2.c
+   M /trunk/test.ecm
+   M /trunk/test.pm1
+   M /trunk/test.pp1
+   M /trunk/testlong.pp1
+   M /trunk/toomcook.c
+   M /trunk/tune.c
+
+updated the copyright headers to GPL 3 and LGPL 3
+
+------------------------------------------------------------------------
+r1866 | zimmerma | 2012-03-16 16:05:59 +0100 (Fri, 16 Mar 2012) | 2 lines
+Changed paths:
+   A /trunk/nodist/countsmooth.c (from /trunk/countsmooth.c:1864)
+   A /trunk/nodist/runecm2.c (from /trunk/runecm2.c:1864)
+
+moved countsmooth.c and runecm2.c to nodist
+
+------------------------------------------------------------------------
+r1865 | zimmerma | 2012-03-16 16:04:58 +0100 (Fri, 16 Mar 2012) | 2 lines
+Changed paths:
+   A /trunk/nodist
+
+[nodist] new directory for non-distributed files
+
+------------------------------------------------------------------------
+r1864 | bouvierc | 2012-03-16 14:50:33 +0100 (Fri, 16 Mar 2012) | 3 lines
+Changed paths:
+   M /trunk/gpu/gpu_ecm/Makefile
+   M /trunk/gpu/gpu_ecm/utils.h
+
+Forgot to commit the new Makefile!
+Now include also directly ecm-ecm.h in gpu/gpu_ecm/utils.h
+
+------------------------------------------------------------------------
+r1863 | bouvierc | 2012-03-16 14:37:12 +0100 (Fri, 16 Mar 2012) | 7 lines
+Changed paths:
+   M /trunk/batch.c
+   M /trunk/ecm-impl.h
+   M /trunk/gpu/gpu_ecm/main.c
+   M /trunk/gpu/gpu_ecm/utils.h
+   M /trunk/random.c
+
+Rewriting Makefile of GPUECM to separate libecm file from ecm-ecm file.
+[Makefile] Separate file from libecm. Goal: linking directly libecm.
+[batch.c] Now only include ecm-impl.h 
+[random.c] No outputf in GPUECM
+[main.c] change #define to avoid conflicts
+
+
+------------------------------------------------------------------------
+r1862 | zimmerma | 2012-03-16 10:21:32 +0100 (Fri, 16 Mar 2012) | 2 lines
+Changed paths:
+   D /trunk/ecmfactor2.c
+
+[ecmfactor2.c] removed unmaintained program
+
+------------------------------------------------------------------------
+r1861 | zimmerma | 2012-03-16 10:16:14 +0100 (Fri, 16 Mar 2012) | 2 lines
+Changed paths:
+   D /trunk/bestdaux.c
+
+[bestdaux.c] removed unused file
+
+------------------------------------------------------------------------
+r1860 | zimmerma | 2012-03-16 10:05:05 +0100 (Fri, 16 Mar 2012) | 2 lines
+Changed paths:
+   D /trunk/trial.c
+
+[trial.c] removed unmaintained and untested file
+
+------------------------------------------------------------------------
+r1859 | zimmerma | 2012-03-16 09:39:46 +0100 (Fri, 16 Mar 2012) | 4 lines
+Changed paths:
+   M /trunk/Makefile.am
+   M /trunk/mpmod.c
+   M /trunk/test.ecm
+
+[test.ecm] added one test
+[mpmod.c] added an ASSERT
+[Makefile.am] missing tab
+
+------------------------------------------------------------------------
+r1858 | zimmerma | 2012-03-16 08:51:11 +0100 (Fri, 16 Mar 2012) | 2 lines
+Changed paths:
+   M /trunk/tune.c
+
+[tune.c] removed trailing blank
+
+------------------------------------------------------------------------
+r1857 | zimmerma | 2012-03-16 08:13:22 +0100 (Fri, 16 Mar 2012) | 4 lines
+Changed paths:
+   M /trunk/Makefile.am
+   M /trunk/test.pm1
+   M /trunk/test.pp1
+
+[test.pp1] added one test and removed blank line at the end
+[test.pm1] removed blank line at the end
+[Makefile.am] added blank line between tests
+
+------------------------------------------------------------------------
+r1856 | bouvierc | 2012-03-15 19:05:05 +0100 (Thu, 15 Mar 2012) | 2 lines
+Changed paths:
+   M /trunk/batch.c
+
+Forgot to remove unused variables.
+
+------------------------------------------------------------------------
+r1855 | zimmerma | 2012-03-15 19:00:20 +0100 (Thu, 15 Mar 2012) | 2 lines
+Changed paths:
+   M /trunk/mpmod.c
+
+[mpmod.c] fixed wrong patch in r1851
+
+------------------------------------------------------------------------
+r1854 | bouvierc | 2012-03-15 16:01:21 +0100 (Thu, 15 Mar 2012) | 2 lines
+Changed paths:
+   M /trunk/gpu/gpu_ecm/cudakernel.cu
+
+Changes in Cuda_Dbl_mod
+
+------------------------------------------------------------------------
+r1853 | bouvierc | 2012-03-15 13:29:24 +0100 (Thu, 15 Mar 2012) | 2 lines
+Changed paths:
+   M /trunk/gpu/gpu_ecm/cudakernel.cu
+
+Rewrite Normalize function.
+
+------------------------------------------------------------------------
+r1852 | bouvierc | 2012-03-15 13:27:47 +0100 (Thu, 15 Mar 2012) | 2 lines
+Changed paths:
+   M /trunk/batch.c
+
+Rewrite dup_add_batch2 with 6 residues (like dup_add_batch1)
+
+------------------------------------------------------------------------
+r1851 | zimmerma | 2012-03-15 12:09:28 +0100 (Thu, 15 Mar 2012) | 5 lines
+Changed paths:
+   M /trunk/batch.c
+   M /trunk/mpmod.c
+
+[mpmod.c] fixed bug in ecm_redc_n (found on gcc45 and gcc61),
+	  probably a new release 6.4.2 is needed
+[batch.c] reduced number of auxiliary variables from 5 to 2 in dup_add_batch1
+	  (remains to do the same in dup_add_batch2)
+
+------------------------------------------------------------------------
+r1850 | zimmerma | 2012-03-15 08:08:05 +0100 (Thu, 15 Mar 2012) | 4 lines
+Changed paths:
+   M /trunk/NEWS
+   M /trunk/build.vc10/config.h
+   M /trunk/configure.in
+   M /trunk/main.c
+   M /trunk/test.ecm
+
+[configure.in,build.vc10/config.h] bump version to 7.0-dev
+[main.c] make batch=1 mode the default one for ECM
+[test.ecm] added -batch=0 where needed
+
+------------------------------------------------------------------------
+r1847 | zimmerma | 2012-03-14 23:19:47 +0100 (Wed, 14 Mar 2012) | 2 lines
+Changed paths:
+   M /trunk/mpzspv.c
+
+[mpzspv.c] added note about possible improvement in mpzspv_from_mpzv_slow()
+
+------------------------------------------------------------------------
+r1846 | zimmerma | 2012-03-14 20:38:17 +0100 (Wed, 14 Mar 2012) | 2 lines
+Changed paths:
+   M /trunk/README.dev
+
+[README.dev] added tag for 6.4.1 release
+
+------------------------------------------------------------------------
+r1844 | zimmerma | 2012-03-14 18:29:22 +0100 (Wed, 14 Mar 2012) | 2 lines
+Changed paths:
+   M /trunk/ChangeLog
+   M /trunk/build.vc10/config.h
+   M /trunk/configure.in
+
+This will be the 6.4.1 release (if all final tests pass)
+
+------------------------------------------------------------------------
+r1842 | zimmerma | 2012-03-14 18:25:52 +0100 (Wed, 14 Mar 2012) | 5 lines
+Changed paths:
+   M /trunk/configure.in
+   M /trunk/ecm-impl.h
+   M /trunk/ecm-params.h.hppa2.0
+   M /trunk/ecm-params.h.ia64
+   M /trunk/ecm-params.h.mips64el
+   M /trunk/ecm-params.h.powerpc970
+   M /trunk/ecm-params.h.sparc64
+
+updated various tuning parameters
+[configure.in] tuning parameters for ia64 and hppa2.0 were not used!
+               Also fixed check for MPIR
+[ecm-impl.h] fixed // comment
+
+------------------------------------------------------------------------
+r1840 | zimmerma | 2012-03-14 16:46:05 +0100 (Wed, 14 Mar 2012) | 2 lines
+Changed paths:
+   M /trunk/ecm.c
+
+[ecm.c] removed computation of number of MULs and SQRs, to save a few cycles
+
+------------------------------------------------------------------------
+r1839 | bouvierc | 2012-03-14 15:47:08 +0100 (Wed, 14 Mar 2012) | 2 lines
+Changed paths:
+   M /trunk/gpu/gpu_ecm/cudakernel.cu
+
+Change in modular substraction.
+
+------------------------------------------------------------------------
+r1838 | zimmerma | 2012-03-14 15:35:59 +0100 (Wed, 14 Mar 2012) | 2 lines
+Changed paths:
+   M /trunk/tune.c
+
+[tune.c] check for failed memory allocation
+
+------------------------------------------------------------------------
+r1837 | bouvierc | 2012-03-14 15:28:56 +0100 (Wed, 14 Mar 2012) | 4 lines
+Changed paths:
+   M /trunk/gpu/gpu_ecm/cudakernel.cu
+
+Add specific code for mul for CC 2.0 cards.
+Treat differently access to constant variables.
+  -> results in significant speed-up.
+
+------------------------------------------------------------------------
+r1836 | bouvierc | 2012-03-14 15:04:39 +0100 (Wed, 14 Mar 2012) | 3 lines
+Changed paths:
+   M /trunk/gpu/gpu_ecm/cudakernel.cu
+
+Rewriting addition, substraction and multiplication by 2. No comparison is
+needed anymore so Cuda_Cmp is removed.
+
+------------------------------------------------------------------------
+r1835 | bouvierc | 2012-03-14 14:53:30 +0100 (Wed, 14 Mar 2012) | 2 lines
+Changed paths:
+   M /trunk/gpu/gpu_ecm/cudakernel.cu
+
+Rewrite #define for asm statement.
+
+------------------------------------------------------------------------
+r1834 | zimmerma | 2012-03-14 09:27:53 +0100 (Wed, 14 Mar 2012) | 4 lines
+Changed paths:
+   M /trunk/Makefile.am
+   M /trunk/bench_mulredc.c
+
+[bench_mulredc.c] only print to stdout what goes to ecm-params.h so that we can
+		  do ./bench_mulredc >> ecm-params.h
+[Makefile.am] build bench_mulredc by default
+
+------------------------------------------------------------------------
+r1833 | zimmerma | 2012-03-13 21:04:49 +0100 (Tue, 13 Mar 2012) | 2 lines
+Changed paths:
+   M /trunk/ecm-params.h.core2
+
+[ecm-params.h.core2] updated
+
+------------------------------------------------------------------------
+r1832 | zimmerma | 2012-03-13 18:19:44 +0100 (Tue, 13 Mar 2012) | 3 lines
+Changed paths:
+   M /trunk/ChangeLog
+   M /trunk/build.vc10/config.h
+   M /trunk/configure.in
+
+[configure.in,build.vc10/config.h] changed version to 6.4.1-rc3
+[ChangeLog] updated
+
+------------------------------------------------------------------------
+r1831 | zimmerma | 2012-03-13 13:47:38 +0100 (Tue, 13 Mar 2012) | 2 lines
+Changed paths:
+   M /trunk/mpzspv.c
+
+[mpzspv.c] removed call to ecm_bdiv_r_1 since it is not working
+
+------------------------------------------------------------------------
+r1830 | zimmerma | 2012-03-13 13:15:09 +0100 (Tue, 13 Mar 2012) | 5 lines
+Changed paths:
+   M /trunk/ecm-params.h.corei5
+   M /trunk/mpzspv.c
+
+[ecm-params.h.corei5] updated
+[mpzspv.c] removed new code with mpn_preinv_mod_1() in mpzspv_from_mpzv_slow
+	   since it was wrong (added comment explaining why)
+	   added new ecm_bdiv_r_1 code (disabled for now)
+
+------------------------------------------------------------------------
+r1829 | brian_gladman | 2012-03-13 10:22:16 +0100 (Tue, 13 Mar 2012) | 1 line
+Changed paths:
+   M /trunk/build.vc10/bench_mulredc/bench_mulredc.vcxproj
+   M /trunk/build.vc10/bench_mulredc/bench_mulredc.vcxproj.filters
+   M /trunk/sp.h
+
+ensure ATTRIBUTE_UNUSED is defined as empty for MSVC in sp.h
+------------------------------------------------------------------------
+r1828 | bouvierc | 2012-03-13 09:47:07 +0100 (Tue, 13 Mar 2012) | 3 lines
+Changed paths:
+   M /trunk/gpu/gpu_ecm/Makefile
+   M /trunk/gpu/gpu_ecm/cudakernel.cu
+
+[cudakernel.cu] Fix a bug
+[Makefile] Add 32-bit lib for CUDA 
+
+------------------------------------------------------------------------
+r1827 | brian_gladman | 2012-03-13 09:43:40 +0100 (Tue, 13 Mar 2012) | 1 line
+Changed paths:
+   M /trunk/build.vc10/bench_mulredc
+   D /trunk/build.vc10/bench_mulredc/bench_mulredc.vcxproj.user
+
+remove file uploaded in error
+------------------------------------------------------------------------
+r1826 | zimmerma | 2012-03-13 09:24:34 +0100 (Tue, 13 Mar 2012) | 2 lines
+Changed paths:
+   M /trunk/ecm-params.h.athlon64
+
+[ecm-params.h.athlon64] redo tuning
+
+------------------------------------------------------------------------
+r1825 | zimmerma | 2012-03-13 08:46:17 +0100 (Tue, 13 Mar 2012) | 2 lines
+Changed paths:
+   M /trunk/README
+   M /trunk/bench_mulredc.c
+
+changes suggested by David Cleaver for Windows+MingW64+Msys
+
+------------------------------------------------------------------------
+r1824 | zimmerma | 2012-03-13 08:30:42 +0100 (Tue, 13 Mar 2012) | 2 lines
+Changed paths:
+   M /trunk/sp.h
+
+[sp.h] removed more compiler warnings (on gcc110)
+
+------------------------------------------------------------------------
+r1823 | zimmerma | 2012-03-13 08:17:49 +0100 (Tue, 13 Mar 2012) | 2 lines
+Changed paths:
+   M /trunk/eval.c
+
+[eval.c] fixed compiler warnings (found on gcc70)
+
+------------------------------------------------------------------------
+r1822 | zimmerma | 2012-03-12 23:00:07 +0100 (Mon, 12 Mar 2012) | 4 lines
+Changed paths:
+   M /trunk/configure.in
+   M /trunk/mpzspv.c
+   M /trunk/spm.c
+
+[mpzspv.c] use __gmpn_preinv_mod_1 in mpzspv_from_mpzv_slow()
+[configure.in] recognize __gmpn_preinv_mod_1
+[spm.c] fixed typo
+
+------------------------------------------------------------------------
+r1821 | zimmerma | 2012-03-12 19:59:40 +0100 (Mon, 12 Mar 2012) | 2 lines
+Changed paths:
+   M /trunk/test.ecm
+
+[test.ecm] modified batch1 test which was not working on 32-bit
+
+------------------------------------------------------------------------
+r1820 | zimmerma | 2012-03-12 18:25:09 +0100 (Mon, 12 Mar 2012) | 2 lines
+Changed paths:
+   M /trunk/test.ecm
+
+[test.ecm] added two non-regression tests for bug fixed by r1819
+
+------------------------------------------------------------------------
+r1819 | zimmerma | 2012-03-12 17:43:22 +0100 (Mon, 12 Mar 2012) | 2 lines
+Changed paths:
+   M /trunk/mpmod.c
+
+[mpmod.c] fixed bug in mpresn_addsub (found on gcc45)
+
+------------------------------------------------------------------------
+r1818 | zimmerma | 2012-03-12 16:18:22 +0100 (Mon, 12 Mar 2012) | 5 lines
+Changed paths:
+   M /trunk/bench_mulredc.c
+
+[bench_mulredc.c] use same cputime() function as in auxlib.c
+		  (should work on Windows too) and setup number of iterations
+		  to get about 100ms for each test (avoid long time on slow
+		  computers)
+
+------------------------------------------------------------------------
+r1817 | zimmerma | 2012-03-12 14:48:29 +0100 (Mon, 12 Mar 2012) | 7 lines
+Changed paths:
+   M /trunk/COPYING
+   M /trunk/COPYING.LIB
+   M /trunk/Makefile.am
+   M /trunk/NEWS
+   M /trunk/bench_mulredc.c
+   M /trunk/longlong.h
+   M /trunk/mpmod.c
+   M /trunk/pm1fs2.c
+
+[COPYING,COPYING.LIB] switched to GPL v3 and LGPL v3
+[bench_mulredc.c,Makefile.am] fix for --disable-asm-redc
+[NEWS] added new items
+[longlong.h] copied umul_ppmm code for MIPS from GMP 5.0.4
+[mpmod.c] now use mulredc_1 when available
+[pm1fs2.c] fixed issue when sizeof(unsigned long) < sizeof(sp_t)
+
+------------------------------------------------------------------------
+r1816 | brian_gladman | 2012-03-12 12:28:43 +0100 (Mon, 12 Mar 2012) | 1 line
+Changed paths:
+   D /trunk/build.vc10/ecm.cuda.sln
+   A /trunk/build.vc10/gpu_ecm.sln (from /trunk/build.vc10/ecm.cuda.sln:1814)
+
+rename the Visual Studio solution for the gpu build to gpu_ecm  
+------------------------------------------------------------------------
+r1815 | brian_gladman | 2012-03-12 12:21:16 +0100 (Mon, 12 Mar 2012) | 1 line
+Changed paths:
+   A /trunk/build.vc10/getopt.c
+   A /trunk/build.vc10/getopt.h
+
+add files needed for the gpu build with MS Visual Studio and Nvidia Nsight 
+------------------------------------------------------------------------
+r1814 | brian_gladman | 2012-03-12 12:05:58 +0100 (Mon, 12 Mar 2012) | 1 line
+Changed paths:
+   M /trunk/build.vc10/config.h
+
+update to match MPIR 2.5.1 (which now has mpn_redc_2) 
+------------------------------------------------------------------------
+r1813 | zimmerma | 2012-03-12 09:25:24 +0100 (Mon, 12 Mar 2012) | 2 lines
+Changed paths:
+   M /trunk/bench_mulredc.c
+
+[bench_mulredc.c] fixed compiler warning
+
+------------------------------------------------------------------------
+r1809 | zimmerma | 2012-03-11 18:55:19 +0100 (Sun, 11 Mar 2012) | 3 lines
+Changed paths:
+   M /trunk/batch.c
+   M /trunk/build.vc10/config.h
+   M /trunk/configure.in
+
+[batch.c] fixed bug since d_1 might not fit in an "unsigned long" on Windows
+[configure.in,build.vc10/config.h] bump version number to 6.4.1-rc2
+
+------------------------------------------------------------------------
+r1808 | zimmerma | 2012-03-10 11:47:44 +0100 (Sat, 10 Mar 2012) | 2 lines
+Changed paths:
+   M /trunk/ecm-params.h.athlon64
+   M /trunk/ecm-params.h.core2
+   M /trunk/ecm-params.h.corei5
+
+added tuning parameters for MPIR
+
+------------------------------------------------------------------------
+r1807 | zimmerma | 2012-03-10 11:26:20 +0100 (Sat, 10 Mar 2012) | 2 lines
+Changed paths:
+   M /trunk/configure.in
+
+[configure.in] recognize if GMP is MPIR
+
+------------------------------------------------------------------------
+r1806 | zimmerma | 2012-03-10 10:49:20 +0100 (Sat, 10 Mar 2012) | 3 lines
+Changed paths:
+   M /trunk/batch.c
+   M /trunk/ecm-impl.h
+   M /trunk/mpmod.c
+
+[mpmod.c] new function mpresn_unpad to normalize mpz_t values
+[batch.c] don't forget to normalize x1 and z1 at the end!!!
+
+------------------------------------------------------------------------
+r1805 | zimmerma | 2012-03-10 10:33:46 +0100 (Sat, 10 Mar 2012) | 2 lines
+Changed paths:
+   M /trunk/test.ecm
+
+[test.ecm] fixed for new batch1 reduction
+
+------------------------------------------------------------------------
+r1804 | zimmerma | 2012-03-09 22:50:17 +0100 (Fri, 09 Mar 2012) | 2 lines
+Changed paths:
+   M /trunk/README
+   M /trunk/bench_mulredc.c
+   M /trunk/configure.in
+   M /trunk/ecm-gmp.h
+   M /trunk/ecm-params.h.athlon64
+   M /trunk/ecm-params.h.core2
+   M /trunk/ecm-params.h.corei5
+   M /trunk/mpmod.c
+   M /trunk/mpmod.h
+   M /trunk/test_mulredc.c
+   M /trunk/x86_64/Makefile.am
+
+removed ecm_redc3 code from x86_64 (variable-size REDC assembly code)
+
+------------------------------------------------------------------------
+r1802 | zimmerma | 2012-03-09 18:21:09 +0100 (Fri, 09 Mar 2012) | 2 lines
+Changed paths:
+   M /trunk/mpmod.c
+
+[mpmod.c] fixed error when __gmpn_add_nc is not defined
+
+------------------------------------------------------------------------
+r1801 | zimmerma | 2012-03-09 18:13:48 +0100 (Fri, 09 Mar 2012) | 5 lines
+Changed paths:
+   M /trunk/batch.c
+   M /trunk/ecm-impl.h
+   M /trunk/ecm.c
+   M /trunk/main.c
+   M /trunk/mpmod.c
+   M /trunk/test.ecm
+
+Change the definition of d in batch1 mode from mp_limb_t to mp_limb_t/B
+so that we can use LSB (Montgomery) division instead of MSB division,
+this gives a nice speedup. However this changes the input parameter A,
+and some tests are still failing. Do not use this version in production!
+
+------------------------------------------------------------------------
+r1800 | bouvierc | 2012-03-09 15:21:35 +0100 (Fri, 09 Mar 2012) | 2 lines
+Changed paths:
+   M /trunk/gpu/gpu_ecm/Makefile
+
+Dependencies in Makefile for GPU-ECM
+
+------------------------------------------------------------------------
+r1799 | zimmerma | 2012-03-09 10:49:47 +0100 (Fri, 09 Mar 2012) | 6 lines
+Changed paths:
+   M /trunk/README.dev
+   M /trunk/batch.c
+   M /trunk/configure.in
+   M /trunk/ecm-impl.h
+   M /trunk/mpmod.c
+
+fixed various problems with ecm-6.4.1-rc1 reported by David Cleaver
+(http://lists.gforge.inria.fr/pipermail/ecm-discuss/2012-March/004144.html):
+* replaced unsigned long by mp_limb_t in batch=1 (under Windows, unsigned long
+  has 32 bits only)
+* configure.in: added -lm for mathematical functions
+
+------------------------------------------------------------------------
+r1798 | zimmerma | 2012-03-08 13:11:00 +0100 (Thu, 08 Mar 2012) | 2 lines
+Changed paths:
+   M /trunk/Makefile.am
+
+[Makefile.am] GMPLIB is not needed for libecm
+
+------------------------------------------------------------------------
+r1797 | zimmerma | 2012-03-08 10:11:52 +0100 (Thu, 08 Mar 2012) | 2 lines
+Changed paths:
+   M /trunk/sets_long.c
+
+[sets_long.c] added comments
+
+------------------------------------------------------------------------
+r1796 | zimmerma | 2012-03-08 08:40:29 +0100 (Thu, 08 Mar 2012) | 2 lines
+Changed paths:
+   M /trunk/Makefile.am
+
+[Makefile.am] forgot ecm-params.h.corei5
+
+------------------------------------------------------------------------
+r1795 | zimmerma | 2012-03-07 16:41:21 +0100 (Wed, 07 Mar 2012) | 2 lines
+Changed paths:
+   M /trunk/NEWS
+
+[NEWS] fixed typo
+
+------------------------------------------------------------------------
+r1794 | zimmerma | 2012-03-07 16:36:37 +0100 (Wed, 07 Mar 2012) | 7 lines
+Changed paths:
+   M /trunk/ChangeLog
+   M /trunk/INSTALL-ecm
+   M /trunk/NEWS
+   M /trunk/README.dev
+   M /trunk/bench_mulredc.c
+   M /trunk/ecmbench
+
+[bench_mulredc.c] fix for Svoboda
+[NEWS] updated for 6.4.1
+[ChangeLog] idem
+[INSTALL-ecm] ibidem
+[ecmbench] rm -> rm -f
+[README.dev] updated
+
+------------------------------------------------------------------------
+r1793 | bouvierc | 2012-03-07 15:12:28 +0100 (Wed, 07 Mar 2012) | 2 lines
+Changed paths:
+   M /trunk/gpu/gpu_ecm/Makefile
+
+Some changes in the Makefile for GPU-ECM
+
+------------------------------------------------------------------------
+r1792 | zimmerma | 2012-03-07 15:11:10 +0100 (Wed, 07 Mar 2012) | 2 lines
+Changed paths:
+   M /trunk/ecm-params.h.powerpc970
+
+[ecm-params.h.powerpc970] removed exec flag
+
+------------------------------------------------------------------------
+r1791 | zimmerma | 2012-03-07 15:02:14 +0100 (Wed, 07 Mar 2012) | 2 lines
+Changed paths:
+   M /trunk/ecm-impl.h
+   M /trunk/mpmod.c
+
+[ecm-impl.h,mpmod.c] removed mult_modulus (was always equal to orig_modulus)
+
+------------------------------------------------------------------------
+r1790 | zimmerma | 2012-03-07 14:22:50 +0100 (Wed, 07 Mar 2012) | 2 lines
+Changed paths:
+   M /trunk/pm1fs2.c
+
+[pm1fs2.c] changed assert to avoid compiler warning with clang 2.9
+
+------------------------------------------------------------------------
+r1789 | zimmerma | 2012-03-07 13:54:25 +0100 (Wed, 07 Mar 2012) | 2 lines
+Changed paths:
+   M /trunk/configure.in
+
+[configure.in] added missing build.vc10/bench_mulredc/Makefile
+
+------------------------------------------------------------------------
+r1788 | zimmerma | 2012-03-07 13:46:16 +0100 (Wed, 07 Mar 2012) | 3 lines
+Changed paths:
+   M /trunk/README.dev
+   M /trunk/build.vc10/config.h
+   M /trunk/configure.in
+   M /trunk/ecm-gmp.h
+
+change version to 6.4.1-rc1
+switched assertions to off for the release candidate
+
+------------------------------------------------------------------------
+r1787 | zimmerma | 2012-03-07 13:13:20 +0100 (Wed, 07 Mar 2012) | 2 lines
+Changed paths:
+   M /trunk/listz.c
+   M /trunk/stage2.c
+
+[listz.c] cleanup, and removed some dead code in #if 0 ... #endif
+
+------------------------------------------------------------------------
+r1786 | zimmerma | 2012-03-07 10:40:51 +0100 (Wed, 07 Mar 2012) | 2 lines
+Changed paths:
+   M /trunk/ecm-impl.h
+   M /trunk/ecm_ntt.c
+   M /trunk/listz.c
+
+fix NEGATED_ROOTS=1 once for all
+
+------------------------------------------------------------------------
+r1785 | zimmerma | 2012-03-07 10:12:57 +0100 (Wed, 07 Mar 2012) | 2 lines
+Changed paths:
+   M /trunk/main.c
+
+[main.c] -treefile is valid for ECM only
+
+------------------------------------------------------------------------
+r1784 | zimmerma | 2012-03-07 10:01:19 +0100 (Wed, 07 Mar 2012) | 2 lines
+Changed paths:
+   M /trunk/test.ecm
+
+[test.ecm] added test with -treefile
+
+------------------------------------------------------------------------
+r1783 | zimmerma | 2012-03-05 08:56:02 +0100 (Mon, 05 Mar 2012) | 3 lines
+Changed paths:
+   M /trunk/ecm.c
+
+[ecm.c] with -v -v, print A=... and x0=... for coherence with command line
+	options
+
+------------------------------------------------------------------------
+r1782 | zimmerma | 2012-03-02 17:27:57 +0100 (Fri, 02 Mar 2012) | 3 lines
+Changed paths:
+   M /trunk/README.dev
+   M /trunk/TODO
+
+[README.dev] added check of -treefile before a release
+[TODO] at some point we should raise sigma to 64 bits
+
+------------------------------------------------------------------------
+r1781 | bouvierc | 2012-03-01 17:43:16 +0100 (Thu, 01 Mar 2012) | 2 lines
+Changed paths:
+   M /trunk/gpu/gpu_ecm/cudakernel.cu
+   M /trunk/gpu/gpu_ecm/main.c
+
+Better measurement of actual running time.
+
+------------------------------------------------------------------------
+r1779 | bouvierc | 2012-03-01 13:44:35 +0100 (Thu, 01 Mar 2012) | 2 lines
+Changed paths:
+   M /trunk/gpu/gpu_ecm/check.sh
+   M /trunk/gpu/gpu_ecm/cudakernel.cu
+   M /trunk/gpu/gpu_ecm/main.c
+
+Don't do modular reduction anymore in GPU arithmetic.
+
+------------------------------------------------------------------------
+r1778 | bouvierc | 2012-02-29 15:50:23 +0100 (Wed, 29 Feb 2012) | 2 lines
+Changed paths:
+   M /trunk/gpu/gpu_ecm/cudakernel.cu
+   M /trunk/gpu/gpu_ecm/main.c
+
+Prepare the code to use Montgomery-Svoboda algorithm for REDC
+
+------------------------------------------------------------------------
+r1777 | bouvierc | 2012-02-29 15:49:02 +0100 (Wed, 29 Feb 2012) | 2 lines
+Changed paths:
+   M /trunk/batch.c
+
+Add an include when linked for GPU-ECM
+
+------------------------------------------------------------------------
+r1775 | bouvierc | 2012-02-28 15:50:25 +0100 (Tue, 28 Feb 2012) | 2 lines
+Changed paths:
+   M /trunk/batch.c
+   M /trunk/ecm-ecm.h
+   M /trunk/ecm-impl.h
+   M /trunk/main.c
+
+Batch mode: allow to save and load s from a file.
+
+------------------------------------------------------------------------
+r1774 | bouvierc | 2012-02-27 11:45:40 +0100 (Mon, 27 Feb 2012) | 2 lines
+Changed paths:
+   M /trunk/test.ecm
+
+Replace ecm and ./ecm by $ECM in two lines of the test file.
+
+------------------------------------------------------------------------
+r1773 | brian_gladman | 2012-02-24 16:47:31 +0100 (Fri, 24 Feb 2012) | 1 line
+Changed paths:
+   M /trunk/build.vc10/ecm/ecm.vcxproj
+   M /trunk/build.vc10/ecm/ecm.vcxproj.filters
+
+
+------------------------------------------------------------------------
+r1772 | brian_gladman | 2012-02-24 16:43:18 +0100 (Fri, 24 Feb 2012) | 1 line
+Changed paths:
+   M /trunk/build.vc10/config.h
+   M /trunk/build.vc10/gpu_ecm/gpu_ecm.vcxproj
+   M /trunk/build.vc10/libecm/libecm.vcxproj
+   M /trunk/build.vc10/libecm/libecm.vcxproj.filters
+
+Update the gpu_ecm build for Windows
+------------------------------------------------------------------------
+r1771 | bouvierc | 2012-02-24 15:15:31 +0100 (Fri, 24 Feb 2012) | 2 lines
+Changed paths:
+   M /trunk/gpu/gpu_ecm/cudakernel.cu
+   M /trunk/gpu/gpu_ecm/cudakernel.h
+
+Make the CPU code handling the GPU clearer.
+
+------------------------------------------------------------------------
+r1770 | bouvierc | 2012-02-24 13:58:59 +0100 (Fri, 24 Feb 2012) | 2 lines
+Changed paths:
+   M /trunk/gpu/gpu_ecm/main.c
+   M /trunk/gpu/gpu_ecm/utils.c
+   M /trunk/gpu/gpu_ecm/utils.h
+
+Minor change in main.c. Add some comments.
+
+------------------------------------------------------------------------
+r1769 | bouvierc | 2012-02-24 13:43:26 +0100 (Fri, 24 Feb 2012) | 2 lines
+Changed paths:
+   M /trunk/batch.c
+
+Fix a problem reported by Brian Gladman.
+
+------------------------------------------------------------------------
+r1768 | bouvierc | 2012-02-24 11:24:31 +0100 (Fri, 24 Feb 2012) | 2 lines
+Changed paths:
+   M /trunk/gpu/gpu_ecm/main.c
+   M /trunk/gpu/gpu_ecm/utils.c
+   M /trunk/gpu/gpu_ecm/utils.h
+
+All factors found and cofactors are printed the same way.
+
+------------------------------------------------------------------------
+r1767 | bouvierc | 2012-02-24 11:02:51 +0100 (Fri, 24 Feb 2012) | 2 lines
+Changed paths:
+   M /trunk/gpu/gpu_ecm/main.c
+
+Use the struct mpcandi_t.
+
+------------------------------------------------------------------------
+r1766 | bouvierc | 2012-02-24 10:45:26 +0100 (Fri, 24 Feb 2012) | 2 lines
+Changed paths:
+   M /trunk/gpu/gpu_ecm/Makefile
+   M /trunk/gpu/gpu_ecm/utils.c
+   M /trunk/resume.c
+
+Write the right program name and right version in resume file.
+
+------------------------------------------------------------------------
+r1765 | bouvierc | 2012-02-24 10:32:36 +0100 (Fri, 24 Feb 2012) | 2 lines
+Changed paths:
+   M /trunk/gpu/gpu_ecm/cudakernel.cu
+   M /trunk/gpu/gpu_ecm/main.c
+   M /trunk/gpu/gpu_ecm/utils.c
+   M /trunk/gpu/gpu_ecm/utils.h
+
+More clear variables' name. More comment in main.c
+
+------------------------------------------------------------------------
+r1764 | bouvierc | 2012-02-24 09:47:36 +0100 (Fri, 24 Feb 2012) | 2 lines
+Changed paths:
+   M /trunk/gpu/gpu_ecm/Makefile
+   M /trunk/gpu/gpu_ecm/main.c
+   M /trunk/gpu/gpu_ecm/utils.c
+   M /trunk/gpu/gpu_ecm/utils.h
+
+Use write_resumefile_line from GMP-ECM.
+
+------------------------------------------------------------------------
+r1763 | zimmerma | 2012-02-24 08:19:43 +0100 (Fri, 24 Feb 2012) | 2 lines
+Changed paths:
+   M /trunk/gpu/gpu_ecm/check.sh
+
+[check.sh] translated error message in english
+
+------------------------------------------------------------------------
+r1762 | bouvierc | 2012-02-23 18:19:07 +0100 (Thu, 23 Feb 2012) | 2 lines
+Changed paths:
+   M /trunk/gpu/gpu_ecm/Makefile
+   M /trunk/gpu/gpu_ecm/README
+   M /trunk/gpu/gpu_ecm/main.c
+   M /trunk/gpu/gpu_ecm/utils.c
+   M /trunk/gpu/gpu_ecm/utils.h
+
+Using more functions from GMP-ECM.
+
+------------------------------------------------------------------------
+r1761 | bouvierc | 2012-02-23 18:18:26 +0100 (Thu, 23 Feb 2012) | 2 lines
+Changed paths:
+   M /trunk/gpu/gpu_ecm/check.sh
+
+Keep temp files when an error occurs in check.sh.
+
+------------------------------------------------------------------------
+r1760 | bouvierc | 2012-02-23 17:55:03 +0100 (Thu, 23 Feb 2012) | 2 lines
+Changed paths:
+   M /trunk/ecm-ecm.h
+
+Delete duplicate prototypes.
+
+------------------------------------------------------------------------
+r1759 | bouvierc | 2012-02-23 17:11:10 +0100 (Thu, 23 Feb 2012) | 2 lines
+Changed paths:
+   M /trunk/auxi.c
+   M /trunk/ecm-ecm.h
+   M /trunk/main.c
+
+Move some functions out of main.c in order to use them with GPU-ECM.
+
+------------------------------------------------------------------------
+r1758 | bouvierc | 2012-02-23 16:23:58 +0100 (Thu, 23 Feb 2012) | 2 lines
+Changed paths:
+   M /trunk/batch.c
+   M /trunk/gpu/gpu_ecm/Makefile
+   M /trunk/gpu/gpu_ecm/def.h
+   M /trunk/gpu/gpu_ecm/main.c
+   M /trunk/gpu/gpu_ecm/utils.c
+   M /trunk/gpu/gpu_ecm/utils.h
+
+Start to use GMP-ECM functions in GPU-ECM when they exist.
+
+------------------------------------------------------------------------
+r1757 | bouvierc | 2012-02-23 14:54:11 +0100 (Thu, 23 Feb 2012) | 4 lines
+Changed paths:
+   M /trunk/gpu/gpu_ecm/Makefile
+   A /trunk/gpu/gpu_ecm/README.dev
+   D /trunk/gpu/gpu_ecm/cudaarith.cu
+   D /trunk/gpu/gpu_ecm/cudaarith.h
+   A /trunk/gpu/gpu_ecm/cudakernel.cu (from /trunk/gpu/gpu_ecm/cudautils.cu:1756)
+   A /trunk/gpu/gpu_ecm/cudakernel.h (from /trunk/gpu/gpu_ecm/cudautils.h:1756)
+   D /trunk/gpu/gpu_ecm/cudautils.cu
+   D /trunk/gpu/gpu_ecm/cudautils.h
+   A /trunk/gpu/gpu_ecm/def.h (from /trunk/gpu/gpu_ecm/main.h:1756)
+   A /trunk/gpu/gpu_ecm/main.c (from /trunk/gpu/gpu_ecm/main.cu:1756)
+   D /trunk/gpu/gpu_ecm/main.cu
+   D /trunk/gpu/gpu_ecm/main.h
+   A /trunk/gpu/gpu_ecm/utils.c (from /trunk/gpu/gpu_ecm/utils.cu:1756)
+   D /trunk/gpu/gpu_ecm/utils.cu
+   M /trunk/gpu/gpu_ecm/utils.h
+
+Reorganization of the code. C code is put in C files compiled with gcc and Cuda
+code is put in .cu files and compiled with nvcc.
+
+
+------------------------------------------------------------------------
+r1756 | bouvierc | 2012-02-22 21:18:28 +0100 (Wed, 22 Feb 2012) | 2 lines
+Changed paths:
+   M /trunk/gpu/gpu_ecm/utils.cu
+
+Fix a bug reported by Brian Gladman.
+
+------------------------------------------------------------------------
+r1755 | bouvierc | 2012-02-22 16:12:37 +0100 (Wed, 22 Feb 2012) | 5 lines
+Changed paths:
+   M /trunk/ecm.c
+   M /trunk/main.c
+   M /trunk/test.ecm
+
+[ecm.c] Fix a problem for batch mode 2 when the value obtained from the
+parametrization is printed
+[main.c] Print which batch mode is used.
+[test.ecm] Add a test for batch mode 2.
+
+------------------------------------------------------------------------
+r1754 | bouvierc | 2012-02-22 16:09:58 +0100 (Wed, 22 Feb 2012) | 2 lines
+Changed paths:
+   D /trunk/gpu/gpu_ecm/obj
+   D /trunk/gpu/gpu_ecm/test.sh
+
+Delete useless files
+
+------------------------------------------------------------------------
+r1753 | bouvierc | 2012-02-22 16:07:10 +0100 (Wed, 22 Feb 2012) | 4 lines
+Changed paths:
+   M /trunk/gpu/gpu_ecm/Makefile
+   A /trunk/gpu/gpu_ecm/README
+   M /trunk/gpu/gpu_ecm/check.sh
+   M /trunk/gpu/gpu_ecm/main.h
+
+[Makefile] A more-easy-to-use Makefile
+[README] README explaining how to compile and execute GPU-ECM and how to use
+check.sh
+
+------------------------------------------------------------------------
+r1752 | bouvierc | 2012-02-22 12:04:26 +0100 (Wed, 22 Feb 2012) | 2 lines
+Changed paths:
+   M /trunk/batch.c
+
+fix a bug in batch mode 2
+
+------------------------------------------------------------------------
+r1751 | bouvierc | 2012-02-22 11:42:57 +0100 (Wed, 22 Feb 2012) | 2 lines
+Changed paths:
+   M /trunk/batch.c
+   M /trunk/ecm.c
+
+Fix batch mode 1 which didn't pass all the test because of previous commits.
+
+------------------------------------------------------------------------
+r1750 | bouvierc | 2012-02-22 10:21:27 +0100 (Wed, 22 Feb 2012) | 2 lines
+Changed paths:
+   M /trunk/gpu/gpu_ecm/main.cu
+   M /trunk/gpu/gpu_ecm/utils.cu
+
+Fix some bugs for 32-bits machines.
+
+------------------------------------------------------------------------
+r1749 | bouvierc | 2012-02-21 18:25:00 +0100 (Tue, 21 Feb 2012) | 4 lines
+Changed paths:
+   M /trunk/batch.c
+   D /trunk/batchmode.h
+   M /trunk/ecm-impl.h
+   M /trunk/ecm.c
+   M /trunk/main.c
+
+Now the choice of the which batch mode is used is not done by a #define.
+It can be passed as a argument: -batch[=1|2], with -batch being equivalent to
+-batch=1 
+
+------------------------------------------------------------------------
+r1748 | bouvierc | 2012-02-21 17:46:23 +0100 (Tue, 21 Feb 2012) | 2 lines
+Changed paths:
+   A /trunk/batchmode.h
+   A /trunk/ellparam_batch.c
+
+Forgot to add 2 new files in the last commit.
+
+------------------------------------------------------------------------
+r1747 | bouvierc | 2012-02-21 17:45:28 +0100 (Tue, 21 Feb 2012) | 4 lines
+Changed paths:
+   M /trunk/Makefile.am
+   M /trunk/batch.c
+   M /trunk/ecm.c
+   M /trunk/main.c
+
+Add elliptic parametrization for batch mode 2
+Move the choice of A for batch mode in ecm.c (as the choice of sigma for Suyama)
+
+
+------------------------------------------------------------------------
+r1746 | brian_gladman | 2012-02-16 18:40:14 +0100 (Thu, 16 Feb 2012) | 1 line
+Changed paths:
+   M /trunk/gpu/gpu_ecm/main.cu
+
+set IDLE priority for GPU application on Windows 
+------------------------------------------------------------------------
+r1745 | brian_gladman | 2012-02-16 17:31:39 +0100 (Thu, 16 Feb 2012) | 1 line
+Changed paths:
+   A /trunk/build.vc10/readme_gpu.txt
+
+add short readme for the Windows GPU build
+------------------------------------------------------------------------
+r1744 | brian_gladman | 2012-02-16 17:18:53 +0100 (Thu, 16 Feb 2012) | 1 line
+Changed paths:
+   A /trunk/build.vc10/ecm.cuda.sln
+
+Add Visual Studio build for the GPU code
+------------------------------------------------------------------------
+r1743 | brian_gladman | 2012-02-16 17:15:45 +0100 (Thu, 16 Feb 2012) | 1 line
+Changed paths:
+   M /trunk/build.vc10/getrusage.h
+   A /trunk/build.vc10/gpu_ecm
+   A /trunk/build.vc10/gpu_ecm/gpu_ecm.vcxproj
+   M /trunk/gpu/gpu_ecm/main.cu
+   M /trunk/gpu/gpu_ecm/main.h
+   M /trunk/gpu/gpu_ecm/utils.cu
+   M /trunk/gpu/gpu_ecm/utils.h
+   M /trunk/gpu/modular_arithmetic.c
+
+
+------------------------------------------------------------------------
+r1742 | brian_gladman | 2012-02-13 22:33:07 +0100 (Mon, 13 Feb 2012) | 1 line
+Changed paths:
+   M /trunk/build.vc10/config.h
+
+correct conflicted config.h
+------------------------------------------------------------------------
+r1741 | brian_gladman | 2012-02-13 22:06:19 +0100 (Mon, 13 Feb 2012) | 1 line
+Changed paths:
+   M /trunk/bench_mulredc.c
+   M /trunk/build.vc10/Makefile.am
+   M /trunk/build.vc10/assembler/Makefile.am
+   A /trunk/build.vc10/assembler/mulredc.asm
+   M /trunk/build.vc10/assembler/mulredc.h
+   A /trunk/build.vc10/assembler/redc.asm
+   A /trunk/build.vc10/bench_mulredc
+   A /trunk/build.vc10/bench_mulredc/Makefile.am
+   A /trunk/build.vc10/bench_mulredc/bench_mulredc.vcxproj
+   A /trunk/build.vc10/bench_mulredc/bench_mulredc.vcxproj.filters
+   A /trunk/build.vc10/bench_mulredc/bench_mulredc.vcxproj.user
+   M /trunk/build.vc10/config.h
+   M /trunk/build.vc10/ecm/ecm.vcxproj
+   M /trunk/build.vc10/ecm.sln
+   A /trunk/build.vc10/getrusage.c
+   A /trunk/build.vc10/getrusage.h
+   M /trunk/build.vc10/libecm/libecm.vcxproj
+   M /trunk/build.vc10/libecm/libecm.vcxproj.filters
+   M /trunk/build.vc10/tune/tune.vcxproj
+   M /trunk/build.vc10/tune/tune.vcxproj.filters
+
+Revamp the Windows Visual Studio 2010 build
+------------------------------------------------------------------------
+r1738 | zimmerma | 2012-02-12 23:46:20 +0100 (Sun, 12 Feb 2012) | 3 lines
+Changed paths:
+   M /trunk/bench_mulredc.c
+
+[bench_mulredc.c] added some Svoboda code (not tested so far) and avoid some
+		  warnings if mpn_redc_2 and mpn_redc_n are not defined
+
+------------------------------------------------------------------------
+r1737 | dcleaver | 2012-02-12 23:24:37 +0100 (Sun, 12 Feb 2012) | 1 line
+Changed paths:
+   M /trunk/Fgw.c
+   M /trunk/test.ecm
+
+Clean up comments and make ecm test deterministic
+------------------------------------------------------------------------
+r1736 | zimmerma | 2012-02-12 23:05:25 +0100 (Sun, 12 Feb 2012) | 2 lines
+Changed paths:
+   M /trunk/mpmod.c
+
+[mpmod.c] fixed misplaced #ifdef, added comments, MPN_COPY -> mpn_copyi
+
+------------------------------------------------------------------------
+r1735 | dcleaver | 2012-02-12 21:50:37 +0100 (Sun, 12 Feb 2012) | 1 line
+Changed paths:
+   M /trunk/test.ecm
+
+Added/fixed test to exercise r1734 patch
+------------------------------------------------------------------------
+r1734 | dcleaver | 2012-02-12 21:44:33 +0100 (Sun, 12 Feb 2012) | 1 line
+Changed paths:
+   M /trunk/Fgw.c
+   M /trunk/test.ecm
+
+Patched Fgw.c to allocate adequate memory for special inputs
+------------------------------------------------------------------------
+r1733 | zimmerma | 2012-02-12 20:15:50 +0100 (Sun, 12 Feb 2012) | 2 lines
+Changed paths:
+   M /trunk/bench_mulredc.c
+   M /trunk/configure.in
+   M /trunk/mpmod.h
+
+also consider mpn_redc_n in bench_mulredc (not yet used in mpmod.c)
+
+------------------------------------------------------------------------
+r1732 | brian_gladman | 2012-02-12 19:54:10 +0100 (Sun, 12 Feb 2012) | 1 line
+Changed paths:
+   M /trunk/build.vc10/assembler/mulredc.h
+   M /trunk/build.vc10/libecm/libecm.vcxproj
+   M /trunk/build.vc10/tune/tune.vcxproj
+
+Make use of assembler code the default for Windows
+------------------------------------------------------------------------
+r1731 | zimmerma | 2012-02-12 17:34:08 +0100 (Sun, 12 Feb 2012) | 2 lines
+Changed paths:
+   M /trunk/mpmod.c
+
+[mpmod.c] fixed problem reported by David Cleaver on ecm-discuss
+
+------------------------------------------------------------------------
+r1730 | zimmerma | 2012-02-12 17:23:22 +0100 (Sun, 12 Feb 2012) | 5 lines
+Changed paths:
+   M /trunk/bench_mulredc.c
+   M /trunk/configure.in
+   M /trunk/ecm-params.h.core2
+   M /trunk/mpmod.c
+
+[configure.in] bump minimal GMP version to 5.0.0
+[bench_mulredc.c,mpmod.c] since mpn_sqr is defined in GMP >= 5, no need to test
+			  it
+[ecm-params.h.core2] updated
+
+------------------------------------------------------------------------
+r1729 | zimmerma | 2012-02-12 16:12:25 +0100 (Sun, 12 Feb 2012) | 2 lines
+Changed paths:
+   M /trunk/build.vc10/assembler/Makefile.am
+
+[assembler/Makefile.am] added missing mulredc.h
+
+------------------------------------------------------------------------
+r1726 | zimmerma | 2012-02-12 12:03:54 +0100 (Sun, 12 Feb 2012) | 2 lines
+Changed paths:
+   M /trunk/Makefile.am
+   M /trunk/bench_mulredc.c
+   M /trunk/mpmod.c
+   A /trunk/mpmod.h
+
+define macros for different choices of redc modular arithmetic
+
+------------------------------------------------------------------------
+r1725 | zimmerma | 2012-02-12 08:35:20 +0100 (Sun, 12 Feb 2012) | 2 lines
+Changed paths:
+   M /trunk/build.vc10/Makefile.am
+
+[build.vc10/Makefile.am] removed non-existent file ecm-params.h.x64.core2
+
+------------------------------------------------------------------------
+r1724 | brian_gladman | 2012-02-12 00:07:15 +0100 (Sun, 12 Feb 2012) | 1 line
+Changed paths:
+   M /trunk/build.vc10/Makefile.am
+
+add distributed in build.vc10 to files to makefile.am 
+------------------------------------------------------------------------
+r1723 | zimmerma | 2012-02-11 14:37:39 +0100 (Sat, 11 Feb 2012) | 15 lines
+Changed paths:
+   M /trunk/README
+   M /trunk/bench_mulredc.c
+   M /trunk/ecm-impl.h
+   M /trunk/ecm-params.h.alpha-ev56
+   M /trunk/ecm-params.h.armv5tel
+   M /trunk/ecm-params.h.athlon64
+   M /trunk/ecm-params.h.core2
+   M /trunk/ecm-params.h.corei5
+   M /trunk/ecm-params.h.hppa2.0
+   M /trunk/ecm-params.h.ia64
+   M /trunk/ecm-params.h.mips64el
+   M /trunk/ecm-params.h.pentium-m
+   M /trunk/ecm-params.h.pentium4
+   M /trunk/ecm-params.h.powerpc970
+   M /trunk/ecm-params.h.sparc64
+   M /trunk/main.c
+   M /trunk/mpmod.c
+   M /trunk/test.pm1
+   M /trunk/tune.c
+
+Complete rewrite of the tuning mechanism for mulredc and sqrredc: instead of
+having a simple threshold, we have a full table for each one up to 20 limbs,
+where each entry for n limbs is an integer saying which function(s) should be
+used for the modular multiplication or squaring.
+
+Those tables are computed by bench_mulredc.
+
+On processors where assembly redc is available, I suggest we always have
+--enable-asm-redc, since the best routine will be chosen by bench_mulredc.
+
+On processors where assembly redc is not available, I suggest we still can
+use/compile bench_mulredc to choose the best routines.
+
+Ultimately bench_mulredc should be incorporated into "make tune".
+
+------------------------------------------------------------------------
+r1722 | brian_gladman | 2012-02-11 12:09:52 +0100 (Sat, 11 Feb 2012) | 1 line
+Changed paths:
+   M /trunk/build.vc10/ecm/Makefile.am
+   M /trunk/build.vc10/libecm/Makefile.am
+   M /trunk/build.vc10/tune/Makefile.am
+
+Add IDE filters to the GMP-ECM distrubution
+------------------------------------------------------------------------
+r1721 | zimmerma | 2012-02-11 09:45:15 +0100 (Sat, 11 Feb 2012) | 2 lines
+Changed paths:
+   M /trunk/build.vc10/Makefile.am
+   A /trunk/build.vc10/tune/Makefile.am
+   M /trunk/configure.in
+
+another try to fix missing vc10 files
+
+------------------------------------------------------------------------
+r1720 | brian_gladman | 2012-02-10 21:40:28 +0100 (Fri, 10 Feb 2012) | 1 line
+Changed paths:
+   M /trunk/build.vc10/ecm/ecm.vcxproj
+   M /trunk/build.vc10/tests.py
+
+another Windows build correction
+------------------------------------------------------------------------
+r1719 | zimmerma | 2012-02-10 21:38:19 +0100 (Fri, 10 Feb 2012) | 3 lines
+Changed paths:
+   M /trunk/bench_mulredc.c
+   M /trunk/x86_64/Makefile.am
+   M /trunk/x86_64/mulredc.h
+
+[x86_64] enable back redc3 code (can be useful for modular squaring)
+[bench_mulredc.c] print results of tuning at the end
+
+------------------------------------------------------------------------
+r1718 | zimmerma | 2012-02-10 20:52:57 +0100 (Fri, 10 Feb 2012) | 2 lines
+Changed paths:
+   M /trunk/Makefile.am
+   A /trunk/build.vc10/Makefile.am
+   A /trunk/build.vc10/assembler/Makefile.am
+   A /trunk/build.vc10/ecm/Makefile.am
+   A /trunk/build.vc10/libecm/Makefile.am
+   M /trunk/configure.in
+
+put in "make dist" missing build.vc10 files (to be checked)
+
+------------------------------------------------------------------------
+r1717 | zimmerma | 2012-02-10 20:12:15 +0100 (Fri, 10 Feb 2012) | 3 lines
+Changed paths:
+   M /trunk/ecm.c
+
+[ecm.c] for the batch mode and A=4d-2 with d "random", the torsion smoothness
+	multiplier is 1/(3*3^(1/128)) = 0.330... and not 1/3 !
+
+------------------------------------------------------------------------
+r1716 | brian_gladman | 2012-02-10 13:32:53 +0100 (Fri, 10 Feb 2012) | 1 line
+Changed paths:
+   M /trunk/build.vc10/libecm/libecm.vcxproj
+
+minor windows build change
+------------------------------------------------------------------------
+r1715 | brian_gladman | 2012-02-10 10:49:38 +0100 (Fri, 10 Feb 2012) | 1 line
+Changed paths:
+   M /trunk/build.vc10/ecm-params.h
+   M /trunk/build.vc10/ecm-params.h.win32.amd
+   M /trunk/build.vc10/ecm-params.h.win32.intel
+   M /trunk/build.vc10/ecm-params.h.x64.amd
+   M /trunk/build.vc10/ecm-params.h.x64.intel
+   M /trunk/build.vc10/tune/tune.vcxproj
+   M /trunk/build.vc10/tune/tune.vcxproj.filters
+
+correct windows tuning errors
+------------------------------------------------------------------------
+r1714 | zimmerma | 2012-02-09 12:42:54 +0100 (Thu, 09 Feb 2012) | 2 lines
+Changed paths:
+   M /trunk/bench_mulredc.c
+
+[bench_mulredc.c] updated to measure more low-level functions
+
+------------------------------------------------------------------------
+r1713 | zimmerma | 2012-02-08 12:29:36 +0100 (Wed, 08 Feb 2012) | 3 lines
+Changed paths:
+   M /trunk/ecm.c
+
+[ecm.c] corrected the value of BATCH_EXTRA_SMOOTHNESS for GMP_NUMB_BITS >= 64,
+	where we use A=4d-2 with d a square
+
+------------------------------------------------------------------------
+r1712 | zimmerma | 2012-02-07 22:24:56 +0100 (Tue, 07 Feb 2012) | 4 lines
+Changed paths:
+   M /trunk/mpmod.c
+
+[mpmod.c] new function sqrredc in C (not used yet because slower than the
+	  assembly mulredc)
+	  use redc_basecase_n in mpresn_sqr and mpresn_mul: small speedup
+
+------------------------------------------------------------------------
+r1711 | zimmerma | 2012-02-06 17:15:47 +0100 (Mon, 06 Feb 2012) | 3 lines
+Changed paths:
+   M /trunk/mpmod.c
+
+[mpmod.c] use TUNE_SQRREDC_THRESH and TUNE_MULREDC_THRESH in the mpresn_*
+	  functions
+
+------------------------------------------------------------------------
+r1710 | zimmerma | 2012-02-06 16:10:32 +0100 (Mon, 06 Feb 2012) | 3 lines
+Changed paths:
+   M /trunk/README.dev
+   M /trunk/ecmbench
+
+[ecmbench] use $1 to allow testing different versions
+[README.dev] added item for efficiency non-regression
+
+------------------------------------------------------------------------
+r1708 | zimmerma | 2012-02-06 15:58:01 +0100 (Mon, 06 Feb 2012) | 2 lines
+Changed paths:
+   M /trunk/ecm.c
+   M /trunk/ecm2.c
+   M /trunk/lucas.c
+   M /trunk/mpmod.c
+   M /trunk/pm1fs2.c
+   M /trunk/pp1.c
+   M /trunk/tune.c
+
+replaced all occurrences of mpres_mul (a, x, x, m) by mpres_sqr (a, x, m)
+
+------------------------------------------------------------------------
+r1706 | zimmerma | 2012-02-06 14:34:35 +0100 (Mon, 06 Feb 2012) | 7 lines
+Changed paths:
+   M /trunk/NEWS
+   M /trunk/README.dev
+   M /trunk/configure.in
+   M /trunk/ecm-impl.h
+   A /trunk/ecm-params.h.corei5
+   A /trunk/ecmbench
+   M /trunk/mpmod.c
+   M /trunk/tune.c
+
+[tune.c] cleaned up comptutation of TUNE_MULREDC_THRESH and TUNE_SQRREDC_THRESH
+[ecm-params.h.corei5] new parameters for Core i5
+[configure.in] now recognize Core i5
+[ecmbench] new bench utility
+[ecm-impl.h] new macro MULREDC_ASSEMBLY_MAX
+[mpmod.c] use MULREDC_ASSEMBLY_MAX
+
+------------------------------------------------------------------------
+r1703 | zimmerma | 2012-02-04 09:47:09 +0100 (Sat, 04 Feb 2012) | 2 lines
+Changed paths:
+   M /trunk/build.vc10/config.h
+   M /trunk/configure.in
+
+switch version to 6.5-dev, and assertions on by default
+
+------------------------------------------------------------------------
+r1701 | zimmerma | 2012-02-03 20:59:21 +0100 (Fri, 03 Feb 2012) | 2 lines
+Changed paths:
+   M /trunk/batch.c
+   M /trunk/mpmod.c
+
+make new batch-mode code also work with --disable-asm-redc
+
+------------------------------------------------------------------------
+r1700 | zimmerma | 2012-02-03 17:14:22 +0100 (Fri, 03 Feb 2012) | 6 lines
+Changed paths:
+   M /trunk/batch.c
+   M /trunk/ecm-impl.h
+   M /trunk/ecm.c
+   M /trunk/mpmod.c
+   M /trunk/pm1fs2.c
+
+[pm1fs2.c] renamed mpmod_copy into mpmod_init_set
+[batch.c] use new function mpresn_pad
+[ecm-impl.h] added mult_modulus (currrently initialized to N)
+[mpmod.c] simplified the mpresn_* functions (assuming repr=ECM_MOD_MODMULN)
+[ecm.c] in batch mode, force repr=ECM_MOD_MODMULN
+
+------------------------------------------------------------------------
+r1697 | zimmerma | 2012-02-03 10:07:59 +0100 (Fri, 03 Feb 2012) | 4 lines
+Changed paths:
+   M /trunk/batch.c
+   M /trunk/ecm-impl.h
+   M /trunk/mpmod.c
+
+[ecm-impl.h] added missing prototypes
+[batch.c] removed debug printf() statements
+[mpmod.c] fixed compiler warnings
+
+------------------------------------------------------------------------
+r1696 | zimmerma | 2012-02-02 20:08:19 +0100 (Thu, 02 Feb 2012) | 2 lines
+Changed paths:
+   M /trunk/NEWS
+
+[NEWS] added --enable-mulredc-svodoba
+
+------------------------------------------------------------------------
+r1695 | bouvierc | 2012-02-02 15:57:09 +0100 (Thu, 02 Feb 2012) | 4 lines
+Changed paths:
+   M /trunk/batch.c
+   M /trunk/mpmod.c
+
+Replace mpz operations by mpn operations in dup_add in batch.c
+For now only mul, sqr, add and sub have been modified.
+Reduction have not changed.
+
+------------------------------------------------------------------------
+r1694 | kruppa | 2012-02-02 15:52:19 +0100 (Thu, 02 Feb 2012) | 2 lines
+Changed paths:
+   M /trunk/configure.in
+   M /trunk/x86_64/mulredc.m4
+
+Support for Svoboda mulredc in x86_64/. Matching support in mpmod.c TBD
+
+------------------------------------------------------------------------
+r1693 | zimmerma | 2012-01-30 17:58:24 +0100 (Mon, 30 Jan 2012) | 2 lines
+Changed paths:
+   M /trunk/getprime.c
+
+[getprime.c] fixed typo in commented printf()
+
+------------------------------------------------------------------------
+r1690 | kruppa | 2012-01-16 16:00:54 +0100 (Mon, 16 Jan 2012) | 2 lines
+Changed paths:
+   M /trunk/mpzspv.c
+
+Slight cleanup
+
+------------------------------------------------------------------------
+r1684 | zimmerma | 2012-01-09 14:12:38 +0100 (Mon, 09 Jan 2012) | 2 lines
+Changed paths:
+   M /trunk/mpmod.c
+
+[mpmod.c] perform lazy reduction in REDC when N < B^n/4
+
+------------------------------------------------------------------------
+r1678 | zimmerma | 2012-01-07 16:45:28 +0100 (Sat, 07 Jan 2012) | 2 lines
+Changed paths:
+   M /trunk/INSTALL-ecm
+   M /trunk/Makefile.am
+   M /trunk/configure.in
+
+removed leftover references to build.vc9
+
+------------------------------------------------------------------------
+r1677 | zimmerma | 2012-01-06 18:32:22 +0100 (Fri, 06 Jan 2012) | 2 lines
+Changed paths:
+   M /trunk/gpu/gpu_ecm/Makefile
+   M /trunk/gpu/gpu_ecm_cc13/Makefile
+
+cleaned up Makefiles
+
+------------------------------------------------------------------------
+r1676 | brian_gladman | 2012-01-04 18:14:22 +0100 (Wed, 04 Jan 2012) | 2 lines
+Changed paths:
+   M /trunk
+   D /trunk/build.vc9
+
+Remove some errors from the Visual Studio readme.txt filesremove unmaintained Visual Studio 2008 build files
+
+------------------------------------------------------------------------
+r1675 | zimmerma | 2012-01-04 09:53:53 +0100 (Wed, 04 Jan 2012) | 2 lines
+Changed paths:
+   M /trunk/main.c
+
+[main.c] fixed warning on 32-bit processor
+
+------------------------------------------------------------------------
+r1674 | zimmerma | 2012-01-04 00:44:48 +0100 (Wed, 04 Jan 2012) | 2 lines
+Changed paths:
+   M /trunk/README.dev
+
+[README.dev] added tag for 6.4
+
+------------------------------------------------------------------------
+r1672 | zimmerma | 2012-01-04 00:42:50 +0100 (Wed, 04 Jan 2012) | 2 lines
+Changed paths:
+   M /trunk/ChangeLog
+
+[ChangeLog] updated, this is the GMP-ECM 6.4 release
+
+------------------------------------------------------------------------
+r1671 | brian_gladman | 2012-01-04 00:39:25 +0100 (Wed, 04 Jan 2012) | 1 line
+Changed paths:
+   M /trunk/build.vc10/readme.txt
+   M /trunk/build.vc9/readme.txt
+
+Remove some errors from the Visual Studio readme.txt files
+------------------------------------------------------------------------
+r1670 | zimmerma | 2012-01-04 00:38:05 +0100 (Wed, 04 Jan 2012) | 2 lines
+Changed paths:
+   A /trunk/INSTALL-ecm (from /trunk/INSTALL:1662)
+
+[INSTALL-ecm] specific INSTALL file for GMP-ECM
+
+------------------------------------------------------------------------
+r1669 | zimmerma | 2012-01-04 00:34:36 +0100 (Wed, 04 Jan 2012) | 2 lines
+Changed paths:
+   M /trunk/mpmod.c
+   M /trunk/resume.c
+
+removed compiler warnings found with gcc 4.6.1
+
+------------------------------------------------------------------------
+r1668 | zimmerma | 2012-01-04 00:26:26 +0100 (Wed, 04 Jan 2012) | 2 lines
+Changed paths:
+   M /trunk/configure.in
+
+[configure.in] added code to check for Pentium 4
+
+------------------------------------------------------------------------
+r1667 | zimmerma | 2012-01-04 00:24:49 +0100 (Wed, 04 Jan 2012) | 2 lines
+Changed paths:
+   D /trunk/INSTALL
+
+[INSTALL] removed from svn, since it is now autogenerated by the autotools
+
+------------------------------------------------------------------------
+r1666 | zimmerma | 2012-01-04 00:24:01 +0100 (Wed, 04 Jan 2012) | 2 lines
+Changed paths:
+   M /trunk/ChangeLog
+
+[ChangeLog] updated for 6.4
+
+------------------------------------------------------------------------
+r1665 | zimmerma | 2012-01-04 00:21:36 +0100 (Wed, 04 Jan 2012) | 2 lines
+Changed paths:
+   M /trunk/TODO
+
+[TODO] removed several done items
+
+------------------------------------------------------------------------
+r1664 | zimmerma | 2012-01-04 00:21:13 +0100 (Wed, 04 Jan 2012) | 2 lines
+Changed paths:
+   M /trunk/README
+
+[README] added sample example
+
+------------------------------------------------------------------------
+r1663 | zimmerma | 2012-01-04 00:20:54 +0100 (Wed, 04 Jan 2012) | 2 lines
+Changed paths:
+   M /trunk/Makefile.am
+
+[Makefile.am] added INSTALL-ecm (INSTALL is now the generic GNU package file)
+
+------------------------------------------------------------------------
+r1662 | zimmerma | 2012-01-04 00:13:33 +0100 (Wed, 04 Jan 2012) | 2 lines
+Changed paths:
+   M /trunk/NEWS
+
+[NEWS] added one item
+
+------------------------------------------------------------------------
+r1661 | zimmerma | 2012-01-04 00:13:06 +0100 (Wed, 04 Jan 2012) | 3 lines
+Changed paths:
+   M /trunk/ecm-gmp.h
+   M /trunk/mpmod.c
+   M /trunk/schoen_strass.c
+
+use of mpn_mullo_n when available
+check if _mpz_realloc sets value to 0
+
+------------------------------------------------------------------------
+r1660 | zimmerma | 2012-01-04 00:12:03 +0100 (Wed, 04 Jan 2012) | 3 lines
+Changed paths:
+   M /trunk/build.vc10/config.h
+   M /trunk/build.vc9/config.h
+   M /trunk/configure.in
+
+changed version to 6.4
+added check for mpn_mullo_n
+
+------------------------------------------------------------------------
+r1659 | zimmerma | 2012-01-04 00:03:08 +0100 (Wed, 04 Jan 2012) | 2 lines
+Changed paths:
+   M /trunk/build.vc10/readme.txt
+   M /trunk/build.vc9/readme.txt
+
+fixed typos
+
+------------------------------------------------------------------------
+r1658 | zimmerma | 2012-01-03 23:49:23 +0100 (Tue, 03 Jan 2012) | 2 lines
+Changed paths:
+   M /trunk/ecm-params.h.pentium4
+
+[ecm-params.h.pentium4] updated for ecm-6.4
+
+------------------------------------------------------------------------
+r1657 | zimmerma | 2012-01-03 23:31:19 +0100 (Tue, 03 Jan 2012) | 3 lines
+Changed paths:
+   M /trunk/ecm-params.h.athlon64
+   M /trunk/ecm-params.h.core2
+
+[ecm-params.h.athlon64] updated on a true AMD machine
+[ecm-params.h.core2] added model name
+
+------------------------------------------------------------------------
+r1656 | zimmerma | 2012-01-03 23:25:27 +0100 (Tue, 03 Jan 2012) | 2 lines
+Changed paths:
+   M /trunk/ecm-params.h.core2
+
+[ecm-params.h.core2] updated for ecm-6.4
+
+------------------------------------------------------------------------
+r1655 | zimmerma | 2012-01-03 23:20:11 +0100 (Tue, 03 Jan 2012) | 2 lines
+Changed paths:
+   M /trunk/ecm-params.h.athlon64
+
+[ecm-params.h.athlon64] updated for ecm 6.4
+
+------------------------------------------------------------------------
+r1653 | kruppa | 2012-01-03 04:28:57 +0100 (Tue, 03 Jan 2012) | 2 lines
+Changed paths:
+   M /trunk/mpmod.c
+
+nn must be initialised before testing assertions involving nn
+
+------------------------------------------------------------------------
+r1647 | zimmerma | 2011-12-30 10:27:49 +0100 (Fri, 30 Dec 2011) | 2 lines
+Changed paths:
+   M /trunk/INSTALL
+
+[INSTALL] modified instructions for GWNUM
+
+------------------------------------------------------------------------
+r1644 | zimmerma | 2011-12-27 16:28:42 +0100 (Tue, 27 Dec 2011) | 2 lines
+Changed paths:
+   M /trunk/AUTHORS
+   M /trunk/README.dev
+
+added Cyril Bouvier as author, small fixes in README.dev
+
+------------------------------------------------------------------------
+r1643 | zimmerma | 2011-12-27 16:22:31 +0100 (Tue, 27 Dec 2011) | 2 lines
+Changed paths:
+   M /trunk/ChangeLog
+   M /trunk/INSTALL
+   M /trunk/NEWS
+   M /trunk/README.dev
+   M /trunk/build.vc10/config.h
+   M /trunk/build.vc9/config.h
+   M /trunk/configure.in
+
+prepare for the 6.4 release: now 6.4-rc1
+
+------------------------------------------------------------------------
+r1642 | zimmerma | 2011-12-27 15:39:10 +0100 (Tue, 27 Dec 2011) | 3 lines
+Changed paths:
+   M /trunk/main.c
+
+[main.c] on 64-bit processors, take d a square in batch mode, which gives
+	 a larger average torsion, and thus a larger success probability
+
+------------------------------------------------------------------------
+r1641 | zimmerma | 2011-12-27 12:06:43 +0100 (Tue, 27 Dec 2011) | 13 lines
+Changed paths:
+   M /trunk/main.c
+   M /trunk/pm1.c
+
+work on "bug" reported by Jason Papadopoulos: the choice between NTT and no-NTT
+code for P-1 was wrong. In fact, since revision 1558, we prefer the variant
+with the larger transform length, which is sometimes a bad choice. For example
+with the following resume file the new choice is twice as slow:
+METHOD=P-1; B1=10000000; N=29799904256775982671863388319999573561548825027149399972531599612392671227006866151136667908641695103422986028076864929902803267437351318167549013218980573566942647077444419419003164546362008247462049; X=0x58bcade9a21209a49e884562ffac2b1dc3041ba75aacb160628223b64bc056cd2212ea489c9dfebe3336df2359ad41cb5ddfa54f7e1ed908cf5b47feed64d7b7daf309751bd9d5aa5848079de14d5590d13be1; CHECKSUM=2706566245; PROGRAM=GMP-ECM 6.3; X0=0xd13920f9; WHO=jasonp@COMPUTER; TIME=Mon Dec 12 07:50:07 2011;
+
+Moreover even with -ntt we could not force the NTT code to be used. This patch
+only fixes that problem: we can now force the NTT code with -ntt for PM1.
+
+Apart from the efficiency problem above (still to be solved), there is another
+problem: in case both NTT and no-NTT are tried, and finally NTT is preferred,
+the computed B2 value is wrong (it is that of no-NTT).
+
+------------------------------------------------------------------------
+r1640 | brian_gladman | 2011-12-20 13:22:32 +0100 (Tue, 20 Dec 2011) | 1 line
+Changed paths:
+   M /trunk/build.vc10/readme.txt
+
+update Visual Studio readme.txt to reflect output directory change
+------------------------------------------------------------------------
+r1639 | brian_gladman | 2011-12-20 09:03:09 +0100 (Tue, 20 Dec 2011) | 1 line
+Changed paths:
+   M /trunk/build.vc10/ecm/ecm.vcxproj
+   M /trunk/build.vc10/libecm/libecm.vcxproj
+   M /trunk/build.vc10/mp_lib.props
+   M /trunk/build.vc10/tune/tune.vcxproj
+
+move Visual Studio build output directories up one level in the directory tree
+------------------------------------------------------------------------
+r1638 | kruppa | 2011-12-14 16:07:17 +0100 (Wed, 14 Dec 2011) | 7 lines
+Changed paths:
+   M /trunk/ecm_ntt.c
+   M /trunk/mpzspv.c
+   M /trunk/pm1fs2.c
+   M /trunk/sp.h
+
+Moved some NTT related functions from pm1fs2.c to mpzspv.c
+Added NTT mul function that does forward transforms, point-wise multiply, 
+and inverse transforms one small-prime vector at a time, which slightly 
+improves memory access locality (also perhaps in preparation for later 
+disk-stored vectors)
+
+
+------------------------------------------------------------------------
+r1637 | brian_gladman | 2011-11-21 22:43:09 +0100 (Mon, 21 Nov 2011) | 1 line
+Changed paths:
+   M /trunk/build.vc10/tune/tune.vcxproj
+
+Add _WIN64 compiler define to the Windows x64 tune build
+------------------------------------------------------------------------
+r1636 | bouvierc | 2011-11-09 21:59:11 +0100 (Wed, 09 Nov 2011) | 2 lines
+Changed paths:
+   M /trunk/gpu/gpu_ecm/cudaarith.cu
+   M /trunk/gpu/gpu_ecm/main.cu
+   M /trunk/gpu/gpu_ecm/main.h
+   M /trunk/gpu/gpu_ecm/utils.cu
+
+Translate comments from french to english in gpu_ecm's code
+
+------------------------------------------------------------------------
+r1635 | zimmerma | 2011-11-08 21:15:24 +0100 (Tue, 08 Nov 2011) | 2 lines
+Changed paths:
+   M /trunk/batch.c
+   M /trunk/mpmod.c
+
+removed compiler warnings
+
+------------------------------------------------------------------------
+r1634 | zimmerma | 2011-11-08 21:11:47 +0100 (Tue, 08 Nov 2011) | 4 lines
+Changed paths:
+   M /trunk/athlon/mulredc.h
+   M /trunk/batch.c
+   M /trunk/configure.in
+   M /trunk/ecm-impl.h
+   M /trunk/main.c
+   M /trunk/mpmod.c
+   M /trunk/pentium4/mulredc.h
+   M /trunk/powerpc64/mulredc.h
+   M /trunk/x86_64/mulredc.h
+
+changed NATIVE_REDC into USE_ASM_REDC to be coherent with --enable-asm-redc
+added new mpres_sqr function, to make it easier if/when we implement a faster
+      modular squaring function
+
+------------------------------------------------------------------------
+r1633 | bouvierc | 2011-11-04 17:37:31 +0100 (Fri, 04 Nov 2011) | 3 lines
+Changed paths:
+   A /trunk/gpu/gpu_ecm/check.sh
+
+To check the correctness of gpu_ecm
+use : ./check B1
+
+------------------------------------------------------------------------
+r1632 | bouvierc | 2011-11-04 17:35:53 +0100 (Fri, 04 Nov 2011) | 2 lines
+Changed paths:
+   M /trunk/gpu/gpu_ecm/Makefile
+   M /trunk/gpu/gpu_ecm/cudaarith.cu
+   M /trunk/gpu/gpu_ecm/cudautils.cu
+   M /trunk/gpu/gpu_ecm/cudautils.h
+   D /trunk/gpu/gpu_ecm/gpu_ecm
+   M /trunk/gpu/gpu_ecm/main.cu
+   M /trunk/gpu/gpu_ecm/main.h
+   M /trunk/gpu/gpu_ecm/utils.cu
+   M /trunk/gpu/gpu_ecm/utils.h
+
+New version of gpu_ecm (compatible with Fermi cards)
+
+------------------------------------------------------------------------
+r1631 | dcleaver | 2011-10-24 04:30:28 +0200 (Mon, 24 Oct 2011) | 1 line
+Changed paths:
+   M /trunk/batch.c
+
+use original compute_s with increased MAX_HEIGHT
+------------------------------------------------------------------------
+r1630 | zimmerma | 2011-10-23 13:16:09 +0200 (Sun, 23 Oct 2011) | 2 lines
+Changed paths:
+   M /trunk/batch.c
+   M /trunk/main.c
+
+[batch.c, main.c] removed useless code + gnu coding style
+
+------------------------------------------------------------------------
+r1629 | dcleaver | 2011-10-23 06:01:57 +0200 (Sun, 23 Oct 2011) | 1 line
+Changed paths:
+   M /trunk/batch.c
+   M /trunk/ecm-ecm.h
+   M /trunk/factor.c
+   M /trunk/main.c
+
+clear s in proper place, show correct time to calculate s, make output defines the same between ecm-ecm.h and ecm-impl.h
+------------------------------------------------------------------------
+r1628 | dcleaver | 2011-10-23 05:13:25 +0200 (Sun, 23 Oct 2011) | 1 line
+Changed paths:
+   M /trunk/ecm-ecm.h
+
+corrected function prototype
+------------------------------------------------------------------------
+r1627 | dcleaver | 2011-10-23 05:08:25 +0200 (Sun, 23 Oct 2011) | 1 line
+Changed paths:
+   M /trunk/batch.c
+   M /trunk/ecm-ecm.h
+   M /trunk/ecm-impl.h
+   M /trunk/ecm.c
+   M /trunk/ecm.h
+   M /trunk/factor.c
+   M /trunk/main.c
+
+update compute_s to allow larger B1, and compute s once per B1
+------------------------------------------------------------------------
+r1626 | zimmerma | 2011-10-18 14:06:23 +0200 (Tue, 18 Oct 2011) | 2 lines
+Changed paths:
+   M /trunk/ecm.c
+
+[ecm.c] added #define for batch mode smoothness constant
+
+------------------------------------------------------------------------
+r1625 | brian_gladman | 2011-10-15 20:03:36 +0200 (Sat, 15 Oct 2011) | 1 line
+Changed paths:
+   M /trunk
+
+
+------------------------------------------------------------------------
+r1624 | zimmerma | 2011-10-13 11:36:46 +0200 (Thu, 13 Oct 2011) | 4 lines
+Changed paths:
+   M /trunk/ecm.c
+   M /trunk/rho.c
+
+[rho.c] added comments about EXTRA_SMOOTHNESS factor (Alex please complete)
+[ecm.c] take into account experimental factor of 3 less in torsion for batch
+	mode (for expected number of curves and time)
+
+------------------------------------------------------------------------
+r1623 | brian_gladman | 2011-10-10 18:18:13 +0200 (Mon, 10 Oct 2011) | 1 line
+Changed paths:
+   M /trunk/build.vc10/libecm/libecm.vcxproj
+   M /trunk/build.vc10/libecm/libecm.vcxproj.filters
+
+add batch.c to VC++ build
+------------------------------------------------------------------------
+r1622 | dcleaver | 2011-10-09 19:58:34 +0200 (Sun, 09 Oct 2011) | 1 line
+Changed paths:
+   M /trunk/batch.c
+
+Test: removed some trailing white space
+------------------------------------------------------------------------
+r1621 | zimmerma | 2011-10-02 22:27:01 +0200 (Sun, 02 Oct 2011) | 2 lines
+Changed paths:
+   M /trunk/batch.c
+
+[batch.c] fix on 32-bit machines when s has >= 2^31 bits
+
+------------------------------------------------------------------------
+r1620 | zimmerma | 2011-10-02 09:10:05 +0200 (Sun, 02 Oct 2011) | 2 lines
+Changed paths:
+   M /trunk/Fgw.c
+
+[Fgw.c] added math.h header
+
+------------------------------------------------------------------------
+r1619 | zimmerma | 2011-10-01 17:12:52 +0200 (Sat, 01 Oct 2011) | 3 lines
+Changed paths:
+   M /trunk/Fgw.c
+   M /trunk/ecm-ecm.h
+   M /trunk/ecm-impl.h
+   M /trunk/ecm.c
+   M /trunk/ecm.h
+   M /trunk/factor.c
+   M /trunk/main.c
+
+included code from David Cleaver to recognize inputs of the form k*b^n+c
+(only with GWNUM)
+
+------------------------------------------------------------------------
+r1618 | bouvierc | 2011-09-29 14:53:25 +0200 (Thu, 29 Sep 2011) | 2 lines
+Changed paths:
+   M /trunk/ecm-ecm.h
+
+Modify MAX_B1 in order to avoid error during char to double conversion
+
+------------------------------------------------------------------------
+r1617 | zimmerma | 2011-09-29 14:47:29 +0200 (Thu, 29 Sep 2011) | 3 lines
+Changed paths:
+   M /trunk/batch.c
+
+[batch.c] MAX_B1 -> MAX_B1_BATCH to avoid conflict with MAX_B1 defined in
+	  ecm-ecm.h
+
+------------------------------------------------------------------------
+r1616 | zimmerma | 2011-09-29 14:39:55 +0200 (Thu, 29 Sep 2011) | 2 lines
+Changed paths:
+   M /trunk/batch.c
+
+[batch.c] added comments and rewritten compute_s()
+
+------------------------------------------------------------------------
+r1615 | bouvierc | 2011-09-29 10:28:42 +0200 (Thu, 29 Sep 2011) | 3 lines
+Changed paths:
+   M /trunk/batch.c
+
+New compute_s fonction with only one array to accumulate
+
+
+------------------------------------------------------------------------
+r1614 | zimmerma | 2011-09-29 08:16:12 +0200 (Thu, 29 Sep 2011) | 3 lines
+Changed paths:
+   M /trunk/Fgw.c
+   M /trunk/batch.c
+
+[Fgw.c] fixed error in ASSERT_ALWAYS
+[batch.c] added missing mpz_clear for s
+
+------------------------------------------------------------------------
+r1613 | zimmerma | 2011-09-28 16:46:16 +0200 (Wed, 28 Sep 2011) | 2 lines
+Changed paths:
+   M /trunk/Fgw.c
+
+[Fgw.c] added constraints on gw_c, and fixed stupid error
+
+------------------------------------------------------------------------
+r1612 | zimmerma | 2011-09-28 16:43:52 +0200 (Wed, 28 Sep 2011) | 2 lines
+Changed paths:
+   M /trunk/auxlib.c
+   M /trunk/mpmod.c
+   M /trunk/mul_fft.c
+
+removed dead code (reported by gcc 4.6.1)
+
+------------------------------------------------------------------------
+r1611 | zimmerma | 2011-09-28 14:24:29 +0200 (Wed, 28 Sep 2011) | 2 lines
+Changed paths:
+   M /trunk/Fgw.c
+
+[Fgw.c] added assertions on gw_k
+
+------------------------------------------------------------------------
+r1610 | zimmerma | 2011-09-26 08:53:04 +0200 (Mon, 26 Sep 2011) | 2 lines
+Changed paths:
+   M /trunk/factor.c
+
+[factor.c] set batch=0 in ecm_init
+
+------------------------------------------------------------------------
+r1609 | zimmerma | 2011-09-25 21:48:04 +0200 (Sun, 25 Sep 2011) | 2 lines
+Changed paths:
+   M /trunk/Fgw.c
+   M /trunk/ecm.c
+
+more changes from David Cleaver for GWNUM and batch mode
+
+------------------------------------------------------------------------
+r1608 | zimmerma | 2011-09-23 16:43:33 +0200 (Fri, 23 Sep 2011) | 2 lines
+Changed paths:
+   M /trunk/test.ecm
+
+[test.ecm] added one test for -batch that did fail on 32-bit computers
+
+------------------------------------------------------------------------
+r1607 | zimmerma | 2011-09-23 16:28:24 +0200 (Fri, 23 Sep 2011) | 2 lines
+Changed paths:
+   M /trunk/batch.c
+   M /trunk/ecm-impl.h
+   M /trunk/mpmod.c
+
+[batch.c] tiny speedup using new mpres_mul_2exp function
+
+------------------------------------------------------------------------
+r1606 | bouvierc | 2011-09-23 14:57:00 +0200 (Fri, 23 Sep 2011) | 2 lines
+Changed paths:
+   M /trunk/batch.c
+
+Correct the bug reported by David Cleaver on 32-bit system
+
+------------------------------------------------------------------------
+r1605 | zimmerma | 2011-09-23 08:45:28 +0200 (Fri, 23 Sep 2011) | 2 lines
+Changed paths:
+   M /trunk/test.ecm
+
+[test.ecm] added one test for the batch mode
+
+------------------------------------------------------------------------
+r1604 | zimmerma | 2011-09-22 12:06:04 +0200 (Thu, 22 Sep 2011) | 2 lines
+Changed paths:
+   M /trunk/batch.c
+   M /trunk/test.ecm
+
+[batch.c] check that A = 2 (mod 4) for the batch mode
+
+------------------------------------------------------------------------
+r1603 | zimmerma | 2011-09-21 07:50:50 +0200 (Wed, 21 Sep 2011) | 2 lines
+Changed paths:
+   M /trunk/batch.c
+
+[batch.c] better fix
+
+------------------------------------------------------------------------
+r1602 | zimmerma | 2011-09-20 17:41:13 +0200 (Tue, 20 Sep 2011) | 2 lines
+Changed paths:
+   M /trunk/batch.c
+
+[batch.c] small changes
+
+------------------------------------------------------------------------
+r1601 | zimmerma | 2011-09-20 17:29:40 +0200 (Tue, 20 Sep 2011) | 2 lines
+Changed paths:
+   M /trunk/batch.c
+   M /trunk/ecm-ecm.h
+   M /trunk/ecm-impl.h
+   M /trunk/ecm.c
+   M /trunk/resume.c
+
+fixed a few compiler warnings with batch mode
+
+------------------------------------------------------------------------
+r1600 | zimmerma | 2011-09-20 08:49:15 +0200 (Tue, 20 Sep 2011) | 2 lines
+Changed paths:
+   M /trunk/main.c
+
+[main.c] fixed stupid error in batch mode (thanks David Cleaver)
+
+------------------------------------------------------------------------
+r1599 | brian_gladman | 2011-09-19 23:26:40 +0200 (Mon, 19 Sep 2011) | 1 line
+Changed paths:
+   M /trunk/build.vc10/ecm/ecm.vcxproj
+   M /trunk/build.vc10/ecm/ecm.vcxproj.filters
+
+add batch mode file to Visual Studio 2010 builds
+------------------------------------------------------------------------
+r1598 | zimmerma | 2011-09-19 20:45:04 +0200 (Mon, 19 Sep 2011) | 2 lines
+Changed paths:
+   M /trunk/batch.c
+   M /trunk/ecm.c
+   M /trunk/main.c
+
+cleanup of the batch mode
+
+------------------------------------------------------------------------
+r1597 | bouvierc | 2011-09-16 15:54:32 +0200 (Fri, 16 Sep 2011) | 3 lines
+Changed paths:
+   M /trunk/Makefile.am
+   M /trunk/TODO
+   A /trunk/batch.c
+   M /trunk/configure.in
+   M /trunk/ecm-ecm.h
+   M /trunk/ecm-gmp.h
+   M /trunk/ecm-impl.h
+   M /trunk/ecm.c
+   M /trunk/ecm.h
+   M /trunk/factor.c
+   M /trunk/main.c
+   M /trunk/mpmod.c
+   M /trunk/test.ecm
+
+Implementation of the batch mode (option -batch)
+Use Montgomery's parametrization to save 1 multiplication
+
+------------------------------------------------------------------------
+r1596 | zimmerma | 2011-09-15 18:41:42 +0200 (Thu, 15 Sep 2011) | 2 lines
+Changed paths:
+   M /trunk/ecm-impl.h
+   M /trunk/ecm.c
+   M /trunk/pp1.c
+
+got rid of the obsolete mpres_normalize and mpres_semi_normalize functions
+
+------------------------------------------------------------------------
+r1595 | zimmerma | 2011-09-03 09:33:12 +0200 (Sat, 03 Sep 2011) | 2 lines
+Changed paths:
+   M /trunk/Fgw.c
+
+[Fgw.c] more changes from David Cleaver, for future new version of GWNUM
+
+------------------------------------------------------------------------
+r1594 | zimmerma | 2011-09-02 20:19:45 +0200 (Fri, 02 Sep 2011) | 2 lines
+Changed paths:
+   M /trunk/ecm-params.h.athlon64
+
+[ecm-params.h.athlon64] updated (from David Cleaver)
+
+------------------------------------------------------------------------
+r1593 | zimmerma | 2011-09-02 16:47:44 +0200 (Fri, 02 Sep 2011) | 2 lines
+Changed paths:
+   M /trunk/main.c
+
+[main.c] deal with MPIR in print_config() too
+
+------------------------------------------------------------------------
+r1592 | zimmerma | 2011-09-02 16:37:02 +0200 (Fri, 02 Sep 2011) | 2 lines
+Changed paths:
+   M /trunk/README.dev
+
+[README.dev] added item for a new release
+
+------------------------------------------------------------------------
+r1591 | zimmerma | 2011-09-01 19:03:25 +0200 (Thu, 01 Sep 2011) | 2 lines
+Changed paths:
+   M /trunk/Fgw.c
+   M /trunk/INSTALL
+
+fixed typo in name of David Cleaver (sorry)
+
+------------------------------------------------------------------------
+r1590 | zimmerma | 2011-08-22 13:58:47 +0200 (Mon, 22 Aug 2011) | 3 lines
+Changed paths:
+   M /trunk/Fgw.c
+   M /trunk/INSTALL
+   M /trunk/Makefile.am
+
+added changes contributed by David Cleaver to use gwnum 26.6 on Windows x64
+with MingW64 in Msys
+
+------------------------------------------------------------------------
+r1589 | kruppa | 2011-07-25 16:11:38 +0200 (Mon, 25 Jul 2011) | 2 lines
+Changed paths:
+   M /trunk/configure.in
+
+Patch to make configure.in work with autoconf 2.68, provided by Ralf Recker
+
+------------------------------------------------------------------------
+r1588 | zimmerma | 2011-06-30 13:37:01 +0200 (Thu, 30 Jun 2011) | 2 lines
+Changed paths:
+   M /trunk/champions.h
+
+[champions.h] bumped P-1 value
+
+------------------------------------------------------------------------
+r1587 | bouvierc | 2011-06-24 14:02:32 +0200 (Fri, 24 Jun 2011) | 3 lines
+Changed paths:
+   M /trunk/gpu/gpu_ecm/Makefile
+   M /trunk/gpu/gpu_ecm/cudaarith.cu
+   M /trunk/gpu/gpu_ecm/cudautils.cu
+   M /trunk/gpu/gpu_ecm/cudautils.h
+   M /trunk/gpu/gpu_ecm/main.cu
+   M /trunk/gpu/gpu_ecm/main.h
+   M /trunk/gpu/gpu_ecm/test.sh
+   M /trunk/gpu/gpu_ecm/utils.cu
+   M /trunk/gpu/gpu_ecm/utils.h
+
+Latest improvements.
+
+
+------------------------------------------------------------------------
+r1586 | zimmerma | 2011-06-20 16:34:33 +0200 (Mon, 20 Jun 2011) | 3 lines
+Changed paths:
+   M /trunk/main.c
+
+[main.c] fixed error message
+	 allow 1 as factor found (when input number is 1)
+
+------------------------------------------------------------------------
+r1585 | zimmerma | 2011-06-20 16:19:19 +0200 (Mon, 20 Jun 2011) | 2 lines
+Changed paths:
+   M /trunk/main.c
+
+[main.c] GNU coding style
+
+------------------------------------------------------------------------
+r1584 | bouvierc | 2011-06-20 16:12:14 +0200 (Mon, 20 Jun 2011) | 3 lines
+Changed paths:
+   M /trunk/main.c
+
+Add a test to forbid nonpositive integers.
+
+
+------------------------------------------------------------------------
+r1583 | bouvierc | 2011-06-20 15:11:36 +0200 (Mon, 20 Jun 2011) | 3 lines
+Changed paths:
+   M /trunk/auxi.c
+
+Fix a bug for number of digits with negative number.
+
+
+------------------------------------------------------------------------
+r1582 | zimmerma | 2011-06-15 07:43:23 +0200 (Wed, 15 Jun 2011) | 2 lines
+Changed paths:
+   M /trunk/champions.h
+
+[champions.h] minimal size for ECM is now 67 digits
+
+------------------------------------------------------------------------
+r1581 | bouvierc | 2011-06-01 15:04:35 +0200 (Wed, 01 Jun 2011) | 5 lines
+Changed paths:
+   A /trunk/gpu/gpu_ecm
+   A /trunk/gpu/gpu_ecm/Makefile
+   A /trunk/gpu/gpu_ecm/cudaarith.cu
+   A /trunk/gpu/gpu_ecm/cudaarith.h
+   A /trunk/gpu/gpu_ecm/cudautils.cu
+   A /trunk/gpu/gpu_ecm/cudautils.h
+   A /trunk/gpu/gpu_ecm/gpu_ecm
+   A /trunk/gpu/gpu_ecm/main.cu
+   A /trunk/gpu/gpu_ecm/main.h
+   A /trunk/gpu/gpu_ecm/obj
+   A /trunk/gpu/gpu_ecm/test.sh
+   A /trunk/gpu/gpu_ecm/utils.cu
+   A /trunk/gpu/gpu_ecm/utils.h
+
+gpu_ecm for GPU of compute capability 1.3 and above
+Optimize for 1024bits modulus but can be compiled for 256 and 512bits
+modulus with make v=1 and make v=2
+
+
+------------------------------------------------------------------------
+r1580 | brian_gladman | 2011-05-31 23:44:26 +0200 (Tue, 31 May 2011) | 1 line
+Changed paths:
+   M /trunk/build.vc10/tests.py
+
+add overall timing to the Windows test program (tests.py)
+------------------------------------------------------------------------
+r1579 | brian_gladman | 2011-05-31 17:33:52 +0200 (Tue, 31 May 2011) | 1 line
+Changed paths:
+   M /trunk/build.vc10/config.h
+   M /trunk/build.vc10/ecm/ecm.vcxproj
+   M /trunk/build.vc10/libecm/libecm.vcxproj
+   M /trunk/build.vc10/tests.py
+
+update Windows builds to add missing defines and add OpenMP support 
+------------------------------------------------------------------------
+r1578 | zimmerma | 2011-05-18 12:11:45 +0200 (Wed, 18 May 2011) | 2 lines
+Changed paths:
+   M /trunk/champions.h
+
+[champions.h] updated for P+1
+
+------------------------------------------------------------------------
+r1577 | zimmerma | 2011-05-05 13:05:45 +0200 (Thu, 05 May 2011) | 2 lines
+Changed paths:
+   M /trunk/champions.h
+
+[champions.h] updated P+1 size
+
+------------------------------------------------------------------------
+r1576 | zimmerma | 2011-05-04 13:19:18 +0200 (Wed, 04 May 2011) | 2 lines
+Changed paths:
+   M /trunk/test.ecm
+
+[test.ecm] added some tests to exercise patch from David Cleaver (r1575)
+
+------------------------------------------------------------------------
+r1575 | zimmerma | 2011-05-04 12:45:37 +0200 (Wed, 04 May 2011) | 4 lines
+Changed paths:
+   M /trunk/TODO
+   M /trunk/configure.in
+   M /trunk/ecm-impl.h
+   M /trunk/ecm.c
+   M /trunk/lucas.c
+   M /trunk/pp1.c
+
+added patch from David Cleaver <wraithx at morpheus dot net> to allow B1>=2^32
+on machines where "unsigned long" has 32 bits only, by using
+"unsigned long long"      
+
+------------------------------------------------------------------------
+r1574 | bouvierc | 2011-04-21 16:30:48 +0200 (Thu, 21 Apr 2011) | 2 lines
+Changed paths:
+   M /trunk/gpu/gpu_ecm_cc13/cudaarith.cu
+
+Correct a little mistake in the compare function.
+
+------------------------------------------------------------------------
+r1573 | bouvierc | 2011-04-20 17:40:57 +0200 (Wed, 20 Apr 2011) | 2 lines
+Changed paths:
+   M /trunk/gpu/gpu_ecm_cc13/Makefile
+   M /trunk/gpu/gpu_ecm_cc13/cudaarith.cu
+   M /trunk/gpu/gpu_ecm_cc13/cudaarith.h
+   M /trunk/gpu/gpu_ecm_cc13/cudautils.cu
+   M /trunk/gpu/gpu_ecm_cc13/main.cu
+   M /trunk/gpu/gpu_ecm_cc13/test.sh
+   M /trunk/gpu/gpu_ecm_cc13/utils.h
+
+Some improvements (especially on multiplication). 30% gain in time. 
+
+------------------------------------------------------------------------
+r1572 | bouvierc | 2011-04-14 15:33:22 +0200 (Thu, 14 Apr 2011) | 1 line
+Changed paths:
+   M /trunk/gpu/gpu_ecm_cc13/cudautils.cu
+   M /trunk/gpu/gpu_ecm_cc13/main.cu
+
+Corrections of the copy between CPU and GPU which only worked for half of the curves.
+------------------------------------------------------------------------
+r1571 | bouvierc | 2011-04-13 10:46:45 +0200 (Wed, 13 Apr 2011) | 1 line
+Changed paths:
+   A /trunk/gpu/gpu_ecm_cc13
+   A /trunk/gpu/gpu_ecm_cc13/Makefile
+   A /trunk/gpu/gpu_ecm_cc13/cudaarith.cu
+   A /trunk/gpu/gpu_ecm_cc13/cudaarith.h
+   A /trunk/gpu/gpu_ecm_cc13/cudautils.cu
+   A /trunk/gpu/gpu_ecm_cc13/main.cu
+   A /trunk/gpu/gpu_ecm_cc13/obj
+   A /trunk/gpu/gpu_ecm_cc13/test.sh
+   A /trunk/gpu/gpu_ecm_cc13/utils.h
+
+Implementation of ecm for NVIDIA GPU of compute capability 1.3\n./test.sh provides a example.
+------------------------------------------------------------------------
+r1570 | zimmerma | 2011-04-08 13:56:38 +0200 (Fri, 08 Apr 2011) | 2 lines
+Changed paths:
+   M /trunk/TODO
+
+[TODO] added one item
+
+------------------------------------------------------------------------
+r1569 | zimmerma | 2011-04-08 08:31:37 +0200 (Fri, 08 Apr 2011) | 2 lines
+Changed paths:
+   M /trunk/README
+
+[README] updated OpenPFGW url
+
+------------------------------------------------------------------------
+r1568 | zimmerma | 2011-03-30 13:05:10 +0200 (Wed, 30 Mar 2011) | 2 lines
+Changed paths:
+   M /trunk/champions.h
+
+[champions.h] updated for P-1
+
+------------------------------------------------------------------------
+r1567 | brian_gladman | 2011-03-30 11:01:16 +0200 (Wed, 30 Mar 2011) | 1 line
+Changed paths:
+   M /trunk/build.vc10/ecm/ecm.vcxproj
+
+Adjust stack size options for Windows
+------------------------------------------------------------------------
+r1566 | zimmerma | 2011-03-10 11:50:33 +0100 (Thu, 10 Mar 2011) | 2 lines
+Changed paths:
+   M /trunk/champions.h
+
+[champions.h] updated P+1 minimum digits
+
+------------------------------------------------------------------------
+r1565 | zimmerma | 2011-01-18 17:44:09 +0100 (Tue, 18 Jan 2011) | 2 lines
+Changed paths:
+   M /trunk/main.c
+
+[main.c] removed trailing blank (commit test)
+
+------------------------------------------------------------------------
+r1564 | brian_gladman | 2011-01-14 17:46:08 +0100 (Fri, 14 Jan 2011) | 1 line
+Changed paths:
+   M /trunk/build.vc10/ecm/ecm.vcxproj
+   M /trunk/build.vc10/ecm/ecm.vcxproj.filters
+   M /trunk/build.vc10/libecm/libecm.vcxproj
+   M /trunk/build.vc10/libecm/libecm.vcxproj.filters
+
+Add champions.h to Windows builds
+------------------------------------------------------------------------
+r1563 | zimmerma | 2011-01-12 14:55:15 +0100 (Wed, 12 Jan 2011) | 3 lines
+Changed paths:
+   M /trunk/main.c
+
+[main.c] print assertions too (if enabled) in the startup line, and cleaned up
+	 the corresponding code
+
+------------------------------------------------------------------------
+r1562 | kruppa | 2011-01-06 16:48:16 +0100 (Thu, 06 Jan 2011) | 2 lines
+Changed paths:
+   M /trunk/x86_64/mulredc.m4
+
+Better asm code for AMD cpus
+
+------------------------------------------------------------------------
+r1561 | kruppa | 2011-01-06 13:49:16 +0100 (Thu, 06 Jan 2011) | 2 lines
+Changed paths:
+   M /trunk/Makefile.am
+   A /trunk/champions.h
+   M /trunk/main.c
+
+Put champions list in own file to avoid frequent updates to main.c
+
+------------------------------------------------------------------------
+r1560 | brian_gladman | 2010-12-30 16:19:42 +0100 (Thu, 30 Dec 2010) | 1 line
+Changed paths:
+   M /trunk/build.vc10/config.h
+
+minor change to Windows win32 build configuration
+------------------------------------------------------------------------
+r1559 | kruppa | 2010-12-17 17:18:11 +0100 (Fri, 17 Dec 2010) | 2 lines
+Changed paths:
+   M /trunk/pm1.c
+   M /trunk/pm1fs2.c
+   M /trunk/pp1.c
+
+Fix spurious error messages introduced in last commit
+
+------------------------------------------------------------------------
+r1558 | kruppa | 2010-12-17 17:11:47 +0100 (Fri, 17 Dec 2010) | 4 lines
+Changed paths:
+   M /trunk/pm1.c
+   M /trunk/pm1fs2.c
+
+Bugfix for choosing between NTT and non-NTT.
+Needs more testing before doing choice for P+1 the same way
+
+
+------------------------------------------------------------------------
+r1557 | zimmerma | 2010-12-17 16:14:22 +0100 (Fri, 17 Dec 2010) | 2 lines
+Changed paths:
+   M /trunk/main.c
+
+[main.c] removed one blank (test commit)
+
+------------------------------------------------------------------------
+r1556 | kruppa | 2010-12-17 14:18:02 +0100 (Fri, 17 Dec 2010) | 2 lines
+Changed paths:
+   M /trunk/configure.in
+
+Link Woltman's GWNUM with -lpthread, abort if GWNUM+OpenMP is requested
+
+------------------------------------------------------------------------
+r1555 | zimmerma | 2010-12-09 15:32:17 +0100 (Thu, 09 Dec 2010) | 2 lines
+Changed paths:
+   M /trunk/main.c
+
+[main.c] removed trailing blank (test)
+
+------------------------------------------------------------------------
+r1554 | zimmerma | 2010-12-05 22:21:25 +0100 (Sun, 05 Dec 2010) | 2 lines
+Changed paths:
+   M /trunk/main.c
+
+[main.c] now recognizes MPIR
+
+------------------------------------------------------------------------
+r1553 | zimmerma | 2010-11-24 16:13:11 +0100 (Wed, 24 Nov 2010) | 2 lines
+Changed paths:
+   M /trunk/main.c
+
+[main.c] we now need at least a p66 to enter the ECM top ten!
+
+------------------------------------------------------------------------
+r1552 | brian_gladman | 2010-11-22 20:17:10 +0100 (Mon, 22 Nov 2010) | 1 line
+Changed paths:
+   M /trunk/build.vc10/ecm/ecm.vcxproj
+   M /trunk/build.vc10/libecm/libecm.vcxproj
+   M /trunk/build.vc10/mp_lib.props
+   M /trunk/build.vc10/tune/tune.vcxproj
+
+minor Windows build changes
+------------------------------------------------------------------------
+r1551 | brian_gladman | 2010-11-22 13:33:06 +0100 (Mon, 22 Nov 2010) | 1 line
+Changed paths:
+   M /trunk/build.vc10/config.h
+   M /trunk/build.vc10/ecm/ecm.vcxproj
+   M /trunk/build.vc10/ecm.sln
+   M /trunk/build.vc10/libecm/libecm.vcxproj
+
+minor Windows build changes
+------------------------------------------------------------------------
+r1550 | zimmerma | 2010-11-19 15:03:23 +0100 (Fri, 19 Nov 2010) | 3 lines
+Changed paths:
+   M /trunk/mul_fft.c
+
+[mul_fft.c] check for malloc return value in main memory allocation,
+	    and point to -maxmem option
+
+------------------------------------------------------------------------
+r1549 | zimmerma | 2010-11-18 21:14:06 +0100 (Thu, 18 Nov 2010) | 2 lines
+Changed paths:
+   M /trunk/pm1fs2.c
+
+[pm1fs2.c] fixed typos in comments
+
+------------------------------------------------------------------------
+r1548 | zimmerma | 2010-11-18 20:57:40 +0100 (Thu, 18 Nov 2010) | 2 lines
+Changed paths:
+   M /trunk/pm1.c
+
+[pm1.c] p-1 -> P-1
+
+------------------------------------------------------------------------
+r1547 | zimmerma | 2010-11-12 15:12:10 +0100 (Fri, 12 Nov 2010) | 2 lines
+Changed paths:
+   M /trunk/NEWS
+
+[NEWS] added more stuff
+
+------------------------------------------------------------------------
+r1546 | zimmerma | 2010-11-12 15:01:48 +0100 (Fri, 12 Nov 2010) | 3 lines
+Changed paths:
+   M /trunk/NEWS
+   M /trunk/configure.in
+
+[configure.in] fixed problem with SSE2 support
+	       (http://trac.sagemath.org/sage_trac/ticket/10252)
+
+------------------------------------------------------------------------
+r1545 | zimmerma | 2010-11-10 11:16:13 +0100 (Wed, 10 Nov 2010) | 2 lines
+Changed paths:
+   M /trunk/main.c
+
+[main.c] removed trailing blank
+
+------------------------------------------------------------------------
+r1544 | zimmerma | 2010-11-10 11:04:02 +0100 (Wed, 10 Nov 2010) | 2 lines
+Changed paths:
+   M /trunk/main.c
+
+[main.c] removed another trailing blank
+
+------------------------------------------------------------------------
+r1543 | zimmerma | 2010-11-10 10:52:14 +0100 (Wed, 10 Nov 2010) | 2 lines
+Changed paths:
+   M /trunk/main.c
+
+[main.c] removed another trailing blank (another commit log test)
+
+------------------------------------------------------------------------
+r1542 | zimmerma | 2010-11-10 10:36:46 +0100 (Wed, 10 Nov 2010) | 2 lines
+Changed paths:
+   M /trunk/main.c
+
+[main.c] removed trailing blank (commit log test)
+
+------------------------------------------------------------------------
+r1541 | zimmerma | 2010-11-08 17:50:20 +0100 (Mon, 08 Nov 2010) | 2 lines
+Changed paths:
+   M /trunk/main.c
+
+[main.c] removed trailing blank
+
+------------------------------------------------------------------------
+r1540 | zimmerma | 2010-11-08 07:53:35 +0100 (Mon, 08 Nov 2010) | 2 lines
+Changed paths:
+   M /trunk/main.c
+
+[main.c] removed trailing space
+
+------------------------------------------------------------------------
+r1539 | brian_gladman | 2010-10-30 19:31:28 +0200 (Sat, 30 Oct 2010) | 1 line
+Changed paths:
+   A /trunk/build.vc10
+   A /trunk/build.vc10/assembler
+   A /trunk/build.vc10/assembler/a_win32a_mulredc.asm
+   A /trunk/build.vc10/assembler/a_win32a_redc.asm
+   A /trunk/build.vc10/assembler/a_win32p_mulredc.asm
+   A /trunk/build.vc10/assembler/a_win32p_redc.asm
+   A /trunk/build.vc10/assembler/a_x64_mulredc.asm
+   A /trunk/build.vc10/assembler/a_x64_redc.asm
+   A /trunk/build.vc10/assembler/mulredc.h
+   A /trunk/build.vc10/assembler/test_mulredc.c
+   A /trunk/build.vc10/config.h
+   A /trunk/build.vc10/ecm
+   A /trunk/build.vc10/ecm/ecm.vcxproj
+   A /trunk/build.vc10/ecm/ecm.vcxproj.filters
+   A /trunk/build.vc10/ecm-params.h
+   A /trunk/build.vc10/ecm-params.h.win32.amd
+   A /trunk/build.vc10/ecm-params.h.win32.intel
+   A /trunk/build.vc10/ecm-params.h.x64.amd
+   A /trunk/build.vc10/ecm-params.h.x64.intel
+   A /trunk/build.vc10/ecm.sln
+   A /trunk/build.vc10/file_copy.bat
+   A /trunk/build.vc10/libecm
+   A /trunk/build.vc10/libecm/libecm.vcxproj
+   A /trunk/build.vc10/libecm/libecm.vcxproj.filters
+   A /trunk/build.vc10/mp_lib.props
+   A /trunk/build.vc10/mul_fft-params.h.win32.amd
+   A /trunk/build.vc10/mul_fft-params.h.win32.intel
+   A /trunk/build.vc10/mul_fft-params.h.x64.amd
+   A /trunk/build.vc10/mul_fft-params.h.x64.intel
+   A /trunk/build.vc10/readme.txt
+   A /trunk/build.vc10/tests.py
+   A /trunk/build.vc10/tune
+   A /trunk/build.vc10/tune/tune.vcxproj
+   A /trunk/build.vc10/tune/tune.vcxproj.filters
+   A /trunk/build.vc10/vsyasm.props
+   A /trunk/build.vc10/vsyasm.targets
+   A /trunk/build.vc10/vsyasm.xml
+
+Add a Visual Studio 2010 build
+------------------------------------------------------------------------
+r1538 | brian_gladman | 2010-10-30 19:07:41 +0200 (Sat, 30 Oct 2010) | 1 line
+Changed paths:
+   M /trunk/longlong.h
+
+Further correction of _PROTO define
+------------------------------------------------------------------------
+r1537 | brian_gladman | 2010-10-30 16:57:34 +0200 (Sat, 30 Oct 2010) | 2 lines
+Changed paths:
+   M /trunk/mul_fft.c
+
+Correct bug in definition of _PROTO in mul_fft.c
+
+------------------------------------------------------------------------
+r1536 | zimmerma | 2010-10-22 10:28:43 +0200 (Fri, 22 Oct 2010) | 2 lines
+Changed paths:
+   M /trunk/main.c
+
+[main.c] updated champions table
+
+------------------------------------------------------------------------
+r1535 | zimmerma | 2010-09-10 16:58:27 +0200 (Fri, 10 Sep 2010) | 2 lines
+Changed paths:
+   A /trunk/gpu/modular_arithmetic.h
+
+[modular_arithmetic.h] header file for routines in modular_arithmetic.c
+
+------------------------------------------------------------------------
+r1534 | zimmerma | 2010-09-10 16:57:45 +0200 (Fri, 10 Sep 2010) | 2 lines
+Changed paths:
+   A /trunk/gpu/stage1-c.c
+
+[stage1-c.c] new file, plain-C version of stage1.c
+
+------------------------------------------------------------------------
+r1533 | zimmerma | 2010-09-10 16:41:33 +0200 (Fri, 10 Sep 2010) | 3 lines
+Changed paths:
+   M /trunk/gpu/makefile
+   M /trunk/gpu/modular_arithmetic.c
+   M /trunk/gpu/prototype.c
+   M /trunk/gpu/prototype.h
+
+now stage1-c seems to give similar results as stage1
+(but the efficiency can still be improved)
+
+------------------------------------------------------------------------
+r1532 | zimmerma | 2010-09-08 13:34:01 +0200 (Wed, 08 Sep 2010) | 2 lines
+Changed paths:
+   M /trunk/gpu/makefile
+   M /trunk/gpu/modular_arithmetic.c
+
+cleanup in file modular_arithmetic.c
+
+------------------------------------------------------------------------
+r1531 | zimmerma | 2010-09-08 13:19:50 +0200 (Wed, 08 Sep 2010) | 2 lines
+Changed paths:
+   M /trunk/gpu/makefile
+   M /trunk/gpu/prototype.c
+   M /trunk/gpu/stage1.c
+
+small changes to avoid compiler warnings
+
+------------------------------------------------------------------------
+r1530 | zimmerma | 2010-09-08 11:50:53 +0200 (Wed, 08 Sep 2010) | 3 lines
+Changed paths:
+   M /trunk/gpu/makefile
+   M /trunk/gpu/prototype.c
+   M /trunk/gpu/stage1.c
+
+fixed computation of d=(a+2)/4 mod N in prototype.c, added copyright notice,
+and started to clean up code
+
+------------------------------------------------------------------------
+r1529 | zimmerma | 2010-09-08 11:04:36 +0200 (Wed, 08 Sep 2010) | 2 lines
+Changed paths:
+   M /trunk/INSTALL
+
+[INSTALL] updated info about sparc problem
+
+------------------------------------------------------------------------
+r1528 | zimmerma | 2010-09-07 08:37:27 +0200 (Tue, 07 Sep 2010) | 2 lines
+Changed paths:
+   M /trunk/INSTALL
+
+[INSTALL] added know problem on sparc with GCC 4.4.5
+
+------------------------------------------------------------------------
+r1527 | kruppa | 2010-07-31 15:35:01 +0200 (Sat, 31 Jul 2010) | 3 lines
+Changed paths:
+   M /trunk/athlon/Makefile.am
+   M /trunk/pentium4/Makefile.am
+   M /trunk/powerpc64/Makefile.am
+   M /trunk/x86_64/Makefile.am
+
+Avoid spurious dependency of libmulredc on GMP and libm.
+
+
+------------------------------------------------------------------------
+r1526 | kruppa | 2010-07-31 15:33:57 +0200 (Sat, 31 Jul 2010) | 5 lines
+Changed paths:
+   M /trunk/x86_64/mulredc.m4
+   M /trunk/x86_64/mulredc1.asm
+   M /trunk/x86_64/mulredc1.m4
+
+PIC-ify calls to abort(). We always call abort@plt now, which on Linux 
+seems to work even in a static library, but may not be portable. Needs 
+testing.
+
+
+------------------------------------------------------------------------
+r1525 | zimmerma | 2010-07-28 11:09:59 +0200 (Wed, 28 Jul 2010) | 2 lines
+Changed paths:
+   M /trunk/Makefile.am
+
+[Makefile.am] patch from Laurent Fousse (libecm.so was not linked against gmp)
+
+------------------------------------------------------------------------
+r1524 | kruppa | 2010-07-24 13:35:53 +0200 (Sat, 24 Jul 2010) | 3 lines
+Changed paths:
+   M /trunk/Makefile.am
+
+Removed linker flags from LDADD to avoid spurious dependencies
+Include mulredc in libecm.la only if asm redc is actually used
+
+------------------------------------------------------------------------
+r1523 | zimmerma | 2010-07-09 11:14:01 +0200 (Fri, 09 Jul 2010) | 2 lines
+Changed paths:
+   M /trunk/gpu/makefile
+   M /trunk/gpu/modular_arithmetic.c
+
+fixed bug in mul()
+
+------------------------------------------------------------------------
+r1522 | zimmerma | 2010-07-09 10:29:10 +0200 (Fri, 09 Jul 2010) | 2 lines
+Changed paths:
+   M /trunk/gpu/makefile
+
+[makefile] added target
+
+------------------------------------------------------------------------
+r1521 | feltin | 2010-07-08 17:07:38 +0200 (Thu, 08 Jul 2010) | 1 line
+Changed paths:
+   A /trunk/gpu/getprime.c
+   A /trunk/gpu/getprime.h
+   M /trunk/gpu/modular_arithmetic.c
+
+
+------------------------------------------------------------------------
+r1520 | feltin | 2010-07-07 17:09:57 +0200 (Wed, 07 Jul 2010) | 2 lines
+Changed paths:
+   A /trunk/gpu/modular_arithmetic.c
+
+Modular arithmetic version in C without using the GMP library
+
+------------------------------------------------------------------------
+r1519 | zimmerma | 2010-07-02 16:34:15 +0200 (Fri, 02 Jul 2010) | 2 lines
+Changed paths:
+   M /trunk/Makefile.am
+
+[Makefile.am] better fix for #10648 (contributed from Vincent Lefèvre)
+
+------------------------------------------------------------------------
+r1518 | zimmerma | 2010-07-01 17:38:51 +0200 (Thu, 01 Jul 2010) | 4 lines
+Changed paths:
+   M /trunk/configure.in
+
+[configure.in] better fix from Vincent Lefevre: even on x86_64, we might use
+	       GMP with ABI=32, in which case we shouldn't use the (64-bit)
+	       assembly redc from x86_64
+
+------------------------------------------------------------------------
+r1517 | zimmerma | 2010-07-01 17:31:34 +0200 (Thu, 01 Jul 2010) | 3 lines
+Changed paths:
+   M /trunk/Makefile.am
+
+[Makefile.am] patch to solve bug #10648 from tracker, however I'm not sure
+	      this solution is the right one, if needed we can revert it.
+
+------------------------------------------------------------------------
+r1516 | zimmerma | 2010-06-30 15:50:19 +0200 (Wed, 30 Jun 2010) | 2 lines
+Changed paths:
+   M /trunk/configure.in
+
+[configure.in] patch from Vincent Lefevre (see bug tracker #10646)
+
+------------------------------------------------------------------------
+r1515 | zimmerma | 2010-06-30 14:54:20 +0200 (Wed, 30 Jun 2010) | 2 lines
+Changed paths:
+   M /trunk/Makefile.am
+
+[Makefile.am] added comment
+
+------------------------------------------------------------------------
+r1514 | zimmerma | 2010-06-30 14:28:04 +0200 (Wed, 30 Jun 2010) | 4 lines
+Changed paths:
+   M /trunk/configure.in
+
+[configure.in] fixed bug reported by Vincent Lefevre:
+	       incorrect configure --help output for --enable-asm-redc
+	       (#10649 on bug tracker)
+
+------------------------------------------------------------------------
+r1513 | zimmerma | 2010-06-30 14:18:56 +0200 (Wed, 30 Jun 2010) | 2 lines
+Changed paths:
+   M /trunk/configure.in
+
+[configure.in] fixed typo
+
+------------------------------------------------------------------------
+r1512 | feltin | 2010-06-21 11:03:53 +0200 (Mon, 21 Jun 2010) | 2 lines
+Changed paths:
+   M /trunk/gpu/makefile
+   M /trunk/gpu/prototype.c
+   M /trunk/gpu/prototype.h
+   M /trunk/gpu/stage1.c
+
+Stage1 of algorithm ECM (version 2)
+
+------------------------------------------------------------------------
+r1511 | zimmerma | 2010-06-15 16:25:05 +0200 (Tue, 15 Jun 2010) | 2 lines
+Changed paths:
+   M /trunk/INSTALL
+
+[INSTALL] new section with known problems
+
+------------------------------------------------------------------------
+r1510 | feltin | 2010-06-15 15:48:17 +0200 (Tue, 15 Jun 2010) | 2 lines
+Changed paths:
+   A /trunk/gpu/makefile
+   A /trunk/gpu/prototype.c
+   A /trunk/gpu/prototype.h
+   A /trunk/gpu/stage1.c
+
+first version of ECM (using GMP)
+
+------------------------------------------------------------------------
+r1509 | zimmerma | 2010-06-15 09:15:29 +0200 (Tue, 15 Jun 2010) | 2 lines
+Changed paths:
+   A /trunk/gpu
+
+[gpu] new subdirectory to experiment with GPU code for stage 1
+
+------------------------------------------------------------------------
+r1508 | zimmerma | 2010-05-22 12:39:45 +0200 (Sat, 22 May 2010) | 2 lines
+Changed paths:
+   M /trunk/main.c
+
+[main.c] updated smallest champion size for P-1
+
+------------------------------------------------------------------------
+r1507 | zimmerma | 2010-05-17 00:38:19 +0200 (Mon, 17 May 2010) | 2 lines
+Changed paths:
+   M /trunk/main.c
+
+[main.c] now we need at least 64 digits to enter the ECM champion list!
+
+------------------------------------------------------------------------
+r1506 | kruppa | 2010-04-27 13:52:26 +0200 (Tue, 27 Apr 2010) | 2 lines
+Changed paths:
+   M /trunk/build.vc9/Makefile.am
+   M /trunk/build.vc9/assembler/Makefile.am
+   A /trunk/build.vc9/tune/Makefile.am
+   M /trunk/configure.in
+
+Added missing files for Visual C build
+
+------------------------------------------------------------------------
+r1505 | zimmerma | 2010-04-24 23:05:26 +0200 (Sat, 24 Apr 2010) | 2 lines
+Changed paths:
+   M /trunk/TODO
+
+[TODO] updated done item
+
+------------------------------------------------------------------------
+r1504 | zimmerma | 2010-04-24 22:59:28 +0200 (Sat, 24 Apr 2010) | 3 lines
+Changed paths:
+   M /trunk/configure.in
+   M /trunk/mpzspm.c
+   M /trunk/mpzspv.c
+   M /trunk/sp.h
+   M /trunk/spm.c
+
+implemented fast conversion from mpz_t to RNS (hard-coded threshold is
+	    2^7 moduli, which seems close to optimal on a 64-bit machine)
+
+------------------------------------------------------------------------
+r1502 | kruppa | 2010-04-19 11:19:49 +0200 (Mon, 19 Apr 2010) | 3 lines
+Changed paths:
+   M /trunk/ChangeLog
+
+Last commits for 6.3 added
+
+------------------------------------------------------------------------
 r1501 | kruppa | 2010-04-18 22:14:22 +0200 (Sun, 18 Apr 2010) | 5 lines
 
 Version 6.3.

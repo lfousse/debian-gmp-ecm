@@ -130,8 +130,10 @@ ifdef(`WINDOWS64_ABI',
 	movq 	%rax, %T0		# Move low word of product to T0
 	movq	%rdx, %T1		# Move high word of product to T1
 
-	imulq	%INVM, %rax		# %rax = ((x[i]*y[0]+tmp[0])*invm)%2^64
-	movq	%rax, %U		# this is the new u value
+ifdef(`MULREDC_SVOBODA',
+, `'
+`	imulq	%INVM, %rax		# %rax = ((x[i]*y[0]+tmp[0])*invm)%2^64'
+) 	movq	%rax, %U		# this is the new u value
 
 	mulq	(%MP)			# multipy u*m[0]
 	addq	%rax, %T0		# Now %T0 = 0, need not be stored
@@ -145,7 +147,9 @@ ifdef(`WANT_ASSERT',
 `	pushf
 	testq	%T0, %T0
 	jz	2f
-	call	GSYM_PREFIX`'abort
+	lea     _GLOBAL_OFFSET_TABLE_(%rip), %rbx # if we do PIC code, we 
+		# need to set rbx; if not, it doesnt hurt
+	call	GSYM_PREFIX`'abort@plt
 LABEL_SUFFIX(2)
 	popf')
 define(`TT', defn(`T0'))dnl
@@ -177,7 +181,9 @@ undefine(`TTl')dnl
 	# T1:T0 <= 2^128 - 2*2^64 + 1 + 2*2^64 - 2 <= 2^128 - 1, no carry!
 ifdef(`WANT_ASSERT', 
 `	jnc	3f
-	call	GSYM_PREFIX`'abort
+	lea     _GLOBAL_OFFSET_TABLE_(%rip), %rbx # if we do PIC code, we 
+		# need to set rbx; if not, it doesnt hurt
+	call	GSYM_PREFIX`'abort@plt
 LABEL_SUFFIX(3)')
 	
 	mulq	%U		# m[j]*u
@@ -219,7 +225,9 @@ undefine(`TTl')dnl
 	# T1:T0 <= 2^128 - 2*2^64 + 1 + 2*2^64 - 2 <= 2^128 - 1, no carry!
 ifdef(`WANT_ASSERT', 
 `	jnc	3f
-	call	GSYM_PREFIX`'abort
+	lea     _GLOBAL_OFFSET_TABLE_(%rip), %rbx # if we do PIC code, we 
+		# need to set rbx; if not, it doesnt hurt
+	call	GSYM_PREFIX`'abort@plt
 LABEL_SUFFIX(3)')
 	
 	mulq	%U		# m[j]*u
@@ -261,7 +269,9 @@ undefine(`TTl')dnl
 	# T1:T0 <= 2^128 - 2*2^64 + 1 + 2*2^64 - 2 <= 2^128 - 1, no carry!
 ifdef(`WANT_ASSERT', 
 `	jnc	3f
-	call	GSYM_PREFIX`'abort
+	lea     _GLOBAL_OFFSET_TABLE_(%rip), %rbx # if we do PIC code, we 
+		# need to set rbx; if not, it doesnt hurt
+	call	GSYM_PREFIX`'abort@plt
 LABEL_SUFFIX(3)')
 	
 	mulq	%U		# m[j]*u
@@ -341,7 +351,9 @@ ifdef(`WANT_ASSERT',
 `	pushf
 	testq	%T0, %T0
 	jz	4f
-	call	GSYM_PREFIX`'abort
+	lea     _GLOBAL_OFFSET_TABLE_(%rip), %rbx # if we do PIC code, we 
+		# need to set rbx; if not, it doesnt hurt
+	call	GSYM_PREFIX`'abort@plt
 LABEL_SUFFIX(4)
 	popf')
 define(`TT', defn(`T0'))dnl
@@ -368,16 +380,16 @@ undefine(`TTl')dnl
 	mulq	%XI		# y[j] * x[i]
 	addq	%rax, %T0	# Add low word to T0
 
-	movq	8(%MP), %rax	# Fetch m[j] into %rax
+	movq	%U, %rax
 	adcq	%rdx, %T1	# Add high word with carry to T1
 	adcb	$0, %CYb	# %CY <= 2
 	
-	mulq	%U		# m[j]*u
-	addq	%T0, %rax	# Add T0 and low word
+	mulq	8(%MP)	# m[j]*u
+	addq	%rax, %T0	# Add T0 and low word
 
-	movq	%rax, 0(%TP)	`#' Store T0 in tmp[1-1]
-	adcq	%rdx, %T1	# Add high word with carry to T1
 	movq	16(%YP), %rax	`#' Fetch y[j+1] = y[2] into %rax
+	adcq	%rdx, %T1	# Add high word with carry to T1
+	movq	%T0, 0(%TP)	`#' Store T0 in tmp[1-1]
 
 define(`TT', defn(`T0'))dnl
 define(`TTl', defn(`T0l'))dnl
@@ -403,16 +415,16 @@ undefine(`TTl')dnl
 	mulq	%XI		# y[j] * x[i]
 	addq	%rax, %T0	# Add low word to T0
 
-	movq	16(%MP), %rax	# Fetch m[j] into %rax
+	movq	%U, %rax
 	adcq	%rdx, %T1	# Add high word with carry to T1
 	adcb	$0, %CYb	# %CY <= 2
 	
-	mulq	%U		# m[j]*u
-	addq	%T0, %rax	# Add T0 and low word
+	mulq	16(%MP)	# m[j]*u
+	addq	%rax, %T0	# Add T0 and low word
 
-	movq	%rax, 8(%TP)	`#' Store T0 in tmp[2-1]
-	adcq	%rdx, %T1	# Add high word with carry to T1
 	movq	24(%YP), %rax	`#' Fetch y[j+1] = y[3] into %rax
+	adcq	%rdx, %T1	# Add high word with carry to T1
+	movq	%T0, 8(%TP)	`#' Store T0 in tmp[2-1]
 
 define(`TT', defn(`T0'))dnl
 define(`TTl', defn(`T0l'))dnl
@@ -438,16 +450,16 @@ undefine(`TTl')dnl
 	mulq	%XI		# y[j] * x[i]
 	addq	%rax, %T0	# Add low word to T0
 
-	movq	24(%MP), %rax	# Fetch m[j] into %rax
+	movq	%U, %rax
 	adcq	%rdx, %T1	# Add high word with carry to T1
 	adcb	$0, %CYb	# %CY <= 2
 	
-	mulq	%U		# m[j]*u
-	addq	%T0, %rax	# Add T0 and low word
+	mulq	24(%MP)	# m[j]*u
+	addq	%rax, %T0	# Add T0 and low word
 
-	movq	%rax, 16(%TP)	`#' Store T0 in tmp[3-1]
-	adcq	%rdx, %T1	# Add high word with carry to T1
 	movq	32(%YP), %rax	`#' Fetch y[j+1] = y[4] into %rax
+	adcq	%rdx, %T1	# Add high word with carry to T1
+	movq	%T0, 16(%TP)	`#' Store T0 in tmp[3-1]
 
 define(`TT', defn(`T0'))dnl
 define(`TTl', defn(`T0l'))dnl

@@ -1,31 +1,32 @@
 /* Modular multiplication.
 
-  Copyright 2002, 2003, 2004, 2005 Paul Zimmermann and Alexander Kruppa.
+Copyright 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012
+Paul Zimmermann, Alexander Kruppa and Cyril Bouvier.
 
-  This file is part of the ECM Library.
+This file is part of the ECM Library.
 
-  The ECM Library is free software; you can redistribute it and/or modify
-  it under the terms of the GNU Lesser General Public License as published by
-  the Free Software Foundation; either version 2.1 of the License, or (at your
-  option) any later version.
+The ECM Library is free software; you can redistribute it and/or modify
+it under the terms of the GNU Lesser General Public License as published by
+the Free Software Foundation; either version 3 of the License, or (at your
+option) any later version.
 
-  The ECM Library is distributed in the hope that it will be useful, but
-  WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
-  or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
-  License for more details.
+The ECM Library is distributed in the hope that it will be useful, but
+WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
+License for more details.
 
-  You should have received a copy of the GNU Lesser General Public License
-  along with the ECM Library; see the file COPYING.LIB.  If not, write to
-  the Free Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston,
-  MA 02110-1301, USA.
-*/
+You should have received a copy of the GNU Lesser General Public License
+along with the ECM Library; see the file COPYING.LIB.  If not, see
+http://www.gnu.org/licenses/ or write to the Free Software Foundation, Inc.,
+51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA. */
 
 #include <stdio.h>
 #include <stdlib.h>
 #include "ecm-gmp.h"
 #include "ecm-impl.h"
+#include "mpmod.h"
 
-#ifdef NATIVE_REDC
+#ifdef USE_ASM_REDC
   #include "mulredc.h"
 #endif
 
@@ -49,6 +50,30 @@ static void ecm_mulredc_basecase (mpres_t, const mpres_t, const mpres_t,
 static void base2mod (mpres_t, const mpres_t, mpres_t, mpmod_t) ATTRIBUTE_HOT;
 static void REDC (mpres_t, const mpres_t, mpz_t, mpmod_t);
 
+/* Up from GMP 5.1.0, mpn_redc{1,2} do not subtract the modulus if needed,
+   but return the carry of the final addition */
+#ifdef HAVE___GMPN_REDC_1
+#ifdef MPN_REDC12_RETURNS_CARRY
+#define REDC1(rp,cp,np,nn,invm)                  \
+  do {if (__gmpn_redc_1 (rp,cp,np,nn,invm))      \
+    mpn_sub_n (rp, rp, np, nn);                  \
+  } while(0)
+#else
+#define REDC1(rp,cp,np,nn,invm) __gmpn_redc_1(rp,cp,np,nn,invm)
+#endif
+#endif
+
+#ifdef HAVE___GMPN_REDC_2
+#ifdef MPN_REDC12_RETURNS_CARRY
+#define REDC2(rp,cp,np,nn,invm)                  \
+  do {if (__gmpn_redc_2 (rp,cp,np,nn,invm))      \
+    mpn_sub_n (rp, rp, np, nn);                  \
+  } while (0)
+#else
+#define REDC2(rp,cp,np,nn,invm) __gmpn_redc_2(rp,cp,np,nn,invm)
+#endif
+#endif
+
 #if 0 /* PZ: commented out, since I don't see how to use this code.
          Indeed, we need a large enough value of K to get significant
          timings; however, for small B1 a too large value of K will
@@ -71,7 +96,7 @@ mpmod_tune_base2 (const mpz_t n, int K, int base2)
   mpres_sub_ui (x, x, 1, modulus); /* so that the initial value is dense */
   t0 = cputime ();
   for (k = 0; k < K; k++)
-    mpres_mul (x, x, x, modulus);
+    mpres_sqr (x, x, modulus);
   t0 = cputime () - t0;
 
   mpres_clear (x, modulus);
@@ -85,7 +110,7 @@ mpmod_tune_base2 (const mpz_t n, int K, int base2)
   mpres_sub_ui (x, x, 1, modulus); /* so that the initial value is dense */
   t1 = cputime ();
   for (k = 0; k < K; k++)
-    mpres_mul (x, x, x, modulus);
+    mpres_sqr (x, x, modulus);
   t1 = cputime () - t1;
 
   fprintf (stderr, "ECM_MOD_NOBASE2:%ld ECM_MOD_BASE2:%ld\n", t0, t1);
@@ -224,17 +249,18 @@ base2mod_2 (mpres_t R, const mpres_t S, mp_size_t n, mpz_t modulus)
 
 /* subquadratic REDC, at mpn level.
    {orig,n} is the original modulus.
-   {aux,n} is the auxiliary modulus.
-   Requires xn = 2n or 2n-1 and ABSIZ(orig_modulus)=ABSIZ(aux_modulus)=n.
+   Requires xn = 2n or 2n-1 and ABSIZ(orig_modulus)=n.
  */
 static void
 ecm_redc_n (mp_ptr rp, mp_srcptr x0p, mp_size_t xn,
-            mp_srcptr orig, mp_srcptr aux, mp_size_t n)
+            mp_srcptr orig, mp_srcptr invm, mp_size_t n)
 {
   mp_ptr tp, up, xp;
   mp_size_t nn = n + n;
-  mp_limb_t cy;
+  mp_limb_t cy, cin;
   TMP_DECL(marker);
+
+  ASSERT((xn == 2 * n) || (xn == 2 * n - 1));
 
   TMP_MARK(marker);
   up = TMP_ALLOC_LIMBS(nn + nn);
@@ -246,23 +272,29 @@ ecm_redc_n (mp_ptr rp, mp_srcptr x0p, mp_size_t xn,
     }
   else
     xp = (mp_ptr) x0p;
-  ecm_mul_lo_n (up, xp, aux, n);
+#ifdef HAVE___GMPN_MULLO_N /* available up from GMP 5.0.0 */
+  __gmpn_mullo_n (up, xp, invm, n);
+#else
+  ecm_mul_lo_n (up, xp, invm, n);
+#endif
   tp = up + nn;
   mpn_mul_n (tp, up, orig, n);
   /* add {x, 2n} and {tp, 2n}. We know that {tp, n} + {xp, n} will give
      either 0, or a carry out. If xp[n-1] <> 0 or tp[n-1] <> 0, 
      then there is a carry. We use a binary OR, which sets the zero flag
      if and only if both operands are zero. */
+  cin = (mp_limb_t) ((xp[n - 1] | tp[n - 1]) ? 1 : 0);
 #ifdef HAVE___GMPN_ADD_NC
-  cy = __gmpn_add_nc (rp, tp + n, xp + n, n, 
-                      (mp_limb_t) ((xp[n - 1] | tp[n - 1]) ? 1 : 0));
+  cy = __gmpn_add_nc (rp, tp + n, xp + n, n, cin);
 #else
   cy = mpn_add_n (rp, tp + n, xp + n, n);
-  cy += mpn_add_1 (rp, rp, n, (mp_limb_t) ((xp[n - 1] | tp[n - 1]) ? 1 : 0));
+  cy += mpn_add_1 (rp, rp, n, cin);
 #endif
-  if (cy || mpn_cmp (rp, orig, n) > 0)
+  /* since we add at most N-1 to the upper half of {x0p,2n},
+     one adjustment is enough */
+  if (cy)
     cy -= mpn_sub_n (rp, rp, orig, n);
-  /* ASSERT ((cy == 0) && (mpn_cmp (rp, orig, n) < 0)); */
+  ASSERT (cy == 0);
   TMP_FREE(marker);
 }
 
@@ -282,7 +314,7 @@ REDC (mpres_t r, const mpres_t x, mpz_t t, mpmod_t modulus)
       MPZ_REALLOC (r, n);
       rp = PTR(r);
       ecm_redc_n (rp, PTR(x), xn, PTR(modulus->orig_modulus),
-		PTR(modulus->aux_modulus), n);
+                  PTR(modulus->aux_modulus), n);
       MPN_NORMALIZE(rp, n);
       SIZ(r) = (SIZ(x) > 0) ? (int) n : (int) -n;
       MPZ_NORMALIZED (r);
@@ -305,38 +337,36 @@ REDC (mpres_t r, const mpres_t x, mpz_t t, mpmod_t modulus)
 /* Quadratic time redc for n word moduli. */
 static inline void 
 redc_basecase_n (mp_ptr rp, mp_ptr cp, mp_srcptr np, const mp_size_t nn, 
-                 const mp_limb_t invm)
+                 const mp_ptr invm)
 {
-#if defined(HAVE___GMPN_REDC_1)
-  __gmpn_redc_1 (rp, cp, np, nn, invm);
-#else
+#ifdef HAVE___GMPN_REDC_2
+  REDC2(rp, cp, np, nn, invm);
+#else /* HAVE___GMPN_REDC_2 is not defined */
+#ifdef HAVE___GMPN_REDC_1
+  REDC1(rp, cp, np, nn, invm[0]);
+#else /* neither HAVE___GMPN_REDC_2 nor HAVE___GMPN_REDC_1 is defined */
   mp_limb_t cy;
-#if defined(NATIVE_REDC) && defined(HAVE_NATIVE_REDC3)
-  ecm_redc3 (cp, np, nn, invm);
-  /* add vector of carries and shift */
-  cy = mpn_add_n (rp, cp + nn, cp, nn);
-#else
   mp_size_t j;
   
   for (j = 0; j < nn; j++)
     {
-      cy = mpn_addmul_1 (cp, np, nn, cp[0] * invm);
+      cy = mpn_addmul_1 (cp, np, nn, cp[0] * invm[0]);
       ASSERT(cp[0] == (mp_limb_t) 0);
       cp[0] = cy;
       cp++;
     }
   /* add vector of carries and shift */
   cy = mpn_add_n (rp, cp, cp - nn, nn);
-#endif
   /* the result of Montgomery's REDC is less than 2^Nbits + N,
      thus at most one correction is enough */
   if (cy != 0)
     {
       mp_limb_t t;
       t = mpn_sub_n (rp, rp, np, nn); /* a borrow should always occur here */
-      ASSERT_ALWAYS (t == 1);
+      ASSERT (t == 1);
     }
-#endif
+#endif /* HAVE___GMPN_REDC_1 */
+#endif /* HAVE___GMPN_REDC_2 */
 }
 
 /* r <- c/R^nn mod n, where n has nn limbs, and R=2^GMP_NUMB_BITS.
@@ -369,7 +399,7 @@ ecm_redc_basecase (mpz_ptr r, mpz_ptr c, mpmod_t modulus)
   SIZ(r) = SIZ(c) < 0 ? (int) -nn : (int) nn;
 }
 
-#if defined(NATIVE_REDC)
+#ifdef USE_ASM_REDC
 /* Quadratic time multiplication and REDC with nn-limb modulus.
    x and y are nn-limb residues, the nn-limb result is written to z. 
    This function merely calls the correct mulredc*() assembly function
@@ -449,17 +479,79 @@ mulredc (mp_ptr z, mp_srcptr x, mp_srcptr y, mp_srcptr m,
      thus at most one correction is enough */
   if (cy != 0)
     {
-      mp_limb_t t;
+      ATTRIBUTE_UNUSED mp_limb_t t;
       t = mpn_sub_n (z, z, m, nn); /* a borrow should always occur here */
-      ASSERT_ALWAYS (t == 1);
+      ASSERT (t == 1);
     }
+}
+
+/* {rp, n} <- {ap, n}^2/B^n mod {np, n} where B = 2^GMP_NUMB_BITS */
+ATTRIBUTE_UNUSED static void
+sqrredc (mp_ptr rp, mp_srcptr ap, mp_srcptr np, const mp_size_t n,
+         const mp_limb_t invm)
+{
+  mp_ptr cp;
+  mp_size_t i;
+  mp_limb_t cy, q;
+  TMP_DECL(marker);
+
+  TMP_MARK(marker);
+  cp = TMP_ALLOC_LIMBS(2*n);
+  for (i = 0; i < n; i++)
+    umul_ppmm (cp[2*i+1], cp[2*i], ap[i], ap[i]);
+
+  if (UNLIKELY(n == 1))
+    {
+      q = cp[0] * invm;
+      rp[0] = mpn_addmul_1 (cp, np, 1, q);
+      cy = mpn_add_n (rp, rp, cp + 1, 1);
+      goto end_sqrredc;
+    }
+
+  if (cp[0] & (mp_limb_t) 1)
+    /* cp[n] is either some ap[i]^2 mod B or floor(ap[i]^2/B),
+       the latter is at most floor((B-1)^2/B) = B-2, and the former cannot be
+       B-1 since -1 is not a square mod 2^n for n >1, thus there is no carry
+       in cp[n] + ... below */
+    cp[n] += mpn_add_n (cp, cp, np, n);
+  /* now {cp, 2n} is even: divide by two */
+  mpn_rshift (cp, cp, 2*n, 1);
+  /* now cp[2n-1] is at most B/2-1 */
+
+  for (i = 0; i < n - 1; i++)
+    {
+      q = cp[i] * invm;
+      cp[i] = mpn_addmul_1 (cp + i, np, n, q);
+      /* accumulate ap[i+1..n-1] * ap[i] */
+      rp[i] = mpn_addmul_1 (cp + 2 * i + 1, ap + i + 1, n - 1 - i, ap[i]);
+    }
+  /* the last iteration did set cp[n-2] to zero, accumulated a[n-1] * a[n-2] */
+
+  /* cp[2n-1] was untouched so far, so it is still at most B/2-1 */
+  q = cp[n-1] * invm;
+  rp[n-1] = mpn_addmul_1 (cp + n - 1, np, n, q);
+  /* rp[n-1] <= floor((B^n-1)*(B-1)/B^n)<=B-2 */
+
+  /* now add {rp, n}, {cp+n, n} and {cp, n-1} */
+  /* cp[2n-1] still <= B/2-1 */
+  rp[n-1] += mpn_add_n (rp, rp, cp, n-1); /* no overflow in rp[n-1] + ... */
+  cy = mpn_add_n (rp, rp, cp + n, n);
+  /* multiply by 2 */
+  cy = (cy << 1) + mpn_lshift (rp, rp, n, 1);
+ end_sqrredc:
+  while (cy)
+    cy -= mpn_sub_n (rp, rp, np, n);
+  TMP_FREE(marker);
 }
 
 #ifdef HAVE_NATIVE_MULREDC1_N
 /* Multiplies y by the 1-limb value of x and does modulo reduction.
    The resulting residue may be multiplied by some constant, 
    which makes this function useful only for cases where, e.g.,
-   all projective coordinates are multiplied by the same constant. */
+   all projective coordinates are multiplied by the same constant.
+   More precisely it computes:
+   {z, N} = {y, N} * x / 2^GMP_NUMB_BITS mod {m, N}
+*/
 static void
 mulredc_1 (mp_ptr z, const mp_limb_t x, mp_srcptr y, mp_srcptr m, 
            const mp_size_t N, const mp_limb_t invm)
@@ -536,94 +628,193 @@ mulredc_1 (mp_ptr z, const mp_limb_t x, mp_srcptr y, mp_srcptr m,
      thus one correction (at most) is enough */
   if (cy != 0)
     {
-      mp_limb_t t;
+      ATTRIBUTE_UNUSED mp_limb_t t;
       t = mpn_sub_n (z, z, m, N); /* a borrow should always occur here */
-      ASSERT_ALWAYS (t == 1);
+      ASSERT (t == 1);
     }
 }
 #endif /* ifdef HAVE_NATIVE_MULREDC1_N */
 #endif
 
+#ifndef TUNE_MULREDC_TABLE
+#define TUNE_MULREDC_TABLE {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0}
+#endif
+#ifndef TUNE_SQRREDC_TABLE
+#define TUNE_SQRREDC_TABLE {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0}
+#endif
+
+static int tune_mulredc_table[] = TUNE_MULREDC_TABLE;
+static int tune_sqrredc_table[] = TUNE_SQRREDC_TABLE;
+
+static void 
+ecm_mulredc_basecase_n (mp_ptr rp, mp_srcptr s1p, mp_srcptr s2p, 
+                        mp_srcptr np, mp_size_t nn, mp_ptr invm, mp_ptr tmp)
+{
+  mp_limb_t cy;
+  mp_size_t j;
+
+  if (nn <= MULREDC_ASSEMBLY_MAX)
+    {
+      switch (tune_mulredc_table[nn])
+        {
+        case MPMOD_MULREDC: /* use quadratic assembly mulredc */
+#ifdef USE_ASM_REDC
+          mulredc (rp, s1p, s2p, np, nn, invm[0]);
+          break;
+#endif /* otherwise go through to the next available mode */
+        case MPMOD_MUL_REDC1: /* mpn_mul_n + __gmpn_redc_1 */
+#ifdef HAVE___GMPN_REDC_1
+          mpn_mul_n (tmp, s1p, s2p, nn);
+          REDC1(rp, tmp, np, nn, invm[0]);
+          break;
+#endif /* otherwise go through to the next available mode */
+        case MPMOD_MUL_REDC2: /* mpn_mul_n + __gmpn_redc_2 */
+#ifdef HAVE___GMPN_REDC_2
+          mpn_mul_n (tmp, s1p, s2p, nn);
+          REDC2(rp, tmp, np, nn, invm);
+          break;
+#endif /* otherwise go through to the next available mode */
+        case MPMOD_MUL_REDCN: /* mpn_mul_n + __gmpn_redc_n */
+#ifdef HAVE___GMPN_REDC_N
+          mpn_mul_n (tmp, s1p, s2p, nn);
+          __gmpn_redc_n (rp, tmp, np, nn, invm);
+          break;
+#endif /* otherwise go through to the next available mode */
+        case MPMOD_MUL_REDC_C: /* plain C quadratic reduction */
+          mpn_mul_n (tmp, s1p, s2p, nn);
+          for (j = 0; j < nn; j++, tmp++)
+            tmp[0] = mpn_addmul_1 (tmp, np, nn, tmp[0] * invm[0]);
+          cy = mpn_add_n (rp, tmp - nn, tmp, nn);
+          if (cy != 0)
+            mpn_sub_n (rp, rp, np, nn); /* a borrow should always occur here */
+          break;
+        default:
+          {
+            outputf (OUTPUT_ERROR, "Invalid mulredc mode: %d\n",
+                     tune_mulredc_table[nn]);
+            exit (EXIT_FAILURE);
+          }
+        }
+    }
+  else /* nn > MULREDC_ASSEMBLY_MAX */
+    {
+      mpn_mul_n (tmp, s1p, s2p, nn);
+      ecm_redc_n (rp, tmp, 2 * nn, np, invm, nn);
+    }
+}
+
+static void 
+ecm_sqrredc_basecase_n (mp_ptr rp, mp_srcptr s1p,
+                        mp_srcptr np, mp_size_t nn, mp_ptr invm, mp_ptr tmp)
+{
+  mp_limb_t cy;
+  mp_size_t j;
+
+  if (nn <= MULREDC_ASSEMBLY_MAX)
+    {
+      switch (tune_sqrredc_table[nn])
+        {
+        case MPMOD_MULREDC: /* use quadratic assembly mulredc */
+#ifdef USE_ASM_REDC
+          mulredc (rp, s1p, s1p, np, nn, invm[0]);
+          break;
+#endif /* otherwise go through to the next available mode */
+        case MPMOD_MUL_REDC1: /* mpn_sqr + __gmpn_redc_1 */
+#ifdef HAVE___GMPN_REDC_1
+          mpn_sqr (tmp, s1p, nn);
+          REDC1(rp, tmp, np, nn, invm[0]);
+          break;
+#endif /* otherwise go through to the next available mode */
+        case MPMOD_MUL_REDC2: /* mpn_sqr + __gmpn_redc_2 */
+#ifdef HAVE___GMPN_REDC_2
+          mpn_sqr (tmp, s1p, nn);
+          REDC2(rp, tmp, np, nn, invm);
+          break;
+#endif /* otherwise go through to the next available mode */
+        case MPMOD_MUL_REDCN: /* mpn_sqr + __gmpn_redc_n */
+#ifdef HAVE___GMPN_REDC_N
+          mpn_sqr (tmp, s1p, nn);
+          __gmpn_redc_n (rp, tmp, np, nn, invm);
+          break;
+#endif /* otherwise go through to the next available mode */
+        case MPMOD_MUL_REDC_C: /* plain C quadratic reduction */
+          mpn_sqr (tmp, s1p, nn);
+          for (j = 0; j < nn; j++, tmp++)
+            tmp[0] = mpn_addmul_1 (tmp, np, nn, tmp[0] * invm[0]);
+          cy = mpn_add_n (rp, tmp - nn, tmp, nn);
+          if (cy != 0)
+            mpn_sub_n (rp, rp, np, nn); /* a borrow should always occur here */
+          break;
+        default:
+          {
+            outputf (OUTPUT_ERROR, "Invalid sqrredc mode: %d\n",
+                     tune_sqrredc_table[nn]);
+            exit (EXIT_FAILURE);
+          }
+        }
+    }
+  else /* nn > MULREDC_ASSEMBLY_MAX */
+    {
+      mpn_sqr (tmp, s1p, nn);
+      ecm_redc_n (rp, tmp, 2 * nn, np, invm, nn);
+    }
+}
 
 /* R <- S1 * S2 mod modulus
    i.e. R <- S1*S2/r^nn mod n, where n has nn limbs, and r=2^GMP_NUMB_BITS.
    Same as ecm_redc_basecase previous, but combined with mul
-   Neither input argument must be in modulus->temp1 */
+   Neither input argument must be in modulus->temp1
+*/
 static void 
 ecm_mulredc_basecase (mpres_t R, const mpres_t S1, const mpres_t S2, 
                       mpmod_t modulus)
 {
-  mp_ptr rp;
-  mp_ptr s1p, s2p;
-  mp_srcptr np;
+  mp_ptr s1p, s2p, rp = PTR(R);
   mp_size_t j, nn = modulus->bits / GMP_NUMB_BITS;
-#if defined(NATIVE_REDC) && !defined(TUNE_MULREDC_THRESH)
-#ifdef TUNE
-  extern mp_size_t TUNE_MULREDC_THRESH;
-#else
-  const mp_size_t TUNE_MULREDC_THRESH = 20;
-#endif
-#endif
-#if defined(NATIVE_REDC) && !defined(TUNE_SQRREDC_THRESH)
-#ifdef TUNE
-  extern mp_size_t TUNE_SQRREDC_THRESH;
-#else
-  const mp_size_t TUNE_SQRREDC_THRESH = 20;
-#endif
-#endif
 
   ASSERT(ALLOC(R) >= nn);
   ASSERT(ALLOC(S1) >= nn);
   ASSERT(ALLOC(S2) >= nn);
-  rp = PTR(R);
   s1p = PTR(S1);
   s2p = PTR(S2);
-  np = PTR(modulus->orig_modulus);
   /* FIXME: S1 and S2 are input and marked const, we mustn't write to them */
   for (j = ABSIZ(S1); j < nn; j++) 
     s1p[j] = 0;
   for (j = ABSIZ(S2); j < nn; j++) 
     s2p[j] = 0;
 
-  if (s1p == s2p)
-    {
-#if defined(NATIVE_REDC)
-      if (nn <= TUNE_SQRREDC_THRESH)
-        mulredc (rp, s1p, s2p, np, nn, modulus->Nprim);
-      else
-#endif
-        {
-          mp_ptr tmp = PTR(modulus->temp1);
-          ASSERT(ALLOC(modulus->temp1) >= 2*nn);
-          ASSERT(tmp != s1p);
-#ifdef HAVE_MPN_SQR
-          mpn_sqr (tmp, s1p, nn);
-#else
-          mpn_mul_n (tmp, s1p, s1p, nn);
-#endif
-          redc_basecase_n (rp, tmp, np, nn, modulus->Nprim);
-        }
-    }
-  else
-    {
-#if defined(NATIVE_REDC)
-      if (nn <= TUNE_MULREDC_THRESH)
-        mulredc (rp, s1p, s2p, np, nn, modulus->Nprim);
-      else
-#endif
-        {
-          mp_ptr tmp = PTR(modulus->temp1);
-          ASSERT(ALLOC(modulus->temp1) >= 2*nn);
-          ASSERT(tmp != s1p && tmp != s2p);
-          mpn_mul_n (tmp, s1p, s2p, nn);
-          redc_basecase_n (rp, tmp, np, nn, modulus->Nprim);
-        }
-    }
+  ecm_mulredc_basecase_n (rp, s1p, s2p, PTR(modulus->orig_modulus), nn,
+                          modulus->Nprim, PTR(modulus->temp1));
 
   MPN_NORMALIZE (rp, nn);
   SIZ(R) = (SIZ(S1)*SIZ(S2)) < 0 ? (int) -nn : (int) nn;
 }
 
+/* R <- S1^2 mod modulus
+   i.e. R <- S1^2/r^nn mod n, where n has nn limbs, and r=2^GMP_NUMB_BITS.
+   Same as ecm_redc_basecase previous, but combined with sqr
+   The input argument must not be in modulus->temp1 */
+static void 
+ecm_sqrredc_basecase (mpres_t R, const mpres_t S1, mpmod_t modulus)
+{
+  mp_ptr rp;
+  mp_ptr s1p;
+  mp_size_t j, nn = modulus->bits / GMP_NUMB_BITS;
+
+  ASSERT(ALLOC(R) >= nn);
+  ASSERT(ALLOC(S1) >= nn);
+  rp = PTR(R);
+  s1p = PTR(S1);
+  /* FIXME: S1 is input and marked const, we mustn't write to it */
+  for (j = ABSIZ(S1); j < nn; j++)
+    s1p[j] = 0;
+
+  ecm_sqrredc_basecase_n (rp, s1p, PTR(modulus->orig_modulus), nn,
+                          modulus->Nprim, PTR(modulus->temp1));
+
+  MPN_NORMALIZE (rp, nn);
+  SIZ(R) = (int) nn;
+}
 
 /* Multiplies S1 by the one-limb integer S2, and does modulo reduction.
    The modulo reduction may imply multiplication of the residue class 
@@ -636,22 +827,21 @@ static void
 ecm_mulredc_1_basecase (mpres_t R, const mpres_t S1, const mp_limb_t S2, 
                         mpmod_t modulus)
 {
-  mp_ptr rp;
   mp_ptr s1p;
-  mp_srcptr np;
   mp_size_t j, nn = modulus->bits / GMP_NUMB_BITS;
+
   ASSERT(ALLOC(R) >= nn);
   ASSERT(ALLOC(S1) >= nn);
-  rp = PTR(R);
   s1p = PTR(S1);
-  np = PTR(modulus->orig_modulus);
   for (j = ABSIZ(S1); j < nn; j++) 
     s1p[j] = 0;
 
 #ifdef HAVE_NATIVE_MULREDC1_N
   if (nn < 20)
     {
-      mulredc_1(rp, S2, s1p, np, nn, modulus->Nprim);
+      mp_ptr rp = PTR(R);
+      mulredc_1(rp, S2, s1p, PTR(modulus->orig_modulus), nn,
+                modulus->Nprim[0]);
       MPN_NORMALIZE (rp, nn);
       SIZ(R) = (SIZ(S1)) < 0 ? (int) -nn : (int) nn;
     }
@@ -675,6 +865,7 @@ int
 mpmod_init (mpmod_t modulus, const mpz_t N, int repr)
 {
   int base2 = 0, r = 0;
+  mp_size_t n = mpz_size (N);
 
   switch (repr)
     {
@@ -704,7 +895,9 @@ mpmod_init (mpmod_t modulus, const mpz_t N, int repr)
       mpmod_init_MPZ (modulus, N);
       break;
     case ECM_MOD_MODMULN:
-      outputf (OUTPUT_VERBOSE, "Using MODMULN\n");
+      outputf (OUTPUT_VERBOSE, "Using MODMULN [mulredc:%d, sqrredc:%d]\n",
+               (n <= MULREDC_ASSEMBLY_MAX) ? tune_mulredc_table[n] : 4,
+               (n <= MULREDC_ASSEMBLY_MAX) ? tune_sqrredc_table[n] : 4);
       mpmod_init_MODMULN (modulus, N);
       break;
     case ECM_MOD_REDC:
@@ -719,7 +912,7 @@ mpmod_init (mpmod_t modulus, const mpz_t N, int repr)
       ASSERT (r == 0); /* error should not happen if isbase2 is correct */
       break;
     }
-  
+
   return r;
 }
 
@@ -741,6 +934,7 @@ mpmod_init_MPZ (mpmod_t modulus, const mpz_t N)
   n = mpz_size (N); /* number of limbs of N */
   modulus->bits = n * GMP_NUMB_BITS; /* Number of bits, 
 					rounded up to full limb */
+
   MPZ_INIT2 (modulus->temp1, 2UL * modulus->bits + GMP_NUMB_BITS);
   MPZ_INIT2 (modulus->temp2, modulus->bits);
   MPZ_INIT2 (modulus->aux_modulus, modulus->bits);
@@ -767,6 +961,7 @@ mpmod_init_BASE2 (mpmod_t modulus, const int base2, const mpz_t N)
 
   Nbits = mpz_size (N) * GMP_NUMB_BITS; /* Number of bits, rounded
                                            up to full limb */
+
   MPZ_INIT2 (modulus->temp1, 2UL * Nbits + GMP_NUMB_BITS);
   MPZ_INIT2 (modulus->temp2, Nbits);
   
@@ -800,6 +995,15 @@ mpmod_init_BASE2 (mpmod_t modulus, const int base2, const mpz_t N)
   return 0;
 }
 
+/* initialize the following fields:
+   orig_modulus - the original modulus
+   bits         - # of bits of N, rounded up to a multiple of GMP_NUMB_BITS
+   temp1, temp2 - auxiliary variables
+   Nprim        - -1/N mod B^n where B=2^GMP_NUMB_BITS and n = #limbs(N)
+   R2           - (2^bits)^2 (mod N)
+   R3           - (2^bits)^3 (mod N)
+   multiple     - smallest multiple of N >= 2^bits
+ */
 void
 mpmod_init_MODMULN (mpmod_t modulus, const mpz_t N)
 {
@@ -815,17 +1019,8 @@ mpmod_init_MODMULN (mpmod_t modulus, const mpz_t N)
   modulus->bits = Nbits;
 
   MPZ_INIT2 (modulus->temp1, 2UL * Nbits + GMP_NUMB_BITS);
-  MPZ_INIT2 (modulus->temp2, Nbits);
-
-  mpz_set_ui (modulus->temp1, 1UL);
-  mpz_mul_2exp (modulus->temp1, modulus->temp1, GMP_NUMB_BITS);
-  mpz_tdiv_r_2exp (modulus->temp2, modulus->orig_modulus, 
-                   GMP_NUMB_BITS);
-  mpz_invert (modulus->temp2, modulus->temp2, modulus->temp1);
-    /* Now temp2 = 1/n (mod 2^GMP_NUMB_BITS) */
-  mpz_sub (modulus->temp2, modulus->temp1, modulus->temp2);
-  modulus->Nprim = mpz_getlimbn (modulus->temp2, 0);
-    /* Now Nprim = -1/n (mod 2^GMP_NUMB_BITS) */
+  MPZ_INIT2 (modulus->temp2, Nbits + 1);
+  modulus->Nprim = (mp_limb_t*) malloc (mpz_size (N) * sizeof (mp_limb_t));
 
   MPZ_INIT2 (modulus->R2, Nbits);
   mpz_set_ui (modulus->temp1, 1UL);
@@ -845,6 +1040,17 @@ mpmod_init_MODMULN (mpmod_t modulus, const mpz_t N)
   mpz_cdiv_q (modulus->temp1, modulus->temp1, modulus->orig_modulus);
   mpz_mul (modulus->multiple, modulus->temp1, modulus->orig_modulus);
   /* Now multiple is the smallest multiple of N >= 2^bits */
+
+  mpz_set_ui (modulus->temp1, 1UL);
+  mpz_mul_2exp (modulus->temp1, modulus->temp1, Nbits);
+  /* since we directly check even modulus in ecm/pm1/pp1,
+     N is odd here, thus 1/N mod 2^Nbits always exist */
+  mpz_invert (modulus->temp2, N, modulus->temp1); /* temp2 = 1/N mod B^n */
+  mpz_sub (modulus->temp2, modulus->temp1, modulus->temp2);
+  /* temp2 = -1/N mod B^n */
+  /* ensure Nprim has all its n limbs correctly set, for ecm_redc_n */
+  MPN_ZERO(modulus->Nprim, mpz_size (N));
+  mpn_copyi (modulus->Nprim, PTR(modulus->temp2), ABSIZ(modulus->temp2));
 }
 
 void 
@@ -875,8 +1081,9 @@ mpmod_init_REDC (mpmod_t modulus, const mpz_t N)
   /* ensure aux_modulus has n allocated limbs, for ecm_redc_n */
   if (ABSIZ(modulus->aux_modulus) < n)
     {
-      /* WARNING: _mpz_realloc does not keep the value!!! */
       _mpz_realloc (modulus->aux_modulus, n);
+      /* in case the reallocation fails, _mpz_realloc sets the value to 0 */
+      ASSERT_ALWAYS (mpz_cmp_ui (modulus->aux_modulus, 0) != 0);
       MPN_ZERO (PTR(modulus->aux_modulus) + ABSIZ(modulus->aux_modulus),
 		n - ABSIZ(modulus->aux_modulus));
     }
@@ -915,19 +1122,22 @@ mpmod_clear (mpmod_t modulus)
       mpz_clear (modulus->R3);
       mpz_clear (modulus->multiple);
     }
+  if (modulus->repr == ECM_MOD_MODMULN)
+    free (modulus->Nprim);
   
   return;
 }
 
-
+/* initialize r and set all entries from those of modulus */
 void
-mpmod_copy (mpmod_t r, const mpmod_t modulus)
+mpmod_init_set (mpmod_t r, const mpmod_t modulus)
 {
   const unsigned long Nbits = abs(modulus->bits);
+  const unsigned long n = mpz_size (modulus->orig_modulus);
+
   r->repr = modulus->repr;
   r->bits = modulus->bits;
   r->Fermat = modulus->Fermat;
-  r->Nprim = modulus->Nprim;
   mpz_init_set (r->orig_modulus, modulus->orig_modulus);
   MPZ_INIT2 (r->temp1, 2 * Nbits + GMP_NUMB_BITS);
   MPZ_INIT2 (r->temp2, Nbits + GMP_NUMB_BITS);
@@ -944,6 +1154,11 @@ mpmod_copy (mpmod_t r, const mpmod_t modulus)
     {
       MPZ_INIT2 (r->aux_modulus, Nbits);
       mpz_set (r->aux_modulus, modulus->aux_modulus);
+    }
+  if (modulus->repr == ECM_MOD_MODMULN)
+    {
+      r->Nprim = (mp_limb_t*) malloc (n * sizeof (mp_limb_t));
+      mpn_copyi (r->Nprim, modulus->Nprim, n);
     }
 }
 
@@ -1245,7 +1460,8 @@ mpres_mul (mpres_t R, const mpres_t S1, const mpres_t S2, mpmod_t modulus)
 
 #ifdef WANT_ASSERT_EXPENSIVE
   mpz_t test1, test2, test_result1, test_result2;
-  ASSERT_ALWAYS (S1 != modulus->temp1 && S2 != modulus->temp1 && R != modulus->temp1);
+  ASSERT_ALWAYS (S1 != modulus->temp1 && S2 != modulus->temp1 &&
+                 R != modulus->temp1);
   mpz_init (test1);
   mpz_init (test2);
   mpz_init (test_result1);
@@ -1256,7 +1472,7 @@ mpres_mul (mpres_t R, const mpres_t S1, const mpres_t S2, mpmod_t modulus)
   mpz_mod (test_result1, test_result1, modulus->orig_modulus);
 #endif
 
-  if (modulus->repr == ECM_MOD_BASE2 && modulus->Fermat >= 32768)
+  if (UNLIKELY(modulus->repr == ECM_MOD_BASE2 && modulus->Fermat >= 32768))
     {
       mp_size_t n = modulus->Fermat / GMP_NUMB_BITS;
       unsigned long k;
@@ -1341,6 +1557,68 @@ mpres_mul (mpres_t R, const mpres_t S1, const mpres_t S2, mpmod_t modulus)
 #endif
 }
 
+/* R <- S1^2 mod modulus */
+void 
+mpres_sqr (mpres_t R, const mpres_t S1, mpmod_t modulus)
+{
+  ASSERT_NORMALIZED (S1);
+
+#ifdef WANT_ASSERT_EXPENSIVE
+  mpz_t test1, test2, test_result1, test_result2;
+  ASSERT_ALWAYS (S1 != modulus->temp1 && R != modulus->temp1);
+  mpz_init (test1);
+  mpz_init (test_result1);
+  mpz_init (test_result2);
+  mpres_get_z (test1, S1, modulus);
+  mpz_mul (test_result1, test1, test1);
+  mpz_mod (test_result1, test_result1, modulus->orig_modulus);
+#endif
+
+  if (UNLIKELY(modulus->repr == ECM_MOD_BASE2 && modulus->Fermat >= 32768))
+    {
+      mpres_mul (R, S1, S1, modulus);
+      return;
+    }
+
+  switch (modulus->repr)
+    {
+    case ECM_MOD_BASE2:
+      mpz_mul (modulus->temp1, S1, S1);
+      base2mod (R, modulus->temp1, modulus->temp1, modulus);
+      break;
+    case ECM_MOD_MODMULN:
+      MPZ_REALLOC (R, modulus->bits / GMP_NUMB_BITS);
+      ecm_sqrredc_basecase (R, S1, modulus);
+      break;
+    case ECM_MOD_REDC:
+      mpz_mul (modulus->temp1, S1, S1);
+      REDC (R, modulus->temp1, modulus->temp2, modulus);
+      break;
+    default: /* case ECM_MOD_MPZ */
+      mpz_mul (modulus->temp1, S1, S1);
+      mpres_mpz_mod (R, modulus->temp1, modulus->orig_modulus,
+		     modulus->aux_modulus);
+      break;
+    }
+  ASSERT_NORMALIZED (R);
+
+#ifdef WANT_ASSERT_EXPENSIVE
+  mpres_get_z (test_result2, R, modulus);
+  if (mpz_cmp (test_result1, test_result2) != 0)
+    {
+      printf ("mpres_sqr and mpz_mul/mpz_mod produced different results.\n");
+      gmp_printf ("input 1:         %Zd\n", test1);
+      gmp_printf ("mpres_mul:       %Zd\n", test_result2);
+      gmp_printf ("mpz_mul/mpz_mod: %Zd\n", test_result1);
+      abort ();
+    }
+  mpz_clear (test1);
+  mpz_clear (test_result1);
+  mpz_clear (test_result2);
+#endif
+}
+
+/* R <- S * n mod modulus */
 void 
 mpres_mul_ui (mpres_t R, const mpres_t S, const unsigned long n, 
               mpmod_t modulus)
@@ -1352,6 +1630,17 @@ mpres_mul_ui (mpres_t R, const mpres_t S, const unsigned long n,
   ASSERT_NORMALIZED (R);
 }
 
+/* R <- S * 2^k mod modulus */
+void 
+mpres_mul_2exp (mpres_t R, const mpres_t S, const unsigned long k, 
+              mpmod_t modulus)
+{
+  ASSERT_NORMALIZED (S);
+  mpz_mul_2exp (modulus->temp1, S, k);
+  /* This is the same for all methods: just reduce with original modulus */
+  mpz_mod (R, modulus->temp1, modulus->orig_modulus);
+  ASSERT_NORMALIZED (R);
+}
 
 /* Multiplies S by n and possibly divides by some constant. 
    Whether or not it divides depends on the modulus representation and
@@ -1654,9 +1943,7 @@ void
 mpres_set_z (mpres_t R, const mpz_t S, mpmod_t modulus)
 {
   if (modulus->repr == ECM_MOD_MPZ || modulus->repr == ECM_MOD_BASE2)
-    {
-      mpz_mod (R, S, modulus->orig_modulus);
-    }
+    mpz_mod (R, S, modulus->orig_modulus);
   else if (modulus->repr == ECM_MOD_MODMULN)
     {
       mpz_mod (modulus->temp2, S, modulus->orig_modulus);
@@ -1766,7 +2053,7 @@ mpres_invert (mpres_t R, const mpres_t S, mpmod_t modulus)
 
   if (mpz_invert (modulus->temp2, S, modulus->orig_modulus) == 0)
     return 0;
-
+  
   if (modulus->repr == ECM_MOD_MPZ || modulus->repr == ECM_MOD_BASE2)
     {
       mpz_set (R, modulus->temp2);
@@ -1848,4 +2135,266 @@ mpmod_selftest (const mpz_t n)
   mpmod_clear (modulus);
 
   return 0;
+}
+
+/****************************************************/
+/* mpresn: modular arithmetic based directly on mpn */
+/****************************************************/
+
+/* We use here a signed word-based redundant representation.
+
+   In case N < B^n/16 (since for redc where we add to the absolute value of
+   the residue), where n is the number of limbs of N in base B (2^32 or 2^64
+   usually), we can prove there is no adjustment (adding or subtracting N),
+   cf http://www.loria.fr/~zimmerma/papers/norm.pdf.
+
+   However current branch predictors are quite good, thus we prefer to keep
+   the tests and to allow any input N (instead of only N < B^n/16).
+*/
+
+/* ensure R has allocated space for at least n limbs,
+   and if less than n limbs are used, pad with zeros,
+   and set SIZ(R) to n if positive or -n if negative */
+void
+mpresn_pad (mpres_t R, mpmod_t N)
+{
+  mp_size_t n = ABSIZ(N->orig_modulus);
+  mp_size_t rn;
+
+  _mpz_realloc (R, n);
+  rn = mpz_size (R);
+  ASSERT_ALWAYS (rn <= n);
+  if (rn < n)
+    {
+      MPN_ZERO (PTR(R) + rn, n - rn);
+      SIZ(R) = SIZ(R) >= 0 ? n : -n;
+    }
+}
+
+void
+mpresn_unpad (mpres_t R)
+{
+  mp_size_t n = ABSIZ(R);
+
+  while (n > 0 && PTR(R)[n-1] == 0)
+    n--;
+  SIZ(R) = SIZ(R) >= 0 ? n : -n;
+}
+
+/* R <- S1 * S1 mod N, used only for ECM_MOD_MODMULN */
+void 
+mpresn_sqr (mpres_t R, const mpres_t S1, mpmod_t modulus)
+{
+  mp_size_t n = ABSIZ(modulus->orig_modulus);
+
+  ASSERT (SIZ(S1) == n || -SIZ(S1) == n);
+
+  ecm_sqrredc_basecase_n (PTR(R), PTR(S1), PTR(modulus->orig_modulus),
+                          n, modulus->Nprim, PTR(modulus->temp1));
+
+  SIZ(R) = n;
+}
+
+/* R <- S1 * S2 mod N, used only for ECM_MOD_MODMULN */
+void 
+mpresn_mul (mpres_t R, const mpres_t S1, const mpres_t S2, mpmod_t modulus)
+{
+  mp_size_t n = ABSIZ(modulus->orig_modulus);
+
+  ASSERT (SIZ(S1) == n || -SIZ(S1) == n);
+  ASSERT (SIZ(S2) == n || -SIZ(S2) == n);
+
+  ecm_mulredc_basecase_n (PTR(R), PTR(S1), PTR(S2), PTR(modulus->orig_modulus),
+                          n, modulus->Nprim, PTR(modulus->temp1));
+
+  SIZ(R) = SIZ(S1) == SIZ(S2) ? n : -n;
+}
+
+/* R <- S*m/B mod modulus where m fits in a mp_limb_t.
+   Here S (w in dup_add_batch1) is the result of a subtraction,
+   thus with the notations from http://www.loria.fr/~zimmerma/papers/norm.pdf
+   we have S < 2 \alpha N.
+   Then R < (2 \alpha N \beta + \beta N) = (2 \alpha + 1) N.
+   This result R is used in an addition with u being the result of a squaring
+   thus u < \alpha N, which gives a result < (3 \alpha + 1) N.
+   Finally this result is used in a multiplication with another operand less
+   than 2 \alpha N, thus we want:
+   ((2 \alpha) (3 \alpha + 1) N^2 + \beta N)/\beta \leq \alpha N, i.e.,
+   2 \alpha (3 \alpha + 1) \varepsilon + 1 \leq \alpha
+   This implies \varepsilon \leq 7/2 - sqrt(3)/2 ~ 0.0359, in which case
+   we can take \alpha = 2/3*sqrt(3)+1 ~ 2.1547.
+   In that case no adjustment is needed in mpresn_mul_1.
+   However we prefer to keep the adjustment here, to allow a larger set of
+   inputs (\varepsilon \leq 1/16 = 0.0625 instead of 0.0359).
+*/
+void 
+mpresn_mul_1 (mpres_t R, const mpres_t S, const mp_limb_t m, mpmod_t modulus)
+{
+  mp_ptr t1 = PTR(modulus->temp1);
+  mp_ptr t2 = PTR(modulus->temp2);
+  mp_size_t n = ABSIZ(modulus->orig_modulus);
+  mp_limb_t q;
+
+  ASSERT (SIZ(S) == n || -SIZ(S) == n);
+  ASSERT (ALLOC(modulus->temp1) >= n+1);
+
+#if defined(USE_ASM_REDC) && defined(HAVE_NATIVE_MULREDC1_N)
+  if (n <= MULREDC_ASSEMBLY_MAX)
+    mulredc_1 (PTR(R), m, PTR(S), PTR(modulus->orig_modulus), n,
+               modulus->Nprim[0]);
+  else
+#endif
+    {
+      t1[n] = mpn_mul_1 (t1, PTR(S), n, m);
+      q = t1[0] * modulus->Nprim[0];
+      t2[n] = mpn_mul_1 (t2, PTR(modulus->orig_modulus), n, q);
+#ifdef HAVE___GMPN_ADD_NC
+      q = __gmpn_add_nc (PTR(R), t1 + 1, t2 + 1, n, t1[0] != 0);
+#else
+      q = mpn_add_n (PTR(R), t1 + 1, t2 + 1, n);
+      q += mpn_add_1 (PTR(R), PTR(R), n, t1[0] != 0);
+#endif
+      while (q != 0)
+        q -= mpn_sub_n (PTR(R), PTR(R), PTR(modulus->orig_modulus), n);
+    }
+
+  SIZ(R) = SIZ(S); /* sign is unchanged */
+}
+
+/* R <- S1 + S2 mod modulus */
+/* we assume all numbers are allocated to n limbs, and unused most significant
+   limbs are set to zero */
+void
+mpresn_add (mpres_t R, const mpres_t S1, const mpres_t S2, mpmod_t modulus)
+{
+  mp_ptr r = PTR(R);
+  mp_ptr s1 = PTR(S1);
+  mp_ptr s2 = PTR(S2);
+  mp_size_t n = ABSIZ(modulus->orig_modulus);
+  ATTRIBUTE_UNUSED mp_limb_t cy;
+
+  ASSERT (SIZ(S1) == n || -SIZ(S1) == n);
+  ASSERT (SIZ(S2) == n || -SIZ(S2) == n);
+
+  if (SIZ(S1) == SIZ(S2)) /* S1 and S2 are of same sign */
+    {
+      cy = mpn_add_n (r, s1, s2, n);
+      /* for N < B^n/16, the while loop will be never performed, which proves
+         it will be performed a small number of times. In practice we
+         observed up to 7 loops, but it happens rarely. */
+#ifndef MPRESN_NO_ADJUSTMENT
+      while (cy != 0)
+        cy -= mpn_sub_n (r, r, PTR(modulus->orig_modulus), n);
+#endif
+      SIZ(R) = SIZ(S1);
+    }
+  else /* different signs */
+    {
+      if (mpn_cmp (s1, s2, n) >= 0)
+        {
+          mpn_sub_n (r, s1, s2, n); /* no borrow here */
+          SIZ(R) = SIZ(S1);
+        }
+      else
+        {
+          mpn_sub_n (r, s2, s1, n); /* idem */
+          SIZ(R) = SIZ(S2);
+        }
+    }
+}
+
+void
+mpresn_sub (mpres_t R, const mpres_t S1, const mpres_t S2, mpmod_t modulus)
+{
+  mp_ptr r = PTR(R);
+  mp_ptr s1 = PTR(S1);
+  mp_ptr s2 = PTR(S2);
+  mp_size_t n = ABSIZ(modulus->orig_modulus);
+  ATTRIBUTE_UNUSED mp_limb_t cy;
+
+  ASSERT (SIZ(S1) == n || -SIZ(S1) == n);
+  ASSERT (SIZ(S2) == n || -SIZ(S2) == n);
+
+  if (SIZ(S1) != SIZ(S2)) /* S1 and S2 are of different signs */
+    {
+      cy = mpn_add_n (r, s1, s2, n);
+#ifndef MPRESN_NO_ADJUSTMENT
+      while (cy != 0)
+        cy -= mpn_sub_n (r, r, PTR(modulus->orig_modulus), n);
+#endif
+      SIZ(R) = SIZ(S1);
+    }
+  else /* same signs, it's a real subtraction */
+    {
+      if (mpn_cmp (s1, s2, n) >= 0)
+        {
+          mpn_sub_n (r, s1, s2, n); /* no borrow here */
+          SIZ(R) = SIZ(S1);
+        }
+      else
+        {
+          mpn_sub_n (r, s2, s1, n); /* idem */
+          SIZ(R) = -SIZ(S2);
+        }
+      
+    }
+}
+
+/* (R, T) <- (S1 + S2, S1 - S2)
+   Assume R differs from both S1 and S2.
+ */
+void
+mpresn_addsub (mpres_t R, mpres_t T,
+               const mpres_t S1, const mpres_t S2, mpmod_t modulus)
+{
+  mp_ptr r = PTR(R);
+  mp_ptr t = PTR(T);
+  mp_ptr s1 = PTR(S1);
+  mp_ptr s2 = PTR(S2);
+  mp_size_t n = ABSIZ(modulus->orig_modulus);
+  ATTRIBUTE_UNUSED mp_limb_t cy;
+
+  ASSERT (R != S1);
+  ASSERT (R != S2);
+  ASSERT (SIZ(S1) == n || -SIZ(S1) == n);
+  ASSERT (SIZ(S2) == n || -SIZ(S2) == n);
+
+  if (SIZ(S1) == SIZ(S2)) /* S1 and S2 are of same sign */
+    {
+      cy = mpn_add_n (r, s1, s2, n);
+#ifndef MPRESN_NO_ADJUSTMENT
+      while (cy != 0)
+        cy -= mpn_sub_n (r, r, PTR(modulus->orig_modulus), n);
+#endif
+      SIZ(R) = SIZ(S1);
+      if (mpn_cmp (s1, s2, n) >= 0)
+        {
+          mpn_sub_n (t, s1, s2, n); /* no borrow since {s1,n} >= {s2,n} */
+          SIZ(T) = SIZ(S1);
+        }
+      else
+        {
+          mpn_sub_n (t, s2, s1, n); /* idem since {s2,n} >= {s1,n} */
+          SIZ(T) = -SIZ(S2);
+        }
+    }
+  else /* different signs */
+    {
+      if (mpn_cmp (s1, s2, n) >= 0)
+        {
+          mpn_sub_n (r, s1, s2, n); /* no borrow since {s1,n} >= {s2,n} */
+          SIZ(R) = SIZ(S1);
+        }
+      else
+        {
+          mpn_sub_n (r, s2, s1, n); /* idem since {s2,n} >= {s1,n} */
+          SIZ(R) = SIZ(S2);
+        }
+      cy = mpn_add_n (t, s1, s2, n);
+#ifndef MPRESN_NO_ADJUSTMENT
+      while (cy != 0)
+        cy -= mpn_sub_n (t, t, PTR(modulus->orig_modulus), n);
+#endif
+      SIZ(T) = SIZ(S1);
+    }
 }

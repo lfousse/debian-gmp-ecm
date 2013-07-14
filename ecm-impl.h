@@ -1,22 +1,24 @@
 /* ecm-impl.h - header file for libecm
  
-  Copyright 2001, 2002, 2003, 2004, 2005 Paul Zimmermann and Alexander Kruppa.
+Copyright 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011,
+2012 Paul Zimmermann, Alexander Kruppa and Cyril Bouvier.
  
-  This program is free software; you can redistribute it and/or modify it
-  under the terms of the GNU General Public License as published by the
-  Free Software Foundation; either version 2 of the License, or (at your
-  option) any later version.
- 
-  This program is distributed in the hope that it will be useful, but WITHOUT
-  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-  FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
-  more details.
- 
-  You should have received a copy of the GNU General Public License along
-  with this program; see the file COPYING.  If not, write to the Free
-  Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
-  02111-1307, USA.
-*/
+This file is part of the ECM Library.
+
+The ECM Library is free software; you can redistribute it and/or modify
+it under the terms of the GNU Lesser General Public License as published by
+the Free Software Foundation; either version 3 of the License, or (at your
+option) any later version.
+
+The ECM Library is distributed in the hope that it will be useful, but
+WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
+License for more details.
+
+You should have received a copy of the GNU Lesser General Public License
+along with the ECM Library; see the file COPYING.LIB.  If not, see
+http://www.gnu.org/licenses/ or write to the Free Software Foundation, Inc.,
+51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA. */
 
 #ifndef _ECM_IMPL_H
 #define _ECM_IMPL_H 1
@@ -26,6 +28,29 @@
 
 #ifdef HAVE_SYS_TYPES_H
 #include <sys/types.h> /* needed for size_t */
+#endif
+
+#if HAVE_STDINT_H
+#include <stdint.h>
+/* needed for int64_t and uint64_t */
+/* or configure will define these for us if possible */
+#endif
+
+#if defined UINT64_MAX || defined uint64_t
+typedef int64_t ecm_int;
+typedef uint64_t ecm_uint;
+#define ECM_INT_MAX INT64_MAX
+#define ECM_UINT_MAX UINT64_MAX
+#elif defined HAVE_LONG_LONG_INT
+typedef long long ecm_int;
+typedef unsigned long long ecm_uint;
+#define ECM_INT_MAX LLONG_MAX
+#define ECM_UINT_MAX ULLONG_MAX
+#else
+typedef long ecm_int;
+typedef unsigned long ecm_uint;
+#define ECM_INT_MAX LONG_MAX
+#define ECM_UINT_MAX ULONG_MAX
 #endif
 
 #ifndef TUNE
@@ -78,10 +103,21 @@ extern FILE *ECM_STDOUT, *ECM_STDERR;
 #define ATTRIBUTE_CONST
 #endif
 
-/* Whether we build the polynomials in stage 2 as described in the literature 
-   as products of (x - x_i) (NEGATED_ROOTS 0), or as 
-   (x + x_i) (NEGATED_ROOTS 1) */
-#define NEGATED_ROOTS 0
+#ifndef LIKELY
+#if defined(__GNUC__)
+#define LIKELY(x) __builtin_expect ((x) != 0, 1)
+#else
+#define LIKELY(x) x
+#endif
+#endif
+
+#ifndef UNLIKELY
+#if defined(__GNUC__)
+#define UNLIKELY(x) __builtin_expect ((x) != 0, 0)
+#else
+#define UNLIKELY(x) x
+#endif
+#endif
 
 /* default B2 choice: pow (B1 * METHOD_COST / 6.0, DEFAULT_B2_EXPONENT) */
 #define DEFAULT_B2_EXPONENT 1.43
@@ -92,9 +128,6 @@ extern FILE *ECM_STDOUT, *ECM_STDERR;
 #define PM1FS2_DEFAULT_B2_EXPONENT 1.7
 #define PM1FS2_COST 1.0 / 4.0
 #define PP1FS2_COST 1.0 / 4.0
-
-/* residues are fully reduced (i.e. in canonical mpz form) */
-#define FULL_REDUCTION
 
 /* if POLYEVALTELLEGEN is defined, use polyeval_tellegen(),
    otherwise use polyeval() */
@@ -109,6 +142,9 @@ extern FILE *ECM_STDOUT, *ECM_STDERR;
 #define TOOM4 4
 #define KS 5
 #define NTT 6
+
+/* maximal limb size of assembly mulredc */
+#define MULREDC_ASSEMBLY_MAX 20
 
 #include "sp.h"
 
@@ -286,8 +322,8 @@ typedef struct
   int Fermat;         /* If repr = 1 (base 2 number): If modulus is 2^(2^m)+1, 
                          i.e. bits = 2^m, then Fermat = 2^m, 0 otherwise.
                          If repr != 1, undefined */
-  mp_limb_t Nprim;    /* For MODMULN */
-  mpz_t orig_modulus; /* The original modulus */
+  mp_limb_t *Nprim;   /* For MODMULN */
+  mpz_t orig_modulus; /* The original modulus N */
   mpz_t aux_modulus;  /* Used only for MPZ and REDC:
 			 - the auxiliary modulus value (i.e. normalized 
                            modulus, or -1/N (mod 2^bits) for REDC,
@@ -369,7 +405,6 @@ void ecm_mul (mpres_t, mpres_t, mpz_t, mpmod_t, mpres_t);
 #define print_B1_B2_poly __ECM(print_B1_B2_poly)
 void print_B1_B2_poly (int, int, double, double, mpz_t, mpz_t, mpz_t, int S,  
                        mpz_t, int, mpz_t);
-      
 
 /* ecm2.c */
 #define ecm_rootsF __ECM(ecm_rootsF)
@@ -389,7 +424,7 @@ int     ecm_findmatch (unsigned long *, const unsigned long, root_params_t *,
 
 /* lucas.c */
 #define pp1_mul_prac __ECM(pp1_mul_prac)
-void  pp1_mul_prac     (mpres_t, unsigned long, mpmod_t, mpres_t, mpres_t,
+void  pp1_mul_prac     (mpres_t, ecm_uint, mpmod_t, mpres_t, mpres_t,
                         mpres_t, mpres_t, mpres_t);
 
 /* pp1.c */
@@ -529,6 +564,9 @@ unsigned int ks_wrapmul (listz_t, unsigned int, listz_t, unsigned int,
                          listz_t, unsigned int, mpz_t);
 
 /* mpmod.c */
+/* Define MPRESN_NO_ADJUSTMENT if mpresn_add, mpresn_sub and mpresn_addsub
+   should perform no adjustment step. This yields constraints on N. */
+/* #define MPRESN_NO_ADJUSTMENT */
 #define isbase2 __ECM(isbase2)
 int isbase2 (const mpz_t, const double);
 #define mpmod_init __ECM(mpmod_init)
@@ -543,8 +581,8 @@ void mpmod_init_MODMULN (mpmod_t, const mpz_t);
 void mpmod_init_REDC (mpmod_t, const mpz_t);
 #define mpmod_clear __ECM(mpmod_clear)
 void mpmod_clear (mpmod_t);
-#define mpmod_copy __ECM(mpmod_copy)
-void mpmod_copy (mpmod_t, const mpmod_t);
+#define mpmod_init_set __ECM(mpmod_init_set)
+void mpmod_init_set (mpmod_t, const mpmod_t);
 #define mpmod_pausegw __ECM(mpmod_pausegw)
 void mpmod_pausegw (const mpmod_t modulus);
 #define mpmod_contgw __ECM(mpmod_contgw)
@@ -557,6 +595,8 @@ void mpres_pow (mpres_t, const mpres_t, const mpz_t, mpmod_t);
 void mpres_ui_pow (mpres_t, const unsigned long, const mpres_t, mpmod_t);
 #define mpres_mul __ECM(mpres_mul)
 void mpres_mul (mpres_t, const mpres_t, const mpres_t, mpmod_t) ATTRIBUTE_HOT;
+#define mpres_sqr __ECM(mpres_sqr)
+void mpres_sqr (mpres_t, const mpres_t, mpmod_t) ATTRIBUTE_HOT;
 #define mpres_mul_z_to_z __ECM(mpres_mul_z_to_z)
 void mpres_mul_z_to_z (mpz_t, const mpres_t, const mpz_t, mpmod_t);
 #define mpres_set_z_for_gcd __ECM(mpres_set_z_for_gcd)
@@ -589,6 +629,8 @@ void mpres_clear (mpres_t, const mpmod_t);
 void mpres_realloc (mpres_t, const mpmod_t);
 #define mpres_mul_ui __ECM(mpres_mul_ui)
 void mpres_mul_ui (mpres_t, const mpres_t, const unsigned long, mpmod_t);
+#define mpres_mul_2exp __ECM(mpres_mul_2exp)
+void mpres_mul_2exp (mpres_t, const mpres_t, const unsigned long, mpmod_t);
 #define mpres_muldivbysomething_si __ECM(mpres_muldivbysomething_si)
 void mpres_muldivbysomething_si (mpres_t, const mpres_t, const long, mpmod_t);
 #define mpres_neg __ECM(mpres_neg)
@@ -603,6 +645,22 @@ void mpres_out_str (FILE *, const unsigned int, const mpres_t, mpmod_t);
 int  mpres_is_zero (const mpres_t, mpmod_t);
 #define mpres_set(a,b,n) mpz_set (a, b)
 #define mpres_swap(a,b,n) mpz_swap (a, b)
+#define mpresn_mul __ECM(mpresn_mul)
+void mpresn_mul (mpres_t, const mpres_t, const mpres_t, mpmod_t);
+#define mpresn_addsub __ECM(mpresn_addsub)
+void mpresn_addsub (mpres_t, mpres_t, const mpres_t, const mpres_t, mpmod_t);
+#define mpresn_pad __ECM(mpresn_pad)
+void mpresn_pad (mpres_t R, mpmod_t N);
+#define mpresn_unpad __ECM(mpresn_unpad)
+void mpresn_unpad (mpres_t R);
+#define mpresn_sqr __ECM(mpresn_sqr)
+void mpresn_sqr (mpres_t, const mpres_t, mpmod_t);
+#define mpresn_add __ECM(mpresn_add)
+void mpresn_add (mpres_t, const mpres_t, const mpres_t, mpmod_t);
+#define mpresn_sub __ECM(mpresn_sub)
+void mpresn_sub (mpres_t, const mpres_t, const mpres_t, mpmod_t);
+#define mpresn_mul_1 __ECM(mpresn_mul_ui)
+void mpresn_mul_1 (mpres_t, const mpres_t, const mp_limb_t, mpmod_t);
 
 /* mul_lo.c */
 #define ecm_mul_lo_n __ECM(ecm_mul_lo_n)
@@ -685,12 +743,13 @@ unsigned long find_factor (const unsigned long);
 void pp1_random_seed  (mpz_t, mpz_t, gmp_randstate_t);
 #define pm1_random_seed __ECM(pm1_random_seed)
 void pm1_random_seed  (mpz_t, mpz_t, gmp_randstate_t);
-#define get_random_ui   __ECM(get_random_ui)
-unsigned int get_random_ui (void);
+#define get_random_ul   __ECM(get_random_ul)
+unsigned long get_random_ul (void);
 
 /* Fgw.c */
 #ifdef HAVE_GWNUM
-int  gw_ecm_stage1 (mpz_t, curve *, mpmod_t, double, double *, mpz_t);
+int  gw_ecm_stage1 (mpz_t, curve *, mpmod_t, double, double *, mpz_t,
+                    double, unsigned long, unsigned long, signed long);
 #endif
 
 /* mul_fft.h */
@@ -705,6 +764,21 @@ int  mpn_fft_best_k (mp_size_t, int);
 #define mpn_fft_next_size __ECM(mpn_fft_next_size)
 mp_size_t mpn_fft_next_size (mp_size_t, int);
 
+/* batch.c */
+#define compute_s  __ECM(compute_s )
+void compute_s (mpz_t, unsigned long);
+#define write_s_in_file __ECM(write_s_in_file)
+int write_s_in_file (char *, mpz_t);
+#define read_s_from_file  __ECM(read_s_from_file)
+void read_s_from_file (mpz_t, char *); 
+#define ecm_stage1_batch  __ECM(ecm_stage1_batch)
+int ecm_stage1_batch (mpz_t, mpres_t, mpres_t, mpmod_t, double, double *, 
+                                                                int,  mpz_t);
+
+/* ellparam_batch.c */
+#define get_curve_from_ell_parametrization \
+                                      __ECM(get_curve_from_ell_parametrization )
+int get_curve_from_ell_parametrization (mpz_t, mpres_t, mpz_t, mpmod_t);
 
 /* sets_long.c */
 /* A set of long ints */
