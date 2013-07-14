@@ -1,3 +1,10 @@
+gmp-ecm (6.4.4-1) unstable; urgency=low
+
+  * New upstream release.
+    + Fixes build with latest GMP (closes: #713399).
+
+ -- Laurent Fousse <lfousse@debian.org>  Sat, 13 Jul 2013 22:33:00 -0700
+
 gmp-ecm (6.4.2-2) unstable; urgency=low
 
   * Only break and replace the Error Code Modeler package from Debian
