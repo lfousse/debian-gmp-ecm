@@ -1,3 +1,9 @@
+gmp-ecm (6.4.4-2) unstable; urgency=low
+
+  * Apply patch by Logan Rosen to fix FTBFS on ppc64el (closes: #735986).
+
+ -- Laurent Fousse <lfousse@debian.org>  Sun, 09 Feb 2014 13:18:23 -0800
+
 gmp-ecm (6.4.4-1) unstable; urgency=low
 
   * New upstream release.
